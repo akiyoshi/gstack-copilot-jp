@@ -1,0 +1,13 @@
+{
+  "name": "gstack-copilot-jp-browse",
+  "version": "0.1.0",
+  "description": "Playwright ベースのブラウザ自動化サーバー＆CLI",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/cli.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

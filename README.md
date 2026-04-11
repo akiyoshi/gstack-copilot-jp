@@ -69,6 +69,10 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | | `/qa-only` | QAレポーター — レポートのみ |
 | | `/cso` | CISO — OWASP + STRIDE監査 |
 | | `/benchmark` | パフォーマンスエンジニア — 計測・比較 |
+| ブラウザ | `/browse` | QAエンジニア — ヘッドレスChromium ~100ms/コマンド |
+| | `/open-browser` | 可視モード — headed Chrome 起動 |
+| | `/setup-browser-cookies` | セッション管理 — Cookie インポート |
+| | `/pair-agent` | マルチエージェント — ブラウザ共有 |
 | 出荷 | `/ship` | リリースエンジニア — テスト→PR作成 |
 | | `/land-and-deploy` | SRE — マージ→デプロイ→検証 |
 | | `/canary` | SRE — デプロイ後監視 |
@@ -87,6 +91,36 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | `/second-opinion` | 別モデルによるクロスレビュー |
 | `/setup-deploy` | デプロイ環境設定 |
 | `/upgrade` | 自己アップデート |
+
+## ブラウザ
+
+`/browse` はAIにブラウザを与える。Playwright ベースのヘッドレス Chromium で
+リアルなクリック、スクリーンショット、フォーム入力が可能。
+
+```
+あなた: /browse
+        https://staging.myapp.com をテストして
+
+Copilot: $B goto https://staging.myapp.com
+         $B snapshot -i                  # インタラクティブ要素一覧
+         $B text                         # ページコンテンツ確認
+         $B console                      # JSエラーチェック
+         $B screenshot /tmp/staging.png  # スクリーンショット
+
+         ページは正常に読み込まれました。コンソールエラーなし。
+         3つのフォームフィールドと2つのCTAボタンを確認。
+```
+
+### 主要機能
+
+- **スナップショット**: `snapshot -i` でインタラクティブ要素に `@ref` 割り当て → `click @e3` で操作
+- **差分検出**: `snapshot -D` で前回との変化を unified diff 表示
+- **レスポンシブ**: `responsive` でmobile/tablet/desktop 同時撮影
+- **パフォーマンス**: `perf` でDNS/TTFB/FCP/Load計測
+- **headed モード**: `connect` で可視Chrome、手動ログインやデモに
+- **50+コマンド**: ナビゲーション、読み取り、操作、検査、ビジュアル、タブ管理
+
+技術詳細は [BROWSER.md](BROWSER.md) を参照。
 
 ## 3つの原則
 
@@ -116,7 +150,7 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 |------|--------|------------------|
 | ターゲット | Claude Code | GitHub Copilot (VS Code) |
 | 言語 | 英語 | 日本語 |
-| ブラウザ | ヘッドレスChromium daemon | なし（コード分析ベース） |
+| ブラウザ | Bun コンパイル済みバイナリ (~58MB) | Node.js + Playwright（コンパイル不要） |
 | ホスト | 8エージェント対応 | Copilot単一 |
 | セカンドオピニオン | Codex CLI依存 | model fallbackで汎用化 |
 | テンプレート | .tmpl + gen-skill-docs | 直接SKILL.md |

@@ -34,6 +34,10 @@
 | ファイル編集を制限 | `/freeze` |
 | フル安全モード | `/guard` |
 | 制限解除 | `/unfreeze` |
+| ブラウザで開く、サイトテスト | `/browse` |
+| ブラウザCookieインポート | `/setup-browser-cookies` |
+| 可視ブラウザ起動 | `/open-browser` |
+| エージェント連携、ブラウザ共有 | `/pair-agent` |
 | セカンドオピニオン、別視点 | `/second-opinion` |
 | デプロイ環境の設定 | `/setup-deploy` |
 | アップグレード | `/upgrade` |
