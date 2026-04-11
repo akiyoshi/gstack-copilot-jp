@@ -1,0 +1,143 @@
+# gstack-copilot-jp
+
+日本人のGitHub Copilotユーザーのための、AIソフトウェアファクトリー。
+
+[gstack](https://github.com/garrytan/gstack)（Garry Tan作）の思想とプロセスを、**日本語のGitHub Copilot向けスキル・エージェント**として一から再実装。
+
+## クイックスタート
+
+### 1. インストール（30秒）
+
+```powershell
+# Windows (PowerShell 管理者権限)
+git clone https://github.com/[your-username]/gstack-copilot-jp.git $HOME\.gstack-copilot-jp
+cd $HOME\.gstack-copilot-jp
+.\setup.ps1
+```
+
+```bash
+# macOS / Linux
+git clone https://github.com/[your-username]/gstack-copilot-jp.git ~/.gstack-copilot-jp
+cd ~/.gstack-copilot-jp
+chmod +x setup.sh && ./setup.sh
+```
+
+### 2. 使い始める
+
+VS Code Copilot Chat で `/` を入力 → スキル一覧が表示される。
+
+```
+あなた: /office-hours
+        カレンダーのブリーフィングアプリを作りたい
+
+Copilot: [痛みを聞く — 具体的なエピソードを引き出す]
+         [前提を挑戦する — 「ブリーフィングアプリ」ではなく「参謀AI」では？]
+         [3つの実装アプローチを工数見積もり付きで提示]
+
+あなた: /plan-ceo-review
+Copilot: [デザインドキュメントを読み、10セクションのCEOレビューを実行]
+
+あなた: /review
+Copilot: [diff分析 → 専門家サブエージェント並列dispatch → 自動修正 → レポート]
+
+あなた: /ship
+Copilot: [テスト → レビュー → VERSION更新 → CHANGELOG → PR作成]
+```
+
+## スプリントプロセス
+
+gstack-copilot-jpは**プロセス**であり、ツール集ではない。スキルは以下の順で連携する：
+
+**考える → 計画する → 作る → レビューする → テストする → 出荷する → 振り返る**
+
+| フェーズ | スキル | ロール |
+|---------|--------|--------|
+| 考える | `/office-hours` | YCパートナー — 6つの問いで本質を見つける |
+| 計画する | `/plan-ceo-review` | CEO — 4つのスコープモードで戦略レビュー |
+| | `/plan-eng-review` | エンジニアリングMgr — アーキテクチャ図・テスト計画 |
+| | `/plan-design-review` | シニアデザイナー — 7次元0-10評価 |
+| | `/plan-devex-review` | DXリード — TTHW計測・8次元評価 |
+| | `/autoplan` | オーケストレーター — 全レビュー一括実行 |
+| デザイン | `/design-consultation` | デザインパートナー — デザインシステム構築 |
+| | `/design-shotgun` | エクスプローラー — 4-6個のデザイン案生成 |
+| | `/design-html` | デザインエンジニア — 本番品質HTML変換 |
+| 作る・レビュー | `/review` | スタッフエンジニア — 専門家サブエージェント |
+| | `/design-review` | デザイナー兼エンジニア — UI実装修正 |
+| | `/devex-review` | DXテスター — 実地検証 |
+| | `/investigate` | デバッガー — Iron Law: 調査なし修正禁止 |
+| テスト | `/qa` | QAリード — 修正→テスト→検証ループ |
+| | `/qa-only` | QAレポーター — レポートのみ |
+| | `/cso` | CISO — OWASP + STRIDE監査 |
+| | `/benchmark` | パフォーマンスエンジニア — 計測・比較 |
+| 出荷 | `/ship` | リリースエンジニア — テスト→PR作成 |
+| | `/land-and-deploy` | SRE — マージ→デプロイ→検証 |
+| | `/canary` | SRE — デプロイ後監視 |
+| 振り返り | `/retro` | エンジニアリングMgr — 週次振り返り |
+| | `/document-release` | テクニカルライター — ドキュメント更新 |
+| | `/learn` | メモリマネージャー — 学習記録管理 |
+
+### パワーツール
+
+| スキル | 用途 |
+|--------|------|
+| `/careful` | 破壊的コマンド警告 |
+| `/freeze` | 編集ロック（指定ディレクトリのみ許可） |
+| `/guard` | careful + freeze 統合 |
+| `/unfreeze` | ロック解除 |
+| `/second-opinion` | 別モデルによるクロスレビュー |
+| `/setup-deploy` | デプロイ環境設定 |
+| `/upgrade` | 自己アップデート |
+
+## 3つの原則
+
+1. **湖を沸かせ（Boil the Lake）** — 完遂できるタスクは完全にやり切る。AIの時代、完全性のコストは安い
+2. **作る前に探せ（Search Before Building）** — 枯れた技術→新しい技術→第一原理の3層で調査
+3. **ユーザー主権（User Sovereignty）** — AIは推奨する。決めるのはユーザー
+
+詳細は [ETHOS.md](ETHOS.md) を参照。
+
+## サブエージェント
+
+`/review` 等のスキルは、専門家サブエージェントに処理を委譲する：
+
+| エージェント | ツール | 役割 |
+|------------|--------|------|
+| `reviewer` | read, search, edit | コードレビュー・修正 |
+| `adversarial` | read, search | 敵対的レビュー（read-only） |
+| `security` | read, search, execute | セキュリティ監査 |
+| `testing` | read, search, execute | テスト戦略・実装 |
+| `design-critic` | read, search | デザイン批評（read-only） |
+| `dx-tester` | read, search, execute, web | DX実地テスト |
+| `architect` | read, search | アーキテクチャレビュー（read-only） |
+
+## gstackとの違い
+
+| 観点 | gstack | gstack-copilot-jp |
+|------|--------|------------------|
+| ターゲット | Claude Code | GitHub Copilot (VS Code) |
+| 言語 | 英語 | 日本語 |
+| ブラウザ | ヘッドレスChromium daemon | なし（コード分析ベース） |
+| ホスト | 8エージェント対応 | Copilot単一 |
+| セカンドオピニオン | Codex CLI依存 | model fallbackで汎用化 |
+| テンプレート | .tmpl + gen-skill-docs | 直接SKILL.md |
+
+## アンインストール
+
+```powershell
+# Windows
+.\setup.ps1 -Uninstall
+```
+
+```bash
+# macOS / Linux
+./setup.sh --uninstall
+```
+
+## ライセンス
+
+MIT
+
+## クレジット
+
+- 原作: [gstack](https://github.com/garrytan/gstack) by [Garry Tan](https://x.com/garrytan)
+- 本プロジェクトはgstackの思想とプロセスを参考に、日本語GitHub Copilot向けに一から再実装したものです
