@@ -64,6 +64,27 @@ ECCの183スキルを全移植するのではなく、**最もインパクトの
 | 13 | リファクタリング | スキル間の一貫性、テンプレート統一 | 2日 / 1時間 |
 | 14 | ドキュメント整備 | ガイド・チュートリアル | 2日 / 1時間 |
 
+### v0.9: スプリントオーケストレーター（実装済み）
+
+| # | 機能 | 内容 | 工数（人間/AI） |
+|---|------|------|----------------|
+| 18 | `/go` スキル | 計画判定→tdd→review→ship→retro 自動連鎖。タスク規模で計画要否を自動判定。味覚判断のみ停止、6つの意思決定原則で自動進行 | 3.5時間 / 2時間 |
+
+詳細: [DESIGN-v3-sprint-runner.md](DESIGN-v3-sprint-runner.md)
+
+### v0.10: セッション回復 & 品質安全弁
+
+| # | 機能 | gstackの参照元 | gstack-copilot-jpでの形 | 工数（人間/AI） |
+|---|------|---------------|------------------------|----------------|
+| 19 | セッション回復 | `checkpoint/SKILL.md` | `/checkpoint` スキル（Copilot `/memories/` ベース）。save/resume/list + セッション開始時の自動回復 | 2時間 / 45分 |
+| 20 | Confusion Protocol | `CLAUDE.md` Confusion Protocol | `.github/rules/common/confusion-protocol.md`。高リスク曖昧さでSTOP→選択肢提示。全スキルに常時適用 | 30分 / 15分 |
+
+不採用とした概念（gstack v1.0比較）:
+- SKILL.md Template System: Copilotにビルドステップがない
+- Question Tuning: preference保存機構がない
+- Session Timeline JSONL: `/checkpoint` のMarkdownで十分
+- Health Check: v1.0の必須ではない
+
 ### v1.0: リブランディング & 公開
 
 | # | 機能 | 内容 | 工数（人間/AI） |

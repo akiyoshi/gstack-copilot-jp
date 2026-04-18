@@ -30,8 +30,8 @@ describe('全スキル フロントマター検証', () => {
     .filter(d => d.isDirectory())
     .map(d => d.name);
 
-  it('41個のスキルディレクトリが存在する', () => {
-    expect(skillDirs.length).toBe(41);
+  it('42個のスキルディレクトリが存在する', () => {
+    expect(skillDirs.length).toBe(42);
   });
 
   for (const skill of skillDirs) {
@@ -83,5 +83,12 @@ describe('レガシー清掃', () => {
 
   it('setup.sh が存在しない', () => {
     expect(existsSync(join(ROOT, 'setup.sh'))).toBe(false);
+  });
+});
+
+describe('Confusion Protocol ルール', () => {
+  it('confusion-protocol.md が rules/common/ に存在する', () => {
+    const rulePath = join(ROOT, '.github', 'rules', 'common', 'confusion-protocol.md');
+    expect(existsSync(rulePath)).toBe(true);
   });
 });
