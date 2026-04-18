@@ -529,4 +529,5 @@ VS Code v1.116+ と GitHub Copilot が前提。セットアップスクリプト
 ## 次のステップ
 
 - **v0.5 実装完了** — TDDスキル、build-fix、ルール体系、learn強化、clean ✅
-- **次: v0.6** — マルチモデルルーティング、並列実行、クロスレビュー強化
+- **v0.6 実装完了** — multi-plan、multi-execute、second-opinion強化 ✅
+- **次: v0.7** — セッション管理、コンテキスト最適化、自律ループ

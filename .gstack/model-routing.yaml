@@ -5,20 +5,54 @@
 #
 # /multi-plan と /multi-execute が参照する。
 # ユーザーのCopilotプランで利用可能なモデルに合わせてカスタマイズすること。
+#
+# コスト参考（プレミアムリクエスト倍率）:
+#   0x（無料）: GPT-5 mini, GPT-4.1, GPT-4o, Raptor mini
+#   0.25x:      Grok Code Fast 1
+#   0.33x:      Claude Haiku 4.5, Gemini 3 Flash, GPT-5.4 mini
+#   1x:         Claude Sonnet 4.6, Gemini 3.1 Pro, GPT-5.4, GPT-5.3-Codex
+#   3x:         Claude Opus 4.6
+#   7.5x:       Claude Opus 4.7
+#
+# 月のプレミアムリクエスト残量に注意。枯渇時はfallbackが使われる。
 
 routing:
+  # --- オーケストレーション（統合判断）---
+  orchestrator:
+    model: Claude Opus 4.6
+    multiplier: 3x
+    strength: "複数分析の統合、矛盾の解決、最終判断。最も高い推論力が必要"
+    note: "コスト高。重要な設計判断のみ使用"
+
+  # --- 分析ロール ---
   backend:
-    model: claude-sonnet-4
-    strength: "アーキテクチャ、型安全性、エラーハンドリング"
+    model: Claude Sonnet 4.6
+    multiplier: 1x
+    strength: "アーキテクチャ、型安全性、エラーハンドリング、API設計"
   frontend:
-    model: gpt-4o
-    strength: "UI/UX、アクセシビリティ、レスポンシブ"
+    model: Claude Sonnet 4.6
+    multiplier: 1x
+    strength: "UI/UX、アクセシビリティ、レスポンシブ、マルチモーダル対応"
   testing:
-    model: gemini-2.5-pro
-    strength: "エッジケース発見、テスト生成"
+    model: Gemini 3.1 Pro
+    multiplier: 1x
+    strength: "エッジケース発見、テスト生成、長いコンテキストでの分析"
+
+  # --- レビュー ---
   review:
-    model: claude-opus-4
-    strength: "深い推論、セキュリティ、アーキテクチャ"
+    model: Claude Opus 4.6
+    multiplier: 3x
+    strength: "深い推論、セキュリティ、アーキテクチャ評価"
+    note: "重要なPRのみ。日常レビューはbackendモデルで十分"
+
+  # --- 軽量タスク ---
   quick:
-    model: gpt-4o-mini
-    strength: "高速な定型作業、フォーマッティング"
+    model: GPT-5 mini
+    multiplier: 0x
+    strength: "高速な定型作業、フォーマッティング、簡単な質問"
+
+  # --- フォールバック ---
+  fallback:
+    model: GPT-5 mini
+    multiplier: 0x
+    note: "プレミアムリクエスト枯渇時、またはモデル利用不可時に使用"

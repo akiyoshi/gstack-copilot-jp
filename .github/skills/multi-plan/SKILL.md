@@ -26,21 +26,20 @@ GitHub Copilotのマルチモデル対応を活用する。ECCのように外部
 
 ```yaml
 routing:
+  orchestrator:
+    model: Claude Opus 4.6         # 3x — 統合判断
   backend:
-    model: claude-sonnet-4
-    strength: "アーキテクチャ、型安全性、エラーハンドリング"
+    model: Claude Sonnet 4.6       # 1x — アーキテクチャ、型安全性
   frontend:
-    model: gpt-4o
-    strength: "UI/UX、アクセシビリティ、レスポンシブ"
+    model: Claude Sonnet 4.6       # 1x — UI/UX、アクセシビリティ
   testing:
-    model: gemini-2.5-pro
-    strength: "エッジケース発見、テスト生成"
+    model: Gemini 3.1 Pro          # 1x — エッジケース発見
   review:
-    model: claude-opus-4
-    strength: "深い推論、セキュリティ、アーキテクチャ"
+    model: Claude Opus 4.6         # 3x — 深い推論、セキュリティ
   quick:
-    model: gpt-4o-mini
-    strength: "高速な定型作業、フォーマッティング"
+    model: GPT-5 mini              # 0x（無料）— 定型作業
+  fallback:
+    model: GPT-5 mini              # 0x — プレミアム枯渇時
 ```
 
 ユーザーのCopilotプランで利用可能なモデルを確認する。利用不可のモデルがあれば、利用可能なモデルで代替する。
@@ -61,8 +60,11 @@ routing:
 | 1 | バックエンド設計 | routing.backend | データモデル、API設計、状態管理 |
 | 2 | フロントエンド設計 | routing.frontend | コンポーネント構成、UX、レスポンシブ |
 | 3 | テスト戦略 | routing.testing | テストケース、エッジケース、カバレッジ |
+| 4 | 統合判断 | routing.orchestrator | 矛盾の解決、最終プラン生成 |
 
 プロジェクトにUIがなければフロントエンドはスキップ。APIのみならバックエンド + テストの2分析。
+
+**orchestrator（統合判断）は最も重要**。複数の分析結果の矛盾を解決し、一貫性のあるプランにまとめる役割。高い推論力を持つモデルを割り当てる。
 
 ## ステップ3: 各モデルでの分析
 
