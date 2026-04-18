@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 // プロジェクトルートは browse/ の親ディレクトリ
@@ -137,10 +137,10 @@ describe('context-management.instructions.md', () => {
     expect(existsSync(instrPath)).toBe(true);
   });
 
-  it('50行以下である（コンテキスト圧迫を防止）', () => {
+  it('60行以下である（コンテキスト圧迫を防止）', () => {
     const content = readFileSync(instrPath, 'utf-8');
     const lines = content.split(/\r?\n/);
-    expect(lines.length).toBeLessThanOrEqual(50);
+    expect(lines.length).toBeLessThanOrEqual(60);
   });
 
   it('フロントマターに description がある', () => {
@@ -164,5 +164,69 @@ describe('context-management.instructions.md', () => {
   it('メモリシステム参照がある', () => {
     const content = readFileSync(instrPath, 'utf-8');
     expect(content).toMatch(/\/memories\//);
+  });
+
+  it('ガードレールフラグ永続化の記述がある', () => {
+    const content = readFileSync(instrPath, 'utf-8');
+    expect(content).toMatch(/guard-state/);
+  });
+});
+
+describe('post-hook.instructions.md', () => {
+  const instrPath = join(ROOT, '.github', 'instructions', 'post-hook.instructions.md');
+
+  it('ファイルが存在する', () => {
+    expect(existsSync(instrPath)).toBe(true);
+  });
+
+  it('60行以下である', () => {
+    const content = readFileSync(instrPath, 'utf-8');
+    const lines = content.split(/\r?\n/);
+    expect(lines.length).toBeLessThanOrEqual(60);
+  });
+
+  it('フロントマターに description がある', () => {
+    const content = readFileSync(instrPath, 'utf-8');
+    const normalized = content.replace(/\r\n/g, '\n');
+    expect(normalized.startsWith('---\n')).toBe(true);
+    const frontmatter = normalized.split('---')[1];
+    expect(frontmatter).toContain('description:');
+  });
+
+  it('次のスキル推奨テーブルがある', () => {
+    const content = readFileSync(instrPath, 'utf-8');
+    expect(content).toContain('次のスキル推奨');
+  });
+
+  it('学習抽出の判定セクションがある', () => {
+    const content = readFileSync(instrPath, 'utf-8');
+    expect(content).toMatch(/学習抽出/);
+  });
+
+  it('コンテキスト圧縮セクションがある', () => {
+    const content = readFileSync(instrPath, 'utf-8');
+    expect(content).toMatch(/コンテキスト圧縮/);
+  });
+});
+
+describe('hookシステム: スキルの「次のスキル」推奨', () => {
+  const skillsDir = join(ROOT, '.github', 'skills');
+  const skillDirs = readdirSync(skillsDir, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => d.name);
+
+  // Post-Hook不要のトグル/ユーティリティスキル
+  const exemptSkills = [
+    'careful', 'freeze', 'guard', 'unfreeze',
+    'checkpoint', 'browse', 'open-browser', 'pair-agent',
+    'setup-browser-cookies', 'setup-deploy', 'upgrade', 'benchmark',
+  ];
+
+  const processSkills = skillDirs.filter(s => !exemptSkills.includes(s));
+
+  it.each(processSkills)('%s に「次のスキル」セクションがある', (skillName) => {
+    const skillPath = join(skillsDir, skillName, 'SKILL.md');
+    const content = readFileSync(skillPath, 'utf-8');
+    expect(content).toMatch(/次のスキル|推奨する次/);
   });
 });

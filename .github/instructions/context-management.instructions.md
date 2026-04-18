@@ -11,6 +11,20 @@ description: "セッション管理とコンテキスト最適化。Use when sta
 - `/memories/repo/checkpoints/` に24時間以内のチェックポイントがあれば、最新のものを読み込み、ウェルカムブリーフィングを生成する:
   「前回: {ブランチ}で{作業内容}。残り: {残タスクの要約}。続行しますか？」
 - 前回の作業状態（未完了タスク、ブランチ状態）を把握する
+- `/memories/session/guard-state.md` が存在すれば読み込み、ガードレールフラグを復元する
+
+## ガードレールフラグの永続化
+
+`/careful`, `/freeze`, `/guard` の有効化・無効化時:
+
+- `/memories/session/guard-state.md` に現在の状態を書き込む:
+  ```
+  careful: on/off
+  freeze: [許可パス] or off
+  guard: on/off
+  ```
+- モデル切替・コンテキストリセット後も状態を復元できる
+- `/unfreeze` 実行時にファイルを削除する
 
 ## タスク境界での整理
 

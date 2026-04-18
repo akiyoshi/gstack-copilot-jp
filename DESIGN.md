@@ -43,7 +43,7 @@ gstackのコードではなく概念を移植し、Copilotのマルチモデル�
 
 ### v0.5: ECC概念統合
 
-gstack（旧: everything-claude-code）の戦場で磨かれたパターンから、最もインパクトの高い概念を選別してCopilot環境に再設計。
+everything-claude-codeの戦場で磨かれたパターンから、最もインパクトの高い概念を選別してCopilot環境に再設計。
 
 | 機能 | スキル/ファイル | 概要 |
 |------|----------------|------|
@@ -243,8 +243,7 @@ VS Code v1.116+ で自動認識:
 
 ## スコープ外
 
-- ECCのhookシステムの再現 — Copilotにhook APIがない
-- 183スキル全移植 — 質で勝負。需要が出てから追加
+- スキル全移植 — 質で勝負。需要が出てから追加
 - 有料化 — OSSとして公開
 - Cursor / Codex / OpenCode対応 — GitHub Copilot専用に集中
 - テレメトリ — プライバシー優先
