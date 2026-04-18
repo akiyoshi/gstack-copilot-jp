@@ -34,6 +34,9 @@
 | TDD、テストファースト | `/tdd` |
 | ビルドエラー、型エラー | `/build-fix` |
 | コード整理、スロップ除去 | `/clean` |
+| マルチモデル設計、並列分析 | `/multi-plan` |
+| 計画の自動実行 | `/multi-execute` |
+| クロスモデルレビュー、別視点 | `/second-opinion` |
 | 「慎重にやって」、安全モード | `/careful` |
 | ファイル編集を制限 | `/freeze` |
 | フル安全モード | `/guard` |
@@ -42,7 +45,6 @@
 | ブラウザCookieインポート | `/setup-browser-cookies` |
 | 可視ブラウザ起動 | `/open-browser` |
 | エージェント連携、ブラウザ共有 | `/pair-agent` |
-| セカンドオピニオン、別視点 | `/second-opinion` |
 | デプロイ環境の設定 | `/setup-deploy` |
 | アップグレード | `/upgrade` |
 

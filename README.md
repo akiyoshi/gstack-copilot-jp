@@ -92,6 +92,9 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 
 | カテゴリ | スキル | 用途 |
 |---------|--------|------|
+| マルチモデル | `/multi-plan` | 複数モデルで並列設計分析→統合プラン |
+| | `/multi-execute` | プランに基づく自動実行 |
+| | `/second-opinion` | クロスモデル信頼度マトリクス |
 | デザイン探索 | `/design-consultation` | デザインシステム構築 |
 | | `/design-shotgun` | 4-6個のデザイン案生成・比較 |
 | ブラウザ | `/browse` | ヘッドレスChromium QAテスト |
@@ -102,8 +105,7 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | | `/freeze` | 編集ロック（指定ディレクトリのみ許可） |
 | | `/guard` | careful + freeze 統合 |
 | | `/unfreeze` | ロック解除 |
-| その他 | `/second-opinion` | 別モデルによるクロスレビュー |
-| | `/setup-deploy` | デプロイ環境設定 |
+| その他 | `/setup-deploy` | デプロイ環境設定 |
 | | `/upgrade` | 自己アップデート |
 
 ## ブラウザ

@@ -1,0 +1,24 @@
+# モデルルーティング設定
+#
+# GitHub Copilotのマルチモデル対応を活用して、
+# タスクの種別に応じて最適なモデルを選択する。
+#
+# /multi-plan と /multi-execute が参照する。
+# ユーザーのCopilotプランで利用可能なモデルに合わせてカスタマイズすること。
+
+routing:
+  backend:
+    model: claude-sonnet-4
+    strength: "アーキテクチャ、型安全性、エラーハンドリング"
+  frontend:
+    model: gpt-4o
+    strength: "UI/UX、アクセシビリティ、レスポンシブ"
+  testing:
+    model: gemini-2.5-pro
+    strength: "エッジケース発見、テスト生成"
+  review:
+    model: claude-opus-4
+    strength: "深い推論、セキュリティ、アーキテクチャ"
+  quick:
+    model: gpt-4o-mini
+    strength: "高速な定型作業、フォーマッティング"
