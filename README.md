@@ -33,6 +33,8 @@ cd gstack-copilot-jp && git pull
 
 ### 4. 使い始める
 
+> **初めての方は [docs/getting-started.md](docs/getting-started.md) へ。** 最初に試すべき3つのスキルとトラブルシューティングをまとめている。
+
 VS Code Copilot Chat で `/` を入力 → スキル一覧が表示される。
 
 ```
