@@ -1,5 +1,12 @@
 #!/bin/bash
-# gstack-copilot-jp セットアップスクリプト (macOS/Linux)
+# [非推奨] gstack-copilot-jp セットアップスクリプト (macOS/Linux)
+#
+# このスクリプトは非推奨です。
+# VS Code v1.116+ では、gstack-copilot-jp フォルダをワークスペースに追加するだけで
+# スキル・エージェント・ルールが自動認識されます。
+# セットアップスクリプトの実行は不要です。
+#
+# レガシー: シンボリックリンク方式でのインストール
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

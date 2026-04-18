@@ -47,7 +47,6 @@ ECCの183スキルを全移植するのではなく、**最もインパクトの
 | 6 | マルチモデルルーティング | `commands/multi-plan.md` | `/multi-plan` スキル | 3日 / 1時間 |
 | 7 | 並列実行 | `commands/multi-execute.md` | `/multi-execute` スキル | 2.5日 / 1.5時間 |
 | 8 | クロスモデルレビュー強化 | `/second-opinion` 拡張 | `/second-opinion` 改修 | 1.5日 / 30分 |
-| 9 | setup.ps1の管理者権限排除 | — | ジャンクション方式へ移行 | 半日 / 15分 |
 
 ### v0.7: セッション管理 & コンテキスト最適化
 

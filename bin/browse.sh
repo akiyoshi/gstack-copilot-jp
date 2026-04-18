@@ -14,7 +14,7 @@ if [ ! -f "$CLI_SCRIPT" ]; then
     GLOBAL_DIR="$HOME/.gstack-copilot-jp/browse"
     CLI_SCRIPT="$GLOBAL_DIR/src/cli.js"
     if [ ! -f "$CLI_SCRIPT" ]; then
-        echo "Error: browse CLI not found. Run setup.sh first." >&2
+        echo "Error: browse CLI not found. gstack-copilot-jp をワークスペースに追加してください。" >&2
         exit 1
     fi
 fi

@@ -27,7 +27,7 @@ if (-not (Test-Path $CliScript)) {
     $GlobalDir = Join-Path $HOME '.gstack-copilot-jp' 'browse'
     $CliScript = Join-Path $GlobalDir 'src' 'cli.js'
     if (-not (Test-Path $CliScript)) {
-        Write-Error "browse CLI not found. Run setup.ps1 first."
+        Write-Error "browse CLI not found. gstack-copilot-jp をワークスペースに追加してください。"
         exit 1
     }
 }
