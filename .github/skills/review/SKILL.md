@@ -89,7 +89,7 @@ git diff $(git merge-base HEAD origin/main)..HEAD
 │ testing 判定: カバレッジ ?%          │
 ├──────────────────────────────────────┤
 │ 総合判定: APPROVE / NEEDS WORK       │
-│ 次のスキル: /ship                    │
+│ 次のスキル: /qa (テスト) or /ship    │
 └──────────────────────────────────────┘
 ```
 

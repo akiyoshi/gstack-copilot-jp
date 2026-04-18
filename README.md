@@ -4,25 +4,34 @@
 
 [gstack](https://github.com/garrytan/gstack)（Garry Tan作）の思想とプロセスを、**日本語のGitHub Copilot向けスキル・エージェント**として一から再実装。
 
+## 前提条件
+
+- Visual Studio Code v1.116 以降
+- GitHub Copilot 拡張（Chat対応）
+
 ## クイックスタート
 
-### 1. インストール（30秒）
-
-```powershell
-# Windows (PowerShell 管理者権限)
-git clone https://github.com/[your-username]/gstack-copilot-jp.git $HOME\.gstack-copilot-jp
-cd $HOME\.gstack-copilot-jp
-.\setup.ps1
-```
+### 1. クローン
 
 ```bash
-# macOS / Linux
-git clone https://github.com/[your-username]/gstack-copilot-jp.git ~/.gstack-copilot-jp
-cd ~/.gstack-copilot-jp
-chmod +x setup.sh && ./setup.sh
+git clone https://github.com/[your-username]/gstack-copilot-jp.git
 ```
 
-### 2. 使い始める
+### 2. ワークスペースに追加
+
+VS Code で `ファイル` → `ワークスペースにフォルダーを追加...` → クローンした `gstack-copilot-jp` フォルダを選択。
+
+これだけ。スキル・エージェント・ルールが自動認識される。
+
+> **なぜ動くのか**: VS Code v1.116+ では、ワークスペース内の `.github/skills/`、`.github/agents/`、`.github/instructions/`、`.github/prompts/` を Copilot が自動で読み込む。セットアップスクリプト不要、管理者権限不要、シンボリックリンク不要。
+
+### 3. 更新
+
+```bash
+cd gstack-copilot-jp && git pull
+```
+
+### 4. 使い始める
 
 VS Code Copilot Chat で `/` を入力 → スキル一覧が表示される。
 
@@ -58,39 +67,44 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | | `/plan-design-review` | シニアデザイナー — 7次元0-10評価 |
 | | `/plan-devex-review` | DXリード — TTHW計測・8次元評価 |
 | | `/autoplan` | オーケストレーター — 全レビュー一括実行 |
-| デザイン | `/design-consultation` | デザインパートナー — デザインシステム構築 |
-| | `/design-shotgun` | エクスプローラー — 4-6個のデザイン案生成 |
+| 作る | `/tdd` | TDDコーチ — RED→GREEN→REFACTOR サイクル |
 | | `/design-html` | デザインエンジニア — 本番品質HTML変換 |
-| 作る・レビュー | `/review` | スタッフエンジニア — 専門家サブエージェント |
+| | `/build-fix` | ビルドエンジニア — エラー自動修復 |
+| | `/clean` | コード清掃 — AI生成コードのスロップ除去 |
+| | `/investigate` | デバッガー — Iron Law: 調査なし修正禁止 |
+| レビューする | `/review` | スタッフエンジニア — 専門家サブエージェント |
 | | `/design-review` | デザイナー兼エンジニア — UI実装修正 |
 | | `/devex-review` | DXテスター — 実地検証 |
-| | `/investigate` | デバッガー — Iron Law: 調査なし修正禁止 |
-| テスト | `/qa` | QAリード — 修正→テスト→検証ループ |
+| テストする | `/qa` | QAリード — 修正→テスト→検証ループ |
 | | `/qa-only` | QAレポーター — レポートのみ |
 | | `/cso` | CISO — OWASP + STRIDE監査 |
 | | `/benchmark` | パフォーマンスエンジニア — 計測・比較 |
-| ブラウザ | `/browse` | QAエンジニア — ヘッドレスChromium ~100ms/コマンド |
-| | `/open-browser` | 可視モード — headed Chrome 起動 |
-| | `/setup-browser-cookies` | セッション管理 — Cookie インポート |
-| | `/pair-agent` | マルチエージェント — ブラウザ共有 |
-| 出荷 | `/ship` | リリースエンジニア — テスト→PR作成 |
+| 出荷する | `/ship` | リリースエンジニア — テスト→PR作成 |
 | | `/land-and-deploy` | SRE — マージ→デプロイ→検証 |
 | | `/canary` | SRE — デプロイ後監視 |
-| 振り返り | `/retro` | エンジニアリングMgr — 週次振り返り |
+| 振り返る | `/retro` | エンジニアリングMgr — 週次振り返り |
 | | `/document-release` | テクニカルライター — ドキュメント更新 |
-| | `/learn` | メモリマネージャー — 学習記録管理 |
+| | `/learn` | メモリマネージャー — 学習記録管理 + セッション振り返り |
 
 ### パワーツール
 
-| スキル | 用途 |
-|--------|------|
-| `/careful` | 破壊的コマンド警告 |
-| `/freeze` | 編集ロック（指定ディレクトリのみ許可） |
-| `/guard` | careful + freeze 統合 |
-| `/unfreeze` | ロック解除 |
-| `/second-opinion` | 別モデルによるクロスレビュー |
-| `/setup-deploy` | デプロイ環境設定 |
-| `/upgrade` | 自己アップデート |
+プロセス外で任意のタイミングで使えるスキル。
+
+| カテゴリ | スキル | 用途 |
+|---------|--------|------|
+| デザイン探索 | `/design-consultation` | デザインシステム構築 |
+| | `/design-shotgun` | 4-6個のデザイン案生成・比較 |
+| ブラウザ | `/browse` | ヘッドレスChromium QAテスト |
+| | `/open-browser` | 可視ブラウザ起動 |
+| | `/setup-browser-cookies` | Cookie インポート |
+| | `/pair-agent` | マルチエージェント ブラウザ共有 |
+| 安全 | `/careful` | 破壊的コマンド警告 |
+| | `/freeze` | 編集ロック（指定ディレクトリのみ許可） |
+| | `/guard` | careful + freeze 統合 |
+| | `/unfreeze` | ロック解除 |
+| その他 | `/second-opinion` | 別モデルによるクロスレビュー |
+| | `/setup-deploy` | デプロイ環境設定 |
+| | `/upgrade` | 自己アップデート |
 
 ## ブラウザ
 
@@ -130,6 +144,27 @@ Copilot: $B goto https://staging.myapp.com
 
 詳細は [ETHOS.md](ETHOS.md) を参照。
 
+## ルール体系
+
+スキルは呼び出し時のみ発動するが、**ルールは常時適用**される。
+
+```
+.github/rules/
+  common/               # 言語非依存（常に適用）
+    coding-style.md     # 命名、不変性、ファイル構成
+    git-workflow.md     # コミット形式、ブランチ戦略
+    testing.md          # カバレッジ基準、テスト構造
+    security.md         # 入力検証、シークレット管理
+  typescript/           # TS/JS ファイルに適用
+    coding-style.md     # 型安全性、React規約
+    testing.md          # Vitest/Jest、Testing Library
+  python/               # Python ファイルに適用
+    coding-style.md     # 型ヒント、構造、フォーマット
+    testing.md          # pytest、フィクスチャ
+```
+
+詳細は [rules/README.md](.github/rules/README.md) を参照。
+
 ## サブエージェント
 
 `/review` 等のスキルは、専門家サブエージェントに処理を委譲する：
@@ -150,6 +185,7 @@ Copilot: $B goto https://staging.myapp.com
 |------|--------|------------------|
 | ターゲット | Claude Code | GitHub Copilot (VS Code) |
 | 言語 | 英語 | 日本語 |
+| インストール | シンボリックリンク + スクリプト | ワークスペースにフォルダ追加のみ |
 | ブラウザ | Bun コンパイル済みバイナリ (~58MB) | Node.js + Playwright（コンパイル不要） |
 | ホスト | 8エージェント対応 | Copilot単一 |
 | セカンドオピニオン | Codex CLI依存 | model fallbackで汎用化 |
@@ -157,15 +193,7 @@ Copilot: $B goto https://staging.myapp.com
 
 ## アンインストール
 
-```powershell
-# Windows
-.\setup.ps1 -Uninstall
-```
-
-```bash
-# macOS / Linux
-./setup.sh --uninstall
-```
+VS Codeのワークスペースから `gstack-copilot-jp` フォルダを削除するだけ。
 
 ## ライセンス
 
