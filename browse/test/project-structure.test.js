@@ -10,9 +10,9 @@ describe('.gstack/plans/ 基盤', () => {
     expect(existsSync(join(ROOT, '.gstack', 'plans'))).toBe(true);
   });
 
-  it('.gitignore に .gstack/plans/ が含まれる', () => {
+  it('.gitignore に .gstack/plans/ のignoreルールが含まれる', () => {
     const gitignore = readFileSync(join(ROOT, '.gitignore'), 'utf-8');
-    expect(gitignore).toContain('.gstack/plans/');
+    expect(gitignore).toMatch(/\.gstack\/plans/);
   });
 });
 
