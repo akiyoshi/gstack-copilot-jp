@@ -30,8 +30,8 @@ describe('全スキル フロントマター検証', () => {
     .filter(d => d.isDirectory())
     .map(d => d.name);
 
-  it('40個のスキルディレクトリが存在する', () => {
-    expect(skillDirs.length).toBe(40);
+  it('41個のスキルディレクトリが存在する', () => {
+    expect(skillDirs.length).toBe(41);
   });
 
   for (const skill of skillDirs) {

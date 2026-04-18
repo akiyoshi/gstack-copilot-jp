@@ -13,6 +13,7 @@
 | デザインレビュー、UI/UX | `/plan-design-review` |
 | 開発者体験、オンボーディング、API設計 | `/plan-devex-review` |
 | 全レビューを一括で | `/autoplan` |
+| 実装して、作って、あとはやっておいて | `/go` |
 | デザイン相談、ブランド構築 | `/design-consultation` |
 | デザイン案を複数見たい | `/design-shotgun` |
 | デザインをHTMLに変換 | `/design-html` |
