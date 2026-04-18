@@ -25,9 +25,10 @@ describe('プランテンプレート', () => {
 
   it('YAMLフロントマターを持つ（--- で囲まれている）', () => {
     const content = readFileSync(templatePath, 'utf-8');
-    expect(content.startsWith('---\n')).toBe(true);
+    const normalized = content.replace(/\r\n/g, '\n');
+    expect(normalized.startsWith('---\n')).toBe(true);
     // 2番目の --- が存在する
-    const secondDash = content.indexOf('---', 4);
+    const secondDash = normalized.indexOf('---', 4);
     expect(secondDash).toBeGreaterThan(4);
   });
 
