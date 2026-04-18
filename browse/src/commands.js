@@ -1,6 +1,38 @@
 // browse/src/commands.js
 // ブラウザコマンドハンドラ
 
+// SSRF 防止: 許可しないプロトコルと内部ネットワークを拒否
+const BLOCKED_PROTOCOLS = ['file:', 'javascript:', 'data:', 'ftp:', 'gopher:'];
+const INTERNAL_IP_PATTERNS = [
+  /^127\./,                          // loopback
+  /^10\./,                           // RFC1918
+  /^172\.(1[6-9]|2\d|3[01])\./,     // RFC1918
+  /^192\.168\./,                     // RFC1918
+  /^169\.254\./,                     // link-local / AWS metadata
+  /^0\./,                            // current network
+  /^::1$/,                           // IPv6 loopback
+  /^fc00:/i,                         // IPv6 unique local
+  /^fe80:/i,                         // IPv6 link-local
+  /^fd/i,                            // IPv6 unique local
+];
+const BLOCKED_HOSTNAMES = ['metadata.google.internal', 'metadata.google.com'];
+
+export function validateUrl(url) {
+  const parsed = new URL(url);
+  if (BLOCKED_PROTOCOLS.includes(parsed.protocol)) {
+    throw new Error(`Protocol not allowed: ${parsed.protocol}`);
+  }
+  // IPv6 ブラケット除去: [::1] → ::1
+  const hostname = parsed.hostname.replace(/^\[|\]$/g, '');
+  if (BLOCKED_HOSTNAMES.includes(hostname.toLowerCase())) {
+    throw new Error(`Hostname not allowed: ${hostname}`);
+  }
+  if (INTERNAL_IP_PATTERNS.some(re => re.test(hostname))) {
+    throw new Error(`Internal network access not allowed: ${hostname}`);
+  }
+  return parsed;
+}
+
 export async function handleCommand(manager, command, args) {
   const page = manager.getActivePage();
   if (!page && command !== 'status' && command !== 'tabs') {
@@ -12,11 +44,7 @@ export async function handleCommand(manager, command, args) {
     case 'goto': {
       const url = args[0];
       if (!url) throw new Error('URL required: goto <url>');
-      // URL バリデーション（SSRF 防止）
-      const parsed = new URL(url);
-      if (['file:', 'javascript:', 'data:'].includes(parsed.protocol)) {
-        throw new Error(`Protocol not allowed: ${parsed.protocol}`);
-      }
+      validateUrl(url);
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
       return `Navigated to ${page.url()}`;
     }
@@ -467,6 +495,8 @@ export async function handleCommand(manager, command, args) {
       const url1 = args[0];
       const url2 = args[1];
       if (!url1 || !url2) throw new Error('Usage: diff <url1> <url2>');
+      validateUrl(url1);
+      validateUrl(url2);
 
       await page.goto(url1, { waitUntil: 'domcontentloaded', timeout: 30000 });
       const text1 = await page.innerText('body');
@@ -482,6 +512,7 @@ export async function handleCommand(manager, command, args) {
     // === タブ管理 ===
     case 'newtab': {
       const url = args[0];
+      if (url) validateUrl(url);
       const tabId = await manager.newTab(url);
       return `New tab ${tabId}${url ? ` at ${url}` : ''}`;
     }
