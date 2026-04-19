@@ -1,5 +1,5 @@
 ---
-name: upgrade
+name: gstack-upgrade
 description: "gstack-copilot-jpの自己アップデート。Use when: アップグレード、更新、upgrade、update gstack。最新版への更新を実行。"
 ---
 
@@ -45,3 +45,5 @@ git pull origin main
 
 - **バックアップ**: アップデート前に現在のバージョンを記録
 - **変更点の表示**: 何が変わったか必ず表示
+
+次のスキル: `/status`（更新後の状態確認）
