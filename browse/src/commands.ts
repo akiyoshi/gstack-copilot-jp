@@ -1,5 +1,6 @@
-// browse/src/commands.js
+// browse/src/commands.ts
 // ブラウザコマンドハンドラ
+import type { BrowserManager } from './browser-manager.js';
 
 // SSRF 防止: 許可しないプロトコルと内部ネットワークを拒否
 const BLOCKED_PROTOCOLS = ['file:', 'javascript:', 'data:', 'ftp:', 'gopher:'];
@@ -17,7 +18,7 @@ const INTERNAL_IP_PATTERNS = [
 ];
 const BLOCKED_HOSTNAMES = ['metadata.google.internal', 'metadata.google.com'];
 
-export function validateUrl(url) {
+export function validateUrl(url: string): URL {
   const parsed = new URL(url);
   if (BLOCKED_PROTOCOLS.includes(parsed.protocol)) {
     throw new Error(`Protocol not allowed: ${parsed.protocol}`);
@@ -33,7 +34,7 @@ export function validateUrl(url) {
   return parsed;
 }
 
-export async function handleCommand(manager, command, args) {
+export async function handleCommand(manager: BrowserManager, command: string, args: string[]): Promise<string> {
   const page = manager.getActivePage();
   if (!page && command !== 'status' && command !== 'tabs') {
     throw new Error('No active page. Server may not be initialized.');
@@ -239,7 +240,7 @@ export async function handleCommand(manager, command, args) {
       const selector = args[0];
       const filePath = args[1];
       if (!selector || !filePath) throw new Error('Usage: upload <selector> <filepath>');
-      const input = target.startsWith('@') ? manager.resolveRef(selector) : page.locator(selector);
+      const input = selector.startsWith('@') ? manager.resolveRef(selector) : page.locator(selector);
       await input.setInputFiles(filePath);
       return `Uploaded ${filePath} to ${selector}`;
     }

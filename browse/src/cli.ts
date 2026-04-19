@@ -1,32 +1,50 @@
-#!/usr/bin/env node
-// browse/src/cli.js
+#!/usr/bin/env bun
+// browse/src/cli.ts
 // ブラウザサーバーへのシンCLIクライアント
-// 使い方: node browse/src/cli.js <command> [args...]
+// 使い方: bun browse/src/cli.ts <command> [args...]
+//         または browse/dist/browse <command> [args...] (コンパイル済み)
 
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+interface BrowseState {
+  port: number;
+  token: string;
+  pid: number;
+  started: string;
+  binaryVersion?: string;
+}
 
-const STATE_DIR = process.env.BROWSE_STATE_DIR || '.gstack';
+// パス解決: コンパイル済みバイナリでもソース実行でも動くようにする
+function resolveProjectRoot(): string {
+  // git root があればそれを使う
+  try {
+    const result = Bun.spawnSync(['git', 'rev-parse', '--show-toplevel']);
+    const root = result.stdout.toString().trim();
+    if (root) return root;
+  } catch { /* ignore */ }
+  // フォールバック: カレントディレクトリ
+  return process.cwd();
+}
+
+const PROJECT_ROOT = resolveProjectRoot();
+const BROWSE_DIR = join(PROJECT_ROOT, 'browse');
+const STATE_DIR = process.env.BROWSE_STATE_DIR || join(PROJECT_ROOT, '.gstack');
 const STATE_FILE = join(STATE_DIR, 'browse.json');
-const SERVER_SCRIPT = join(__dirname, 'server.js');
+const SERVER_SCRIPT = join(BROWSE_DIR, 'src', 'server.ts');
 
-function readState() {
+function readState(): BrowseState | null {
   if (!existsSync(STATE_FILE)) return null;
   try {
     const raw = readFileSync(STATE_FILE, 'utf-8');
-    return JSON.parse(raw);
+    return JSON.parse(raw) as BrowseState;
   } catch {
     return null;
   }
 }
 
-function isServerAlive(state) {
+function isServerAlive(state: BrowseState | null): boolean {
   if (!state) return false;
   try {
     process.kill(state.pid, 0);
@@ -36,9 +54,32 @@ function isServerAlive(state) {
   }
 }
 
-async function startServer() {
+async function stopServer(state: BrowseState): Promise<void> {
+  // 安全なシャットダウン: まず HTTP リクエストで停止を試みる
+  try {
+    await fetch(`http://127.0.0.1:${state.port}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`,
+      },
+      body: JSON.stringify({ command: '__shutdown' }),
+      signal: AbortSignal.timeout(3000),
+    });
+    // 少し待ってプロセス終了を確認
+    await Bun.sleep(500);
+    if (!isServerAlive(state)) return;
+  } catch { /* HTTP shutdown failed, fall back to SIGTERM */ }
+
+  // フォールバック: SIGTERM
+  try {
+    process.kill(state.pid, 'SIGTERM');
+  } catch { /* already dead */ }
+}
+
+async function startServer(): Promise<BrowseState> {
   return new Promise((resolve, reject) => {
-    const child = spawn('node', [SERVER_SCRIPT], {
+    const child = spawn('bun', ['run', SERVER_SCRIPT], {
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
@@ -54,11 +95,10 @@ async function startServer() {
       reject(new Error('Server start timeout (15s)'));
     }, 15000);
 
-    child.stdout.on('data', chunk => {
+    child.stdout?.on('data', (chunk: Buffer) => {
       output += chunk.toString();
       if (output.includes('Server running on')) {
         clearTimeout(timeout);
-        // サーバー起動完了 — state file を読む
         setTimeout(() => {
           const state = readState();
           if (state) {
@@ -70,7 +110,7 @@ async function startServer() {
       }
     });
 
-    child.stderr.on('data', chunk => {
+    child.stderr?.on('data', (chunk: Buffer) => {
       const msg = chunk.toString();
       if (msg.includes('Failed to start')) {
         clearTimeout(timeout);
@@ -78,14 +118,14 @@ async function startServer() {
       }
     });
 
-    child.on('error', err => {
+    child.on('error', (err: Error) => {
       clearTimeout(timeout);
       reject(err);
     });
   });
 }
 
-async function sendCommand(state, command, args) {
+async function sendCommand(state: BrowseState, command: string, args: string[]): Promise<string> {
   const url = `http://127.0.0.1:${state.port}`;
   const response = await fetch(url, {
     method: 'POST',
@@ -109,7 +149,8 @@ async function main() {
   if (args.length === 0 || args[0] === 'help' || args[0] === '--help') {
     console.log(`gstack-copilot-jp browse CLI
 
-使い方: node browse/src/cli.js <command> [args...]
+使い方: $B <command> [args...]
+        bun browse/src/cli.ts <command> [args...]
 
 ナビゲーション:
   goto <url>          ページに移動
@@ -184,11 +225,11 @@ async function main() {
     process.exit(0);
   }
 
-  // stop コマンド
+  // stop コマンド — 安全なシャットダウン
   if (args[0] === 'stop') {
     const state = readState();
     if (state && isServerAlive(state)) {
-      process.kill(state.pid, 'SIGTERM');
+      await stopServer(state);
       console.log('Server stopped');
     } else {
       console.log('Server not running');

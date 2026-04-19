@@ -1,21 +1,54 @@
-// browse/src/browser-manager.js
+// browse/src/browser-manager.ts
 // Chromium ライフサイクル管理 + スナップショット @ref マッピング
-import { chromium } from 'playwright';
+import { chromium, type Browser, type BrowserContext, type Page, type Locator } from 'playwright';
+
+interface RefEntry {
+  role: string;
+  name: string;
+  locator: Locator;
+}
+
+interface CursorRefEntry {
+  selector: string;
+  description: string;
+}
+
+interface ConsoleLogEntry {
+  type: string;
+  text: string;
+  time: string;
+}
+
+interface NetworkLogEntry {
+  url: string;
+  status: number;
+  method: string;
+  time: string;
+}
+
+interface SnapshotOptions {
+  interactive?: boolean;
+  compact?: boolean;
+  depth?: number;
+  selector?: string;
+  diff?: boolean;
+  cursorInteractive?: boolean;
+}
 
 export class BrowserManager {
-  constructor() {
-    this.browser = null;
-    this.context = null;
-    this.pages = new Map(); // tabId -> page
-    this.activeTabId = 1;
-    this.nextTabId = 1;
-    this.refMap = new Map();     // @eN -> { locator, role, name }
-    this.cursorRefMap = new Map(); // @cN -> { selector, description }
-    this.lastSnapshot = null;
-    this.headless = true;
-  }
+  browser: Browser | null = null;
+  context: BrowserContext | null = null;
+  pages: Map<number, Page> = new Map();
+  activeTabId: number = 1;
+  nextTabId: number = 1;
+  refMap: Map<string, RefEntry> = new Map();
+  cursorRefMap: Map<string, CursorRefEntry> = new Map();
+  lastSnapshot: string | null = null;
+  headless: boolean = true;
+  consoleLogs: ConsoleLogEntry[] = [];
+  networkLogs: NetworkLogEntry[] = [];
 
-  async launch(options = {}) {
+  async launch(options: { headless?: boolean } = {}) {
     const headless = options.headless !== false;
     this.headless = headless;
 
@@ -51,7 +84,7 @@ export class BrowserManager {
     return this;
   }
 
-  _attachPageListeners(page) {
+  _attachPageListeners(page: Page) {
     page.on('console', msg => {
       this.consoleLogs.push({
         type: msg.type(),
@@ -73,11 +106,11 @@ export class BrowserManager {
     });
   }
 
-  getActivePage() {
+  getActivePage(): Page | undefined {
     return this.pages.get(this.activeTabId);
   }
 
-  async newTab(url) {
+  async newTab(url?: string): Promise<number> {
     const page = await this.context.newPage();
     this._attachPageListeners(page);
     const tabId = this.nextTabId++;
@@ -87,13 +120,13 @@ export class BrowserManager {
     return tabId;
   }
 
-  async switchTab(tabId) {
+  async switchTab(tabId: number): Promise<number> {
     if (!this.pages.has(tabId)) throw new Error(`Tab ${tabId} not found`);
     this.activeTabId = tabId;
     return tabId;
   }
 
-  async closeTab(tabId) {
+  async closeTab(tabId?: number): Promise<number> {
     const id = tabId || this.activeTabId;
     const page = this.pages.get(id);
     if (!page) throw new Error(`Tab ${id} not found`);
@@ -120,7 +153,7 @@ export class BrowserManager {
 
   // --- スナップショットシステム ---
 
-  async snapshot(page, options = {}) {
+  async snapshot(page: Page, options: SnapshotOptions = {}): Promise<string> {
     const { interactive, compact, depth, selector, diff, cursorInteractive } = options;
 
     let scope = page;
@@ -240,7 +273,7 @@ export class BrowserManager {
     return result;
   }
 
-  _unifiedDiff(oldLines, newLines) {
+  _unifiedDiff(oldLines: string[], newLines: string[]): string {
     const output = ['--- previous', '+++ current'];
     const maxLen = Math.max(oldLines.length, newLines.length);
     for (let i = 0; i < maxLen; i++) {
@@ -256,7 +289,7 @@ export class BrowserManager {
     return output.join('\n');
   }
 
-  resolveRef(ref) {
+  resolveRef(ref: string): Locator {
     if (ref.startsWith('@e')) {
       const entry = this.refMap.get(ref);
       if (!entry) throw new Error(`Ref ${ref} not found. Run snapshot first.`);
