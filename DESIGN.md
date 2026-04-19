@@ -702,13 +702,13 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 ## 現在の実装状態
 
-**VERSION: 1.0.0-alpha.3**（Phase 0-2 実装済み。Copilot CLI 対応）
+**VERSION: 1.0.0-alpha.4**（Phase 0-3 実装済み。browse Bun移行 + plugin + setup）
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
 | スキル | 39 | Phase 2 で 7 廃止、1 新規（health）。38 + health = 39 |
 | エージェント | 5 | architect, design-critic, dx-tester, security, testing |
-| ブラウザ | 1 | Playwright + Node.js（v1.0 で Bun 移行） |
+| ブラウザ | 1 | Bun コンパイル + Playwright（本家互換） |
 | hookシステム | 4 | sessionStart, sessionEnd, preToolUse, postToolUse |
 
 ## v1.0 仕様: Copilot CLI 専用 + 追随モデル

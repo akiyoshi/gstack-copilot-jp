@@ -15,7 +15,7 @@
 |------|-----|
 | 本家バージョン | v1.1.3 (fix: /checkpoint rename) |
 | 最終検証日 | 2026-04-20 |
-| gstack-copilot-jp バージョン | 1.0.0-alpha.3 |
+| gstack-copilot-jp バージョン | 1.0.0-alpha.4 |
 
 ## スキル互換性
 
@@ -40,7 +40,7 @@
 | `/cso` | ✓ | ✓ | same | — | |
 | `/benchmark` | ✓ | ✓ | same | — | |
 | `/health` | ✓ | ✓ | same | — | v1.1.x。typecheck/lint/test/deadcode 4軸スコアリング |
-| `/browse` | ✓ | △ | adapted | — | Bun移行は Phase 3 |
+| `/browse` | ✓ | ✓ | same | — | Bun コンパイル + Playwright（本家互換） |
 | `/open-gstack-browser` | ✓ | ✓ | same | — | 旧 `/open-browser` からリネーム |
 | `/pair-agent` | ✓ | ✓ | same | — | |
 | `/setup-browser-cookies` | ✓ | ✓ | same | — | |
