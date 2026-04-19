@@ -35,10 +35,11 @@ argument-hint: "出荷対象のブランチまたは機能の説明"
 
 ### 3. レビュー実行
 
-`/review` と同等のチェックを実行:
+`/review` と同等のチェックを実行（ただし `/go` からの呼び出しでフェーズ2のレビューレポートが存在する場合はスキップ）:
 - ロジックエラー
 - セキュリティ問題
 - パフォーマンス問題
+- スロップ検出（デバッグ残骸、未使用コード、AIスロップ）
 
 自動修正可能な問題は修正する。
 
@@ -51,14 +52,9 @@ argument-hint: "出荷対象のブランチまたは機能の説明"
 
 メジャー/マイナーバンプが必要な場合はユーザーに確認。
 
-### 5. CHANGELOG更新
+### 5. コミットメッセージ生成
 
-`CHANGELOG.md` に今回の変更を追記:
-```markdown
-## [0.1.1] - YYYY-MM-DD
-### 変更
-- [変更内容の要約]
-```
+Conventional Commits 形式で変更内容をまとめる。CHANGELOG は不要（git log で十分）。
 
 ### 6. コミット・プッシュ・PR
 
@@ -68,7 +64,7 @@ git commit -m "feat/fix/refactor: [要約]"
 git push origin HEAD
 ```
 
-PR作成（`gh` CLIが利用可能な場合）:
+PR作成（`gh` CLIまたは GitHub MCP が利用可能な場合）:
 ```bash
 gh pr create --title "[タイトル]" --body "[本文]"
 ```

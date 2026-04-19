@@ -78,10 +78,19 @@ argument-hint: "記録したい知見、検索したい内容、または「振�
 
 ## 保存場所
 
-GitHub Copilot のメモリシステムを使用する：
+2つの保存先を使い分ける:
 
-- **プロジェクト固有**: `/memories/repo/` に保存
-- **グローバル**（2+プロジェクトで確認）: `/memories/` に保存
+- **プロジェクト固有**: `~/.gstack/projects/{slug}/learnings.jsonl` に JSONL 形式で追記
+- **Copilot メモリ**: `store_memory` ツールで `/memories/repo/` にも保存（検索用）
+- **グローバル**（2+プロジェクトで確認）: `~/.gstack/learnings.jsonl` + `/memories/` に保存
+
+### JSONL スキーマ（本家互換）
+
+```json
+{"ts":"2026-04-19T10:00:00Z","type":"pitfall","confidence":8,"source":"observed","text":"CartItemのN+1問題","project":"myapp"}
+```
+
+`~/.gstack/projects/{slug}/` ディレクトリが存在しない場合は作成する。slug は `git remote get-url origin` からリポ名を抽出して kebab-case にする。
 
 ## 他スキルとの連携
 
