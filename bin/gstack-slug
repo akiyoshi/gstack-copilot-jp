@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# gstack-slug — プロジェクトの slug を計算する
+# 本家 bin/gstack-slug と同一インターフェース
+# 使い方: gstack-slug [--with-branch]
+set -euo pipefail
+
+# リモート URL からリポジトリ名を抽出し kebab-case に変換
+get_slug() {
+  local remote
+  remote=$(git remote get-url origin 2>/dev/null || echo "")
+  if [ -z "$remote" ]; then
+    # リモートがなければディレクトリ名をフォールバック
+    basename "$(pwd)" | tr '[:upper:]' '[:lower:]' | tr ' _.' '-'
+    return
+  fi
+  # git@github.com:user/repo.git → repo
+  # https://github.com/user/repo.git → repo
+  echo "$remote" \
+    | sed -E 's#\.git$##' \
+    | sed -E 's#.*/([^/]+)$#\1#' \
+    | tr '[:upper:]' '[:lower:]' \
+    | tr ' _.' '-'
+}
+
+SLUG=$(get_slug)
+
+if [ "${1:-}" = "--with-branch" ]; then
+  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+  echo "${SLUG}/${BRANCH}"
+else
+  echo "$SLUG"
+fi

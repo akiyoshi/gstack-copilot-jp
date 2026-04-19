@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# gstack-session-track — セッション追跡（ELI16 判定用）
+# 本家の PREAMBLE セッション追跡相当
+# 使い方: gstack-session-track [--count | --clean]
+set -euo pipefail
+
+SESSIONS_DIR="${HOME}/.gstack/sessions"
+mkdir -p "$SESSIONS_DIR"
+
+case "${1:-}" in
+  --count)
+    # 2時間以内にアクティブなセッション数を返す
+    find "$SESSIONS_DIR" -maxdepth 1 -type f -mmin -120 2>/dev/null | wc -l | tr -d ' '
+    ;;
+  --clean)
+    # 2時間超の古いセッションファイルを削除
+    find "$SESSIONS_DIR" -maxdepth 1 -type f -mmin +120 -delete 2>/dev/null
+    echo "古いセッションファイルを削除"
+    ;;
+  *)
+    # 現在のセッションを登録
+    touch "${SESSIONS_DIR}/${PPID}"
+    COUNT=$(find "$SESSIONS_DIR" -maxdepth 1 -type f -mmin -120 2>/dev/null | wc -l | tr -d ' ')
+    echo "$COUNT"
+    ;;
+esac

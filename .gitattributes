@@ -1,0 +1,11 @@
+# 改行コードの統一（Linux前提）
+* text=auto eol=lf
+
+# バイナリ
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+
+# Windows スクリプト（CRLF を許容）
+*.ps1 text eol=crlf

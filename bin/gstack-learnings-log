@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# gstack-learnings-log — 学習記録の JSONL 書き込み
+# 本家 bin/gstack-learnings-log と同一インターフェース
+# 使い方: gstack-learnings-log <type> <confidence> <source> <text>
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SLUG=$("$SCRIPT_DIR/gstack-slug" 2>/dev/null || echo "unknown")
+GSTACK_DIR="${HOME}/.gstack"
+PROJECT_DIR="${GSTACK_DIR}/projects/${SLUG}"
+mkdir -p "$PROJECT_DIR"
+
+TYPE="${1:?type required}"
+CONFIDENCE="${2:?confidence required}"
+SOURCE="${3:?source required}"
+TEXT="${4:?text required}"
+TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+echo "{\"ts\":\"${TS}\",\"type\":\"${TYPE}\",\"confidence\":${CONFIDENCE},\"source\":\"${SOURCE}\",\"text\":\"${TEXT}\",\"project\":\"${SLUG}\"}" \
+  >> "${PROJECT_DIR}/learnings.jsonl"

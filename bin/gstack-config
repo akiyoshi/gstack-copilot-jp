@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# gstack-config — ~/.gstack/config.yaml の get/set
+# 本家 bin/gstack-config と同一インターフェース
+# 使い方: gstack-config get <key>
+#         gstack-config set <key> <value>
+set -euo pipefail
+
+CONFIG_FILE="${HOME}/.gstack/config.yaml"
+
+usage() {
+  echo "Usage: gstack-config get <key>"
+  echo "       gstack-config set <key> <value>"
+  exit 1
+}
+
+[ $# -lt 2 ] && usage
+
+CMD="$1"
+KEY="$2"
+
+case "$CMD" in
+  get)
+    if [ ! -f "$CONFIG_FILE" ]; then
+      echo ""
+      exit 0
+    fi
+    # YAML の単純なキー: 値 パターンを grep
+    grep -E "^${KEY}:" "$CONFIG_FILE" 2>/dev/null \
+      | sed -E "s/^${KEY}:[[:space:]]*//" \
+      | head -1 \
+      || echo ""
+    ;;
+  set)
+    [ $# -lt 3 ] && usage
+    VALUE="$3"
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    if [ ! -f "$CONFIG_FILE" ]; then
+      echo "${KEY}: ${VALUE}" > "$CONFIG_FILE"
+    elif grep -qE "^${KEY}:" "$CONFIG_FILE" 2>/dev/null; then
+      # 既存キーを更新（sed -i のポータブル版）
+      TMP=$(mktemp)
+      sed -E "s/^${KEY}:.*/${KEY}: ${VALUE}/" "$CONFIG_FILE" > "$TMP"
+      mv "$TMP" "$CONFIG_FILE"
+    else
+      echo "${KEY}: ${VALUE}" >> "$CONFIG_FILE"
+    fi
+    ;;
+  *)
+    usage
+    ;;
+esac
