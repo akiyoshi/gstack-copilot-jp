@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# gstack-diff-scope — 差分スコープ分析
+# 変更ファイルを frontend/backend/test/config/docs/other に分類する
+# 使い方: gstack-diff-scope [base-branch]
+set -euo pipefail
+
+BASE="${1:-$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")}"
+MERGE_BASE=$(git merge-base HEAD "origin/${BASE}" 2>/dev/null || echo "HEAD~1")
+
+declare -A COUNTS=( [frontend]=0 [backend]=0 [test]=0 [config]=0 [docs]=0 [other]=0 )
+
+while IFS= read -r file; do
+  [ -z "$file" ] && continue
+  case "$file" in
+    *.tsx|*.jsx|*.css|*.scss|*.html|*.svg|src/components/*|src/pages/*|src/app/*)
+      COUNTS[frontend]=$((COUNTS[frontend]+1)) ;;
+    *.test.*|*.spec.*|*__tests__/*|test/*|tests/*)
+      COUNTS[test]=$((COUNTS[test]+1)) ;;
+    *.md|docs/*|*.txt|CHANGELOG*|README*)
+      COUNTS[docs]=$((COUNTS[docs]+1)) ;;
+    package.json|tsconfig*|*.config.*|.github/*|Dockerfile|docker-compose*|Makefile|*.yaml|*.yml|*.toml)
+      COUNTS[config]=$((COUNTS[config]+1)) ;;
+    *.ts|*.js|*.py|*.go|*.rs|*.java|src/*|lib/*|bin/*|cmd/*)
+      COUNTS[backend]=$((COUNTS[backend]+1)) ;;
+    *)
+      COUNTS[other]=$((COUNTS[other]+1)) ;;
+  esac
+done < <(git diff --name-only "$MERGE_BASE"..HEAD 2>/dev/null)
+
+TOTAL=0
+for v in "${COUNTS[@]}"; do TOTAL=$((TOTAL+v)); done
+
+if [ "$TOTAL" -eq 0 ]; then
+  echo '{"scope":"none","total":0}'
+  exit 0
+fi
+
+# 最大のカテゴリを primary scope とする
+PRIMARY=""
+PRIMARY_COUNT=0
+for k in "${!COUNTS[@]}"; do
+  if [ "${COUNTS[$k]}" -gt "$PRIMARY_COUNT" ]; then
+    PRIMARY="$k"
+    PRIMARY_COUNT="${COUNTS[$k]}"
+  fi
+done
+
+echo "{\"scope\":\"${PRIMARY}\",\"total\":${TOTAL},\"frontend\":${COUNTS[frontend]},\"backend\":${COUNTS[backend]},\"test\":${COUNTS[test]},\"config\":${COUNTS[config]},\"docs\":${COUNTS[docs]},\"other\":${COUNTS[other]}}"

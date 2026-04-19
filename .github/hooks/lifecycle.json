@@ -18,6 +18,12 @@
         "type": "command",
         "bash": "bin/gstack-pre-tool-guard.sh"
       }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "bin/gstack-post-tool-log.sh"
+      }
     ]
   }
 }

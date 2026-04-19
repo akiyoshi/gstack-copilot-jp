@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# gstack-analytics — ローカル analytics ダッシュボード表示
+# skill-usage.jsonl を集計して使用統計を表示する
+# 使い方: gstack-analytics [--days N]
+set -euo pipefail
+
+GSTACK_DIR="${HOME}/.gstack"
+USAGE_FILE="${GSTACK_DIR}/analytics/skill-usage.jsonl"
+
+DAYS="${2:-7}"
+if [ "${1:-}" = "--days" ]; then
+  DAYS="${2:-7}"
+fi
+
+if [ ! -f "$USAGE_FILE" ]; then
+  echo "No analytics data found at ${USAGE_FILE}"
+  echo "Run some skills first to generate usage data."
+  exit 0
+fi
+
+TOTAL=$(wc -l < "$USAGE_FILE")
+SUCCESS=$(grep -c '"success":true' "$USAGE_FILE" 2>/dev/null || echo "0")
+FAIL=$((TOTAL - SUCCESS))
+
+echo "━━━ gstack analytics ━━━"
+echo ""
+echo "データソース: ${USAGE_FILE}"
+echo "全実行数: ${TOTAL}"
+echo "成功: ${SUCCESS}  失敗: ${FAIL}"
+echo ""
+
+echo "スキル別使用回数:"
+# skill 名を抽出して集計
+grep -oP '"skill":"[^"]*"' "$USAGE_FILE" 2>/dev/null \
+  | sed 's/"skill":"//;s/"//' \
+  | sort | uniq -c | sort -rn \
+  | head -20 \
+  | while read -r count name; do
+    printf "  %-25s %d回\n" "$name" "$count"
+  done
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━"
