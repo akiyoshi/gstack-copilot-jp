@@ -6,7 +6,7 @@
 # [PLACEHOLDER] は実際の値に置き換える。
 # [OPTIONAL] セクションは不要なら削除する。
 #
-# 共通ルールは instructions/ で自動適用されるため、
+# 共通ルールは copilot-instructions.md で自動適用されるため、
 # スキル内に重複して書く必要はない:
 #   - voice.instructions.md      → ボイス・トーン
 #   - completeness.instructions.md → 完全性原則・工数見積もり
@@ -94,7 +94,7 @@ quality-gate.instructions.md が共通ルールを規定する。
 ```
 
 ### 8. 重要ルール
-スキル固有の鉄則を3-7個。instructions/ の共通ルールと重複させない。
+スキル固有の鉄則を3-7個。copilot-instructions.md の共通ルールと重複させない。
 
 ### 9. 次のスキル
 post-hook.instructions.md のテーブルと一致する推奨を記述。
@@ -108,5 +108,5 @@ post-hook.instructions.md のテーブルと一致する推奨を記述。
 - [ ] copilot-instructions.md のルーティングテーブルに追加した
 - [ ] post-hook.instructions.md の推奨テーブルに追加した
 - [ ] 「次のスキル」セクションがある
-- [ ] instructions/ の共通ルールを重複して書いていない
+- [ ] copilot-instructions.md の共通ルールを重複して書いていない
 - [ ] 品質ゲートテスト（browse/test/quality-gate.test.js）が通る

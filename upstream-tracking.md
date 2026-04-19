@@ -14,8 +14,8 @@
 | 項目 | 値 |
 |------|-----|
 | 本家バージョン | v1.1.3 (fix: /checkpoint rename) |
-| 最終検証日 | 2026-04-19 |
-| gstack-copilot-jp バージョン | 1.0.0-alpha.2 |
+| 最終検証日 | 2026-04-20 |
+| gstack-copilot-jp バージョン | 1.0.0-alpha.3 |
 
 ## スキル互換性
 
@@ -27,8 +27,8 @@
 | `/plan-design-review` | ✓ | ✓ | same | — | |
 | `/plan-devex-review` | ✓ | ✓ | same | — | |
 | `/autoplan` | ✓ | ✓ | same | — | |
-| `/review` | ✓ | ✓ | adapted | — | `code-review` built-in + slop検出統合 |
-| `/ship` | ✓ | ✓ | adapted | — | CHANGELOG不要。MCP対応 |
+| `/review` | ✓ | ✓ | adapted | — | Outside Voice (`code-review` + `rubber-duck` + fallback) + slop検出統合 |
+| `/ship` | ✓ | ✓ | adapted | — | Outside Voice + CHANGELOG不要。MCP対応 |
 | `/investigate` | ✓ | ✓ | same | — | |
 | `/design-html` | ✓ | ✓ | same | — | |
 | `/design-consultation` | ✓ | ✓ | same | — | |
@@ -39,7 +39,7 @@
 | `/qa-only` | ✓ | ✓ | same | — | |
 | `/cso` | ✓ | ✓ | same | — | |
 | `/benchmark` | ✓ | ✓ | same | — | |
-| `/health` | ✓ | ✓ (new) | same | — | v1.1.x 新規追跡 |
+| `/health` | ✓ | ✓ | same | — | v1.1.x。typecheck/lint/test/deadcode 4軸スコアリング |
 | `/browse` | ✓ | △ | adapted | — | Bun移行は Phase 3 |
 | `/open-gstack-browser` | ✓ | ✓ | same | — | 旧 `/open-browser` からリネーム |
 | `/pair-agent` | ✓ | ✓ | same | — | |
@@ -83,9 +83,9 @@
 | `gstack-review-log` | `bin/gstack-review-log` | ✓ same |
 | `gstack-learnings-log` | `bin/gstack-learnings-log` | ✓ same |
 | `gstack-update-check` | — | Phase 3（sessionStart hook から呼ばれるが未実装。静かにスキップ） |
-| `gstack-diff-scope` | — | Phase 2 |
-| `gstack-timeline-log` | — | Phase 2 |
-| `gstack-analytics` | — | Phase 2 |
+| `gstack-diff-scope` | `bin/gstack-diff-scope` | ✓ same |
+| `gstack-timeline-log` | `bin/gstack-timeline-log` | ✓ same |
+| `gstack-analytics` | `bin/gstack-analytics` | ✓ same |
 | `gstack-uninstall` | — | Phase 3 |
 | `gstack-session-track` | `bin/gstack-session-track` | ✓ same |
 
@@ -105,4 +105,4 @@
 | `SessionStart` | `sessionStart` | ✓ 互換 |
 | `SessionEnd` | `sessionEnd` | ✓ 互換 |
 | `PreToolUse` | `preToolUse` | ✓ 互換 |
-| `PostToolUse` | `postToolUse` | — Phase 2 |
+| `PostToolUse` | `postToolUse` | ✓ 互換（スタブ実装。Phase 3 で timeline-log 連携） |

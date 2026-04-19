@@ -702,15 +702,14 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 ## 現在の実装状態
 
-**VERSION: 1.0.0-alpha.2**（Phase 0-1 実装済み。Copilot CLI 対応）
+**VERSION: 1.0.0-alpha.3**（Phase 0-2 実装済み。Copilot CLI 対応）
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
-| スキル | 45 | 廃止予定6（Phase 2で削除）、新規3（context-save, context-restore, status） |
-| エージェント | 7 → v1.0で整理 | 廃止2（reviewer, adversarial → Copilot CLI ビルトイン利用） → 最終5 |
-| 命令 | 9 | instructions/*.instructions.md |
+| スキル | 39 | Phase 2 で 7 廃止、1 新規（health）。38 + health = 39 |
+| エージェント | 5 | architect, design-critic, dx-tester, security, testing |
 | ブラウザ | 1 | Playwright + Node.js（v1.0 で Bun 移行） |
-| hookシステム | 3 | sessionStart, sessionEnd, preToolUse |
+| hookシステム | 4 | sessionStart, sessionEnd, preToolUse, postToolUse |
 
 ## v1.0 仕様: Copilot CLI 専用 + 追随モデル
 
