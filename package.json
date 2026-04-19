@@ -1,0 +1,17 @@
+{
+  "name": "gstack-copilot-jp",
+  "version": "1.0.0-alpha.3",
+  "private": true,
+  "description": "日本語のGitHub Copilotユーザーのための、AIソフトウェアファクトリー",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akiyoshi/gstack-copilot-jp.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vitest": "^4.1.4"
+  }
+}

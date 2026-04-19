@@ -2,10 +2,7 @@
 // Tier 1: JSONL スキーマ互換テスト
 // 本家 gstack と同一フィールドで出力されることを検証する
 
-const { describe, it, expect } = require('vitest') ?? (() => {
-  // fallback for bun test
-  return { describe: globalThis.describe, it: globalThis.it, expect: globalThis.expect }
-})()
+import { describe, it, expect } from 'vitest';
 
 const SCHEMAS = {
   learnings: {

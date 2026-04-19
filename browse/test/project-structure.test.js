@@ -95,117 +95,16 @@ describe('model-routing.yaml 検証', () => {
   });
 });
 
-describe('/loop SKILL.md', () => {
-  const skillPath = join(ROOT, '.github', 'skills', 'loop', 'SKILL.md');
-
-  it('SKILL.md が存在する', () => {
-    expect(existsSync(skillPath)).toBe(true);
-  });
-
-  it('フロントマターに name: loop がある', () => {
-    const content = readFileSync(skillPath, 'utf-8');
-    const frontmatter = content.split('---')[1];
-    expect(frontmatter).toContain('name: loop');
-  });
-
-  it('フロントマターに description がある', () => {
-    const content = readFileSync(skillPath, 'utf-8');
-    const frontmatter = content.split('---')[1];
-    expect(frontmatter).toContain('description:');
-  });
-
-  it('安全弁セクションがある', () => {
-    const content = readFileSync(skillPath, 'utf-8');
-    expect(content).toMatch(/安全弁|safety|safeguard/i);
-  });
-
-  it('.gstack/plans/TEMPLATE.md への参照がある', () => {
-    const content = readFileSync(skillPath, 'utf-8');
-    expect(content).toContain('.gstack/plans/');
-  });
-
-  it('/multi-execute とのスコープ分離が明記されている', () => {
-    const content = readFileSync(skillPath, 'utf-8');
-    expect(content).toContain('/multi-execute');
+describe('/loop は廃止済み', () => {
+  it('/loop ディレクトリが存在しない', () => {
+    const skillPath = join(ROOT, '.github', 'skills', 'loop');
+    expect(existsSync(skillPath)).toBe(false);
   });
 });
 
-describe('context-management.instructions.md', () => {
-  const instrPath = join(ROOT, '.github', 'instructions', 'context-management.instructions.md');
-
-  it('ファイルが存在する', () => {
-    expect(existsSync(instrPath)).toBe(true);
-  });
-
-  it('60行以下である（コンテキスト圧迫を防止）', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    const lines = content.split(/\r?\n/);
-    expect(lines.length).toBeLessThanOrEqual(60);
-  });
-
-  it('フロントマターに description がある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    const normalized = content.replace(/\r\n/g, '\n');
-    expect(normalized.startsWith('---\n')).toBe(true);
-    const frontmatter = normalized.split('---')[1];
-    expect(frontmatter).toContain('description:');
-  });
-
-  it('セッション管理の記述がある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    expect(content).toMatch(/セッション|session/i);
-  });
-
-  it('コンテキスト整理の記述がある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    expect(content).toMatch(/コンテキスト|context/i);
-  });
-
-  it('メモリシステム参照がある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    expect(content).toMatch(/\/memories\//);
-  });
-
-  it('ガードレールフラグ永続化の記述がある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    expect(content).toMatch(/guard-state/);
-  });
-});
-
-describe('post-hook.instructions.md', () => {
-  const instrPath = join(ROOT, '.github', 'instructions', 'post-hook.instructions.md');
-
-  it('ファイルが存在する', () => {
-    expect(existsSync(instrPath)).toBe(true);
-  });
-
-  it('60行以下である', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    const lines = content.split(/\r?\n/);
-    expect(lines.length).toBeLessThanOrEqual(60);
-  });
-
-  it('フロントマターに description がある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    const normalized = content.replace(/\r\n/g, '\n');
-    expect(normalized.startsWith('---\n')).toBe(true);
-    const frontmatter = normalized.split('---')[1];
-    expect(frontmatter).toContain('description:');
-  });
-
-  it('次のスキル推奨テーブルがある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    expect(content).toContain('次のスキル推奨');
-  });
-
-  it('学習抽出の判定セクションがある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    expect(content).toMatch(/学習抽出/);
-  });
-
-  it('コンテキスト圧縮セクションがある', () => {
-    const content = readFileSync(instrPath, 'utf-8');
-    expect(content).toMatch(/コンテキスト圧縮/);
+describe('VS Code 資産は copilot-instructions.md に統合済み', () => {
+  it('.github/instructions/ が存在しない', () => {
+    expect(existsSync(join(ROOT, '.github', 'instructions'))).toBe(false);
   });
 });
 
@@ -218,8 +117,8 @@ describe('hookシステム: スキルの「次のスキル」推奨', () => {
   // Post-Hook不要のトグル/ユーティリティスキル
   const exemptSkills = [
     'careful', 'freeze', 'guard', 'unfreeze',
-    'checkpoint', 'browse', 'open-browser', 'pair-agent',
-    'setup-browser-cookies', 'setup-deploy', 'upgrade', 'benchmark',
+    'browse', 'open-gstack-browser', 'pair-agent',
+    'setup-browser-cookies', 'setup-deploy', 'gstack-upgrade', 'benchmark',
   ];
 
   const processSkills = skillDirs.filter(s => !exemptSkills.includes(s));
