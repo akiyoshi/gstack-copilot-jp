@@ -27,6 +27,13 @@ argument-hint: "編集を許可するディレクトリまたはファイルパ�
 - 読み取りは制限なし
 - `/unfreeze` で解除
 
+## 実装
+
+`preToolUse` hook (`bin/gstack-pre-tool-guard.sh`) が環境変数 `GSTACK_FREEZE_PATH` を検出すると、edit/create ツール実行前にパスをチェックする。
+
+有効化: スキル呼び出し時に `GSTACK_FREEZE_PATH=<許可パス>` を設定する。
+無効化: `/unfreeze` で `GSTACK_FREEZE_PATH` をクリアする。
+
 ## 重要ルール
 
 - **読み取りは自由**: 制限は編集のみ

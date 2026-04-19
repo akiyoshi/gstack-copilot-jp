@@ -40,7 +40,7 @@ if [ -f "$LAST_CHECK" ]; then
   fi
 fi
 
-# 更新チェック実行 (ネットワーク障害は無視)
+# 更新チェック実行 (Phase 3 で bin/gstack-update-check を実装予定。未実装時は静かにスキップ)
 if command -v gstack-update-check >/dev/null 2>&1; then
   gstack-update-check 2>/dev/null || true
 fi

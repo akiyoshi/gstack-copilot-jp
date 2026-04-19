@@ -45,9 +45,12 @@ B) 修正して実行（より安全なバージョン）
 C) キャンセル
 ```
 
-## 解除
+## 実装
 
-ユーザーが「careful解除」「careful off」と言ったら無効化する。
+`preToolUse` hook (`bin/gstack-pre-tool-guard.sh`) が環境変数 `GSTACK_CAREFUL=1` を検出すると、bash ツール実行前に破壊的パターンをチェックする。
+
+有効化: スキル呼び出し時に `GSTACK_CAREFUL=1` を設定する。
+無効化: ユーザーが「careful解除」「careful off」と言ったら `GSTACK_CAREFUL=0` に戻す。
 
 ## 重要ルール
 

@@ -230,3 +230,17 @@ describe('hookシステム: スキルの「次のスキル」推奨', () => {
     expect(content).toMatch(/次のスキル|推奨する次/);
   });
 });
+
+describe('Spec Review Loop: ドキュメント生成スキルに品質ゲートがある', () => {
+  // ドキュメントを生成して下流スキルに引き渡すスキル
+  const docGeneratingSkills = [
+    'office-hours',
+    'plan-ceo-review',
+  ];
+
+  it.each(docGeneratingSkills)('%s に品質ゲートのステップがある', (skillName) => {
+    const skillPath = join(ROOT, '.github', 'skills', skillName, 'SKILL.md');
+    const content = readFileSync(skillPath, 'utf-8');
+    expect(content).toMatch(/品質ゲート|敵対レビュー|Spec Review/);
+  });
+});
