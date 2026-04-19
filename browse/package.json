@@ -10,6 +10,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.60.2",
     "playwright": "^1.49.0"
   },
   "devDependencies": {

@@ -15,7 +15,7 @@
 |------|-----|
 | 本家バージョン | v1.1.3 (fix: /checkpoint rename) |
 | 最終検証日 | 2026-04-19 |
-| gstack-copilot-jp バージョン | 1.0.0-alpha.1 |
+| gstack-copilot-jp バージョン | 1.0.0-alpha.2 |
 
 ## スキル互換性
 

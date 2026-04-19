@@ -702,7 +702,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 ## 現在の実装状態
 
-**VERSION: 1.0.0-alpha.1**（Phase 0-1 実装済み。Copilot CLI 対応）
+**VERSION: 1.0.0-alpha.2**（Phase 0-1 実装済み。Copilot CLI 対応）
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
