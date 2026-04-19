@@ -166,7 +166,7 @@ for each task in plan.tasks:
 2. VERSION更新（semverに従い自動判定）
 3. git commit + push
 4. PR作成
-5. 失敗時 → /build-fix → リトライ（最大3回）
+5. 失敗時 → ビルドエラー修復を試みる → リトライ（最大3回）
 ```
 
 **重要**: `/go` からの呼び出し時、`/ship` のレビュー実行ステップはスキップする（フェーズ2で実行済み）。
