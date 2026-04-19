@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "bin/gstack-session-start.sh"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "bin/gstack-session-end.sh"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "bin/gstack-pre-tool-guard.sh"
+      }
+    ]
+  }
+}
