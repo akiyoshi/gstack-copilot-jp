@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# setup — gstack-copilot-jp セットアップスクリプト
+# 使い方:
+#   ./setup                    project-local モード（デフォルト）
+#   ./setup --mode user-link   ~/.copilot/skills/ にシンボリックリンク
+#   ./setup --uninstall        アンインストール
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+INSTALL_MANIFEST="$HOME/.gstack/hosts/copilot-cli/installations/gstack-copilot-jp.json"
+
+MODE="project-local"
+for arg in "$@"; do
+  case "$arg" in
+    --mode) shift; MODE="${1:-project-local}"; shift ;;
+    --uninstall) MODE="uninstall" ;;
+  esac
+done
+
+check_deps() {
+  local missing=()
+  command -v git &>/dev/null || missing+=("git")
+  command -v bun &>/dev/null || missing+=("bun (https://bun.sh)")
+  if [ ${#missing[@]} -gt 0 ]; then
+    echo "Missing dependencies: ${missing[*]}" >&2
+    exit 1
+  fi
+  echo "✓ Dependencies OK (git, bun)"
+}
+
+build_browse() {
+  echo "Building browse..."
+  cd "$SCRIPT_DIR/browse"
+  bun install --frozen-lockfile 2>/dev/null || bun install
+  bun run build
+  echo "✓ browse binary built: browse/dist/browse"
+  cd "$SCRIPT_DIR"
+}
+
+install_playwright() {
+  if ! npx playwright install --dry-run chromium &>/dev/null 2>&1; then
+    echo "Installing Playwright Chromium..."
+    npx playwright install chromium
+  fi
+  echo "✓ Playwright Chromium ready"
+}
+
+write_manifest() {
+  local dir
+  dir="$(dirname "$INSTALL_MANIFEST")"
+  mkdir -p "$dir"
+  cat > "$INSTALL_MANIFEST" << EOF
+{
+  "path": "$SCRIPT_DIR",
+  "mode": "$MODE",
+  "installed": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "version": "$(cat "$SCRIPT_DIR/VERSION")"
+}
+EOF
+  echo "✓ Manifest written: $INSTALL_MANIFEST"
+}
+
+do_project_local() {
+  echo "=== gstack-copilot-jp setup (project-local) ==="
+  check_deps
+  build_browse
+  install_playwright
+  write_manifest
+  echo ""
+  echo "Done! Add this folder to your VS Code workspace, or run:"
+  echo "  eval \"\$(bin/gstack-env)\""
+}
+
+do_user_link() {
+  echo "=== gstack-copilot-jp setup (user-link) ==="
+  check_deps
+  build_browse
+
+  local link_dir="$HOME/.copilot/skills/gstack-copilot-jp"
+  if [ -L "$link_dir" ] || [ -d "$link_dir" ]; then
+    echo "Removing existing link: $link_dir"
+    rm -rf "$link_dir"
+  fi
+  mkdir -p "$(dirname "$link_dir")"
+  ln -s "$SCRIPT_DIR" "$link_dir"
+  echo "✓ Symlink: $link_dir → $SCRIPT_DIR"
+
+  install_playwright
+  write_manifest
+  echo ""
+  echo "Done! Skills are available in all Copilot CLI sessions."
+}
+
+do_uninstall() {
+  echo "=== gstack-copilot-jp uninstall ==="
+
+  # シンボリックリンク削除
+  local link_dir="$HOME/.copilot/skills/gstack-copilot-jp"
+  if [ -L "$link_dir" ]; then
+    rm "$link_dir"
+    echo "✓ Removed symlink: $link_dir"
+  fi
+
+  # browse サーバー停止
+  local state_file="$SCRIPT_DIR/.gstack/browse.json"
+  if [ -f "$state_file" ]; then
+    local pid
+    pid=$(grep -o '"pid":[0-9]*' "$state_file" | grep -o '[0-9]*')
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+      echo "✓ Stopped browse server (PID $pid)"
+    fi
+    rm -f "$state_file"
+  fi
+
+  # マニフェスト削除
+  if [ -f "$INSTALL_MANIFEST" ]; then
+    rm "$INSTALL_MANIFEST"
+    echo "✓ Removed manifest"
+  fi
+
+  echo ""
+  echo "Done! To fully remove, delete the gstack-copilot-jp directory."
+}
+
+case "$MODE" in
+  project-local) do_project_local ;;
+  user-link) do_user_link ;;
+  uninstall) do_uninstall ;;
+  *) echo "Unknown mode: $MODE. Use: project-local, user-link, --uninstall" >&2; exit 1 ;;
+esac

@@ -1,0 +1,21 @@
+{
+  "name": "gstack-copilot-jp",
+  "version": "1.0.0-alpha.4",
+  "description": "日本語のGitHub Copilotユーザーのための、AIソフトウェアファクトリー",
+  "author": "akiyoshi",
+  "license": "MIT",
+  "homepage": "https://github.com/akiyoshi/gstack-copilot-jp",
+  "includes": {
+    "skills": ".github/skills/*/SKILL.md",
+    "agents": ".github/agents/*.agent.md",
+    "hooks": ".github/hooks/*.json",
+    "instructions": ".github/copilot-instructions.md",
+    "bin": "bin/gstack-*",
+    "browse": "browse/dist/browse"
+  },
+  "dependencies": {
+    "bun": ">=1.0.0",
+    "playwright": ">=1.49.0"
+  },
+  "postInstall": "cd browse && bun install && bun run build"
+}
