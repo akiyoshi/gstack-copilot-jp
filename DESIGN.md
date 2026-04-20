@@ -4,7 +4,7 @@
 
 [gstack](https://github.com/garrytan/gstack)（Garry Tan作）のスキル・方法論を、**GitHub Copilot CLI + 日本語で提供する適応レイヤー**。
 
-本家gstackの進化速度（v0.0.1→v1.1.3 を39日で到達、1000+ PR、48コントリビューター）に個人で独自開発として追随するのは不可能。v1.0.0までは「再設計」として独自実装してきたが、v2.0からは**本家gstackを上流として追跡し、Copilot CLI向けに適応する**方針に転換する。
+本家gstackを**上流として追跡し、Copilot CLI向けに適応する**。方法論・スキル判定基準は本家に追随し、マルチホスト基盤（`hosts/`, `model-overlays/`, テンプレート生成）は追跡対象外。
 
 ### GitHub Copilot CLI は主要プリミティブを持つ
 
@@ -97,7 +97,6 @@ gstack-copilot-jp/
 ├── DESIGN.md
 ├── ETHOS.md
 ├── README.md
-├── SKILL.md                       # ルートスキル（メタ: /status, /skills 一覧）
 └── VERSION
 ```
 
@@ -655,61 +654,36 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 | スキル | 本家対応 | 備考 |
 |--------|---------|------|
-| ~~`/multi-plan`~~ | 廃止 | Copilot CLI `/model` + `/fleet` で代替 |
-| ~~`/multi-execute`~~ | 廃止 | Copilot CLI `--autopilot` + `/fleet` で代替 |
-| ~~`/second-opinion`~~ | 廃止 | 本家 `/codex` 相当。Copilot CLI `/model` 切替 + `task` で再現 |
 | `/design-consultation` | 同一 | |
-| `/design-shotgun` | 同一 | $D バイナリなし → テキストベース |
+| `/design-shotgun` | 適応 | `$D` バイナリなし → テキストベース |
 | `/browse` | 同一 | Bun + Playwright（本家と同一） |
-| `/open-browser` | 同一 | |
+| `/open-gstack-browser` | 同一 | |
 | `/pair-agent` | 同一 | |
 | `/setup-browser-cookies` | 同一 | |
 | `/setup-deploy` | 同一 | |
+| `/benchmark-models` | 適応 | Copilot CLI マルチモデル環境向け |
 | `/health` | 同一 | typecheck/lint/test/deadcode を wrap して 0-10 スコア |
 | `/careful` | 同一 | |
 | `/freeze` | 同一 | |
 | `/guard` | 同一 | |
 | `/unfreeze` | 同一 | |
-| `/checkpoint` → `/context-save` + `/context-restore` | 同一 | 本家 v1.1.3 に合わせて分割・リネーム |
-| `/upgrade` → `/gstack-upgrade` | 同一 | 本家に合わせてリネーム |
-| `/open-browser` → `/open-gstack-browser` | 同一 | 本家に合わせてリネーム |
-| ~~`/build-fix`~~ | 廃止 | 通常の対話で代替可能 |
-| ~~`/clean`~~ | 廃止 | `/review` に統合（スロップ検出パス） |
-| ~~`/loop`~~ | 廃止 | `/fleet` + `--autopilot` で代替 |
+| `/context-save` | 同一 | |
+| `/context-restore` | 同一 | |
+| `/gstack-upgrade` | 適応 | plugin update で実現 |
 
-### 本家 v1.0〜v1.1 で追加された注目機能
+## 実装状態
 
-以下は追跡対象として優先的に取り込む:
-
-| 機能 | 本家バージョン | 取り込み方針 |
-|------|--------------|-------------|
-| v1 prompts（平易な説明） | v1.0.0 | ボイス指針に反映 |
-| `/context-save` + `/context-restore` | v1.1.3 | `/checkpoint` を分割。v1.0 で対応 |
-| `/plan-tune` (質問チューニング) | v0.19 | `store_memory` + `copilot-instructions.md` で実装 |
-| Confusion Protocol | v0.18 | ✅ 取り込み済み |
-| UX behavioral foundations | v0.17 | デザインスキルに反映 |
-| Content security (4層防御) | v0.15.12 | browse スキルに反映。`lib/` 相当の共有ロジックは `bin/` に統合 |
-| Review Army (並列専門家) | v0.14.4 | `/fleet` でサブエージェント並列 dispatch |
-| `load-html` / `file://` ナビ | v1.1.0 | browse に取り込み |
-| `/health` (コード品質ダッシュボード) | v1.1.x | **新規追跡**。tsc/lint/test/deadcode を wrap して 0-10 スコアリング |
-| `/codex` (クロスモデル第二意見) | v0.14 | Copilot CLI `/model` 切替 + `task` で再現。`/second-opinion` 廃止後の後継 |
-| ELI16 モード (並列セッション簡素化) | v1.0.0 | `sessionStart` hook でセッション数検出。3+ で簡素化フラグ |
-| 運用自己改善 (end-of-session reflection) | v1.0.0 | `sessionEnd` hook → `/learn 振り返り` 提案 |
-| Review Readiness Dashboard | v1.0.0 | `/ship` のプレフライトチェックとして実装 |
-| Proactive skill suggestions | v1.0.0 | `copilot-instructions.md` にステージ検知ロジックを記載 |
-| Voice-friendly triggers | v1.0.0 | SKILL.md の `description` に自然言語トリガーを含める（既存方式で対応可） |
-| `$D` (design binary) | v0.12 | v1.0 スコープ外。テキストベースで代替（`/design-shotgun` は GPT Image なし） |
-
-## 現在の実装状態
-
-**VERSION: 1.0.0-alpha.5**（Phase 0-4 実装済み。v1.0 リリース準備完了）
+**VERSION: 1.0.0-alpha.5**
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
-| スキル | 40 | Phase 2 で 7 廃止、1 新規（health）、1 新規（benchmark-models）。38 + health + benchmark-models = 40 |
+| スキル | 40 | スプリントプロセス全フェーズ + パワーツール |
 | エージェント | 5 | architect, design-critic, dx-tester, security, testing |
+| bin/ | 18 | gstack-slug, gstack-config, gstack-env, gstack-diff-scope 等の本家互換ユーティリティ |
 | ブラウザ | 1 | Bun コンパイル + Playwright（本家互換） |
 | hookシステム | 4 | sessionStart, sessionEnd, preToolUse, postToolUse |
+| テスト | 4 | Vitest（Tier 1 静的検証）。JSONL スキーマ、構造、完全性、browse品質ゲート |
+| 本家追跡 | v1.4.0.0 | `upstream-tracking.md` で互換性台帳を管理 |
 
 ## v1.0 仕様: Copilot CLI 専用 + 追随モデル
 
@@ -723,165 +697,48 @@ v1.0 = **Copilot CLI をホストターゲットとし、本家gstack追随モ�
 4. **プラグイン配布** — `copilot plugin install` で一発導入。複数端末で共有可能
 5. **本家 v1.1 の方法論を反映** — 各スキルの判定基準・ワークフローが本家と同等
 
-### タスク
+### v1.0 リリース基準
 
-| # | タスク | 内容 | 工数（人間/AI） |
-|---|--------|------|----------------|
-| 1 | プラグインパッケージング | `copilot-plugin.json` マニフェスト作成。skills + agents + hooks + bin + browse をバンドル。CI で自動ビルド・公開 | 2日 / 1時間 |
-| 1b | setup スクリプト (フォールバック) | `setup` (bash)。project-local / user-link / uninstall の3モード、Bun ビルド、Playwright 確認。plugin 非対応環境向け | 1日 / 30分 |
-| 2 | browse Bun移行 | `browse/src/` を TypeScript 化。`bun build --compile`。本家のコマンド体系を適応 | 1週間 / 2時間 |
-| 3 | hookシステム | `.github/hooks/` に sessionStart, preToolUse, postToolUse を実装 | 2日 / 1時間 |
-| 4 | Copilot CLI 設定 | `.github/copilot/settings.json` 作成。スキルのフロントマターを Copilot CLI 互換形式に統一 | 1日 / 30分 |
-| 5 | 独自資産の整理 | 廃止: `build-fix`, `clean`, `loop`, `multi-plan`, `multi-execute`, `second-opinion`。リネーム: `checkpoint`→2分割, `open-browser`, `upgrade`。`reviewer`/`adversarial`エージェント廃止。`/clean` のスロップ検出を `/review` に統合 | 3日 / 1時間 |
-| 6 | VS Code Chat 資産の整理 | `.github/rules/`, `.github/instructions/`, `.github/prompts/` を `copilot-instructions.md` + スキルに統合・廃止 | 2日 / 1時間 |
-| 7 | 外部の目（Outside Voice）実装 | `/review` と `/ship` にビルトイン `code-review` + `rubber-duck` + `/model` 切替による独立レビューを組み込む | 2日 / 1時間 |
-| 8 | `~/.gstack/` 互換 | 本家と同一 root を共有しつつ、Copilot 固有 state を `hosts/copilot-cli/` に隔離 | 1日 / 30分 |
-| 9 | 上流追跡ツール | `bin/upstream-diff.sh` + `bin/adapt-upstream-skill.sh` + compatibility 台帳運用 | 1日 / 30分 |
-| 10 | `bin/` ユーティリティ互換 | `gstack-slug`, `gstack-review-log`, `gstack-config` 等の本家互換スクリプト作成。PATH は activation 時のみ切り替え | 2日 / 1時間 |
-| 11 | `$B` エイリアス設定 | browse バイナリへの `$B`。`bin/gstack-env` と env スニペットで有効化し、グローバル恒久設定はしない | 半日 / 15分 |
-| 12 | E2E テスト | `copilot -p` によるスキル動作テスト。3層テスト体系の Tier 1 + Tier 2 + coexistence テスト | 3日 / 1時間 |
-| 13 | ドキュメント | README、getting-started を Copilot CLI + WSL 前提に改訂。ARCHITECTURE.md 作成 | 半日 / 30分 |
-| 14 | 追跡基盤 | `upstream-tracking.md` 作成。本家バージョンとの対応表、compatibility status、反映期限 | 2時間 / 20分 |
-| 15 | Copilot fallback 実装 | built-in agent / MCP / plugin 不在時の代替経路を各スキルに実装 | 1日 / 45分 |
-| 16 | Preamble 相当 hook | sessionStart/End hook で更新チェック、セッション追跡、ELI16、自己改善を実装 | 1日 / 30分 |
-| 17 | `/health` スキル | 本家 `/health` の Copilot 版。typecheck/lint/test/deadcode を wrap して 0-10 スコア | 1日 / 30分 |
-| 18 | JSONL スキーマ互換 | learnings/reviews/usage/health の JSONL を本家と同一フィールドで出力 | 半日 / 20分 |
-| 19 | ルートスキル (`SKILL.md`) | `/status` + スキル一覧 + version 表示。本家ルート SKILL.md に対応 | 半日 / 15分 |
+| 基準 | 状態 | 備考 |
+|------|------|------|
+| 40スキル全て SKILL.md 存在 | ✅ | `.github/skills/` に配置 |
+| 5エージェント動作 | ✅ | architect, design-critic, dx-tester, security, testing |
+| 4 hooks 動作 | ✅ | sessionStart, sessionEnd, preToolUse, postToolUse |
+| browse ビルド成功 | ✅ | `bun build --compile` → `browse/dist/browse` |
+| Tier 1 テスト全 pass | ✅ | `npm test` (Vitest) |
+| 本家 v1.4.0.0 まで追跡完了 | ✅ | `upstream-tracking.md` |
+| README + getting-started 完備 | ✅ | |
+| ARCHITECTURE.md 作成 | ✅ | |
+| `copilot-plugin.json` 作成 | ✅ | |
+| VERSION を `1.0.0` に更新 | 🔲 | リリース時 |
+| git tag `v1.0.0` | 🔲 | リリース時 |
 
-### 実装ロードマップ
+### 既知の制限事項
 
-**原則: gstack-copilot-jp 自身を使って gstack-copilot-jp を作る（セルフホスト）。**
+v1.0 で意図的に含めないもの:
 
-Phase 0 で最低限のスプリントループを回せる状態にし、Phase 1 以降はそのループを使って開発する。長期セッションの継続性（セッション保存・復帰・学習蓄積）を最優先とする。
+| 項目 | 理由 | 対応予定 |
+|------|------|---------|
+| browse Puppeteer parity (`load-html`, `--selector`, `--scale`, `file://`) | 本家が Puppeteer→Playwright 移行中 | v1.1 |
+| `/make-pdf` | browse `$B pdf` 対応が前提 | v1.1 |
+| `gstack-update-check` | sessionStart hook が静かにスキップ | v1.1 |
+| `gstack-uninstall` | `setup --uninstall` で手動対応可 | v1.1 |
+| Tier 2 E2E テスト (`copilot -p`) | インフラ構築が必要 | v1.1 |
+| `/plan-tune` | `store_memory` で簡易代替可 | v1.1 |
+| `$D` (design binary) | テキストベースで代替 | スコープ外 |
+| CI 自動ビルド・公開 | GitHub Actions 構築が必要 | v1.1 |
 
-#### Phase 0: ブートストラップ（Day 1-2）
+### v1.1 方向性
 
-目的: **Copilot CLI 上で最初のスプリントが回る状態を作る。**
+v1.0 リリース後の優先事項:
 
-| 順 | タスク# | 内容 | 依存 | 完了条件 |
-|----|---------|------|------|---------|
-| 0-1 | 4 | `copilot-instructions.md` 作成。スキルルーティング、ボイス、ethos、ask-format、Confusion Protocol を統合 | なし | `copilot` を起動してスキルが認識される |
-| 0-2 | 6 | `.github/rules/`, `.github/instructions/` の内容を `copilot-instructions.md` に統合 | 0-1 | rules/instructions ディレクトリ削除可能 |
-| 0-3 | 19 | ルートスキル `SKILL.md` 作成。`/status` で version + スキル一覧表示 | 0-1 | `/status` が動く |
-| 0-4 | 5a | `/context-save` + `/context-restore` 作成（`/checkpoint` をリネーム・分割） | 0-1 | セッション中断→再開が動く |
-| 0-5 | 5b | `/go` を Copilot CLI 向けに適応（ツール名変換、サブエージェント→`task`） | 0-1 | `/go` でスプリントが起動する |
-| 0-6 | 5c | `/review` を Copilot CLI 向けに適応 + `/clean` スロップ検出を統合 | 0-1 | `/review` が diff を読んでレビューできる |
-| 0-7 | 5d | `/ship` を Copilot CLI 向けに適応 | 0-6 | `/ship` で PR が作成できる |
-| 0-8 | 5e | `/learn` を Copilot CLI 向けに適応 | 0-1 | 学習記録が `~/.gstack/` に書き込まれる |
+1. **browse Puppeteer parity** — `load-html`, `--selector`, `--scale`, `file://` ナビゲーション対応
+2. **`/make-pdf`** — browse `$B pdf` を活用した PDF 生成スキル
+3. **Tier 2 E2E テスト基盤** — `copilot -p --output-format json` による自動スキルテスト
+4. **CI/CD パイプライン** — GitHub Actions で Tier 1 テスト + browse ビルド + plugin 公開
+5. **`/plan-tune`** — `store_memory` と `copilot-instructions.md` を活用した質問チューニング
 
-**Phase 0 完了 = `/go` で `/review` → `/ship` → `/learn` が回る。以降はこのループで開発する。**
-
-#### Phase 1: セッション継続基盤（Day 3-5）
-
-目的: **長時間・複数セッションにまたがる作業を安全に続けられる。**
-
-| 順 | タスク# | 内容 | 依存 | 完了条件 |
-|----|---------|------|------|---------|
-| 1-1 | 3 | hook システム実装。`sessionStart`（更新チェック、状態復帰）、`sessionEnd`（学習提案） | P0 | hook がセッション開始/終了時に発火 |
-| 1-2 | 16 | Preamble 相当 hook。セッション追跡、ELI16 判定、自己改善 | 1-1 | 並列3+セッションで ELI16 フラグが立つ |
-| 1-3 | 8 | `~/.gstack/` ディレクトリ構造作成。`hosts/copilot-cli/` 分離 | P0 | learnings/reviews/usage が正しいパスに書き込まれる |
-| 1-4 | 18 | JSONL スキーマ互換。全 JSONL 出力を本家フィールドに統一 | 1-3 | Tier 1 テストで schema 検証 pass |
-| 1-5 | 10a | `gstack-slug`, `gstack-config`, `gstack-session-track` 実装 | 1-3 | hook と learn がこれらを呼び出せる |
-| 1-6 | 14 | `upstream-tracking.md` 作成。互換性台帳の初期版 | P0 | 本家 v1.1.x との差分が一覧できる |
-
-**Phase 1 完了 = セッションを中断しても `/context-restore` で復帰し、`/learn` の蓄積が次のセッションに引き継がれる。**
-
-#### Phase 2: スプリント完全化（Day 6-10）
-
-目的: **考える→出荷する→振り返るの全フェーズが動く。残りのコアスキルを適応。**
-
-| 順 | タスク# | 内容 | 依存 | 完了条件 |
-|----|---------|------|------|---------|
-| 2-1 | 5f | 残りの廃止（`build-fix`, `loop`, `multi-plan`, `multi-execute`, `second-opinion`）、リネーム（`open-browser`, `upgrade`）、エージェント廃止（`reviewer`, `adversarial`） | P1 | 廃止スキルのディレクトリが削除済み |
-| 2-2 | 7 | `/review` + `/ship` に Outside Voice 実装（`code-review` + `rubber-duck` + `/model`） | 2-1 | `/review` がモデル切替で独立レビューを実行 |
-| 2-3 | — | `/tdd`, `/investigate`, `/office-hours`, `/autoplan`, `/plan-*` を Copilot CLI 向けに適応 | P1 | 各スキルが単体で動作 |
-| 2-4 | — | `/qa`, `/qa-only`, `/cso`, `/benchmark` を適応 | P1 | `/qa` が browse なしで基本テストを実行 |
-| 2-5 | 17 | `/health` スキル新規作成 | 1-3 | `/health` が 0-10 スコアを出力 |
-| 2-6 | — | `/retro`, `/document-release`, `/canary`, `/land-and-deploy` を適応 | 2-1 | `/retro` が JSONL からコミット統計を集計 |
-| 2-7 | 15 | Copilot fallback 実装。built-in agent/MCP 不在時の代替経路 | 2-2 | fallback 経路が各スキルに組み込まれている |
-| 2-8 | 10b | 残りの `bin/` ユーティリティ（`gstack-review-log`, `gstack-learnings-log`, `gstack-timeline-log`, `gstack-analytics`, `gstack-uninstall`） | 1-5 | `/review`, `/learn` が bin を呼び出して JSONL 書き込み |
-
-**Phase 2 完了 = 35+ スキルが全て Copilot CLI で動作。browse 以外のスプリント全体が回る。**
-
-#### Phase 3: ブラウザ & 配布（Day 11-17）
-
-目的: **browse を本家互換で動かし、plugin で配布できる状態にする。**
-
-| 順 | タスク# | 内容 | 依存 | 完了条件 |
-|----|---------|------|------|---------|
-| 3-1 | 2 | browse Bun 移行。`browse/src/` TypeScript 化、`bun build --compile`、コマンド体系を本家互換に | P2 | `$B snapshot -i` が動く |
-| 3-2 | 11 | `$B` エイリアス + `bin/gstack-env` 実装 | 3-1 | `eval $(bin/gstack-env)` で `$B` が定義される |
-| 3-3 | — | `/browse`, `/open-gstack-browser`, `/setup-browser-cookies`, `/pair-agent` を適応 | 3-1 | `/browse` で snapshot → click → fill のフローが動く |
-| 3-4 | 1 | plugin パッケージング。`copilot-plugin.json` + CI 自動ビルド | 3-1 | `copilot plugin install` でインストール成功 |
-| 3-5 | 1b | setup スクリプト（フォールバック） | 3-1 | `./setup` → `./setup --uninstall` のラウンドトリップ |
-| 3-6 | 9 | `bin/upstream-diff.sh` + `bin/adapt-upstream-skill.sh` | P2 | 本家の新バージョン検出→draft 出力が動く |
-
-**Phase 3 完了 = `copilot plugin install` で全機能が入る。browse QA テストが動く。**
-
-#### Phase 4: 品質 & ドキュメント（Day 18-21）
-
-目的: **テスト・ドキュメントを揃えて v1.0 リリース可能な状態にする。**
-
-| 順 | タスク# | 内容 | 依存 | 完了条件 |
-|----|---------|------|------|---------|
-| 4-1 | 12 | E2E テスト。Tier 1（`bun test`）+ Tier 2（`copilot -p`）+ coexistence テスト | P3 | Tier 1 全 pass。Tier 2 でコアスキル 5+ が pass |
-| 4-2 | 13 | README、getting-started を Copilot CLI 前提に改訂。ARCHITECTURE.md 作成 | P3 | 新規ユーザーが README だけで install→`/office-hours` 実行可能 |
-| 4-3 | — | 全スキルの description に voice-friendly trigger を追加 | P2 | 「セキュリティチェック」で `/cso` が起動 |
-| 4-4 | — | `copilot-instructions.md` に proactive skill suggestion ロジック追加 | P2 | ブランチに diff がある状態で `/review` が提案される |
-| 4-5 | — | v1.0 リリース。VERSION 更新、タグ付け、plugin 公開 | 4-1, 4-2 | `copilot plugin install` で v1.0 が入る |
-
-### フェーズ間の依存グラフ
-
-```
-Phase 0: ブートストラップ
-  copilot-instructions.md ─→ ルートSKILL.md
-            │                      │
-            ├─→ /context-save      │
-            ├─→ /go ───→ /review ──→ /ship
-            └─→ /learn
-            ▼
-Phase 1: セッション継続基盤
-  hooks ──→ preamble hooks ──→ ~/.gstack/ ──→ JSONL互換
-    │                              │
-    └─→ bin/gstack-slug,config     └─→ upstream-tracking.md
-            ▼
-Phase 2: スプリント完全化
-  資産整理 ──→ Outside Voice ──→ 残りスキル全適応
-    │                              │
-    └─→ /health ──→ fallback ──→ 残りbin/
-            ▼
-Phase 3: ブラウザ & 配布
-  browse Bun ──→ $B alias ──→ browse スキル群
-    │                          │
-    └─→ plugin ──→ setup ──→ upstream ツール
-            ▼
-Phase 4: 品質 & ドキュメント
-  E2E テスト ──→ ドキュメント ──→ v1.0 リリース
-```
-
-### セルフホスト戦略
-
-| Phase | 使えるスキル | 開発スタイル |
-|-------|-------------|-------------|
-| Phase 0 実行中 | なし（手動で Copilot CLI に指示） | Copilot CLI 素の対話 |
-| Phase 1 実行中 | `/go`, `/review`, `/ship`, `/learn`, `/context-save` | **最低限のスプリントが回る** |
-| Phase 2 実行中 | + `/tdd`, `/investigate`, `/office-hours`, `/autoplan` | **計画→実装→テストの全体が回る** |
-| Phase 3 実行中 | + `/browse`, `/qa`, `/health` | **QA付きの完全スプリント** |
-| Phase 4 実行中 | 全スキル | **本番運用と同等** |
-
-Phase 0 だけは Copilot CLI の素の対話で進める。Phase 0 の完了条件（`/go` が回る）を達成した瞬間から、残りの全作業は gstack-copilot-jp 自身のスキルで駆動する。
-
-### Copilot CLI のフィーチャーフラグ活用
-
-| フラグ | 機能 | 活用方針 |
-|--------|------|---------|
-| `copilot-feature-agentic-memory` | セッション間永続メモリ | ✅ ON（デフォルト）。`/learn` と統合 |
-| `SESSION_STORE` | SQLiteベースのセッション履歴 | 安定化待ち。`/retro` と統合可能 |
-| `BACKGROUND_SESSIONS` | バックグラウンド並列セッション | 安定化待ち。`/multi-execute` と統合可能 |
-| `MULTI_TURN_AGENTS` | サブエージェントとの対話継続 | 安定化待ち。`/review` の専門家dispatch改善 |
-| `PERSISTED_PERMISSIONS` | セッション間のツール許可永続化 | 安定化待ち。セットアップ体験改善 |
-
-## 本家gstackとの構造的差異（v1.0 想定）
+## 本家gstackとの構造的差異
 
 | 側面 | gstack (本家) | gstack-copilot-jp v1.0 |
 |------|--------------|------------------------|
@@ -927,62 +784,6 @@ Phase 0 だけは Copilot CLI の素の対話で進める。Phase 0 の完了条
 - テレメトリ / アナリティクス — プライバシー優先
 - テンプレートビルドシステム — 手書きで十分
 - 有料化 — OSSとして公開
-
-## v1.0 での資産整理
-
-### 廃止するスキル
-
-| スキル | 理由 | 代替 |
-|--------|------|------|
-| `/build-fix` | 通常の対話で代替可能 | `copilot` で直接「ビルド直して」 |
-| `/clean` | `/review` に統合 | `/review` のスロップ検出パスとして組み込み |
-| `/loop` | Copilot CLI 機能で代替 | `/fleet` + `--autopilot` |
-| `/multi-plan` | Copilot CLI 機能で代替 | `/model` 切替 + `/fleet` |
-| `/multi-execute` | Copilot CLI 機能で代替 | `--autopilot` + `/fleet` |
-| `/second-opinion` | Copilot CLI ビルトインで代替 | `code-review` + `rubber-duck` エージェント |
-
-### リネームするスキル
-
-| 現在 | 変更後 | 理由 |
-|------|--------|------|
-| `/checkpoint` | `/context-save` + `/context-restore` | 本家 v1.1.3 に合わせて分割 |
-| `/open-browser` | `/open-gstack-browser` | 本家スキル名に統一 |
-| `/upgrade` | `/gstack-upgrade` | 本家スキル名に統一 |
-
-### 廃止するエージェント
-
-| エージェント | 理由 | 代替 |
-|-------------|------|------|
-| `reviewer.agent.md` | Copilot CLI ビルトイン `code-review` と重複 | ビルトイン利用 |
-| `adversarial.agent.md` | Copilot CLI ビルトイン `rubber-duck` と重複 | ビルトイン利用 |
-
-### `/clean` → `/review` 統合方針
-
-本家の `/review` は v0.16.3 で `slop:diff` を導入し、スロップ検出をレビューの一部として実行する。gstack-copilot-jp もこれに従い、`/clean` の内容を `/review` に統合する:
-
-- `/review` ステップ2（チェックリスト）にスロップ検出カテゴリを追加
-  - デバッグ残骸（`console.log`, `debugger`, コメントアウトされたコード）
-  - 型の怠慢（`any` 型、`type: ignore` 濫用）
-  - 未使用コード（インポート、変数、到達不能コード）
-  - AIスロップパターン（TODO放置、冗長コメント、繰り返しロジック）
-- Fix-First 原則は `/review` と共通（自動修正 vs 要確認の分類）
-- `/clean` スキルディレクトリは削除
-
-### 廃止する VS Code Chat 専用資産
-
-| 資産 | 理由 | 統合先 |
-|------|------|--------|
-| `.github/instructions/` (9ファイル) | Copilot CLI に自動ロード機構なし | `copilot-instructions.md` + 各スキル |
-| `.github/rules/` (8ファイル) | 同上 | `copilot-instructions.md` |
-| `.github/prompts/` (2ファイル) | `setup` + `sessionStart` hook で代替 | 削除 |
-
-### 維持する独自スキル
-
-| スキル | 理由 |
-|--------|------|
-| `/tdd` | TDDプロセス自体を強制する独自価値。将来的に本家に実装されたら統合 |
-| `/go` | autoplan→tdd→review→ship→retro の一気通貫オーケストレーション。本家にない独自価値 |
-| `/health` | 本家 v1.1.x で追加されたコード品質ダッシュボード。`/qa` と補完関係にある独立スキル |
 
 ## 設計原則
 

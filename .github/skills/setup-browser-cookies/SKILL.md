@@ -88,8 +88,26 @@ $B is visible ".user-menu"
 headed モード（`$B connect` 済み）では、ユーザーが直接ブラウザでログインできるため、Cookie インポートは不要。
 
 ```bash
-$B status                        # Mode: headed なら不要
+$B status
+# → Mode: headed なら Cookie インポートをスキップ
+# 「headed モードです。ブラウザで直接ログインしてください。」
 ```
+
+## Cookie 確認コマンド
+
+インポート後、Cookie が正しく設定されたか検証:
+
+```bash
+$B cookies example.com
+# → session_id=abc123 (HttpOnly, Secure, SameSite=Lax)
+```
+
+## SameSite / HttpOnly の注意点
+
+- **HttpOnly Cookie**: `document.cookie` ではアクセス不可。方法2（JSON import）か方法1（headed ログイン）を使う
+- **SameSite=Strict**: クロスオリジンのナビゲーションで送信されない。テスト時は直接URLに移動する
+- **SameSite=None**: `Secure: true` が必須。HTTPS でなければ設定されない
+- **有効期限**: Session Cookie はブラウザ再起動で消える。永続 Cookie の `expires` を確認
 
 ## トラブルシューティング
 
