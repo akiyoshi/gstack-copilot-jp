@@ -1,0 +1,213 @@
+{
+  "upstream_version": "v1.4.0.0",
+  "upstream_repo": "garrytan/gstack",
+  "snapshot_path": "test/fixtures/upstream/v1.4.0.0",
+  "audited_at": "2026-04-20",
+  "local_version": "1.0.0-alpha.5",
+  "skills": {
+    "office-hours": {
+      "upstream": "office-hours/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "plan-ceo-review": {
+      "upstream": "plan-ceo-review/SKILL.md",
+      "status": "unaudited",
+      "reason": "mode-posture energy fix (v1.1.2.0) 反映済み"
+    },
+    "plan-eng-review": {
+      "upstream": "plan-eng-review/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "plan-design-review": {
+      "upstream": "plan-design-review/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "plan-devex-review": {
+      "upstream": "plan-devex-review/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "autoplan": {
+      "upstream": "autoplan/SKILL.md",
+      "status": "precision-gap",
+      "reason": "判断監査証跡フォーマット欠落、最終ゲート分離なし、再実行時差分表示なし",
+      "exclusions": ["preamble", "codex", "telemetry", "codex-filesystem"]
+    },
+    "review": {
+      "upstream": "review/SKILL.md",
+      "status": "precision-gap",
+      "reason": "specialist チェックリスト欠落（code-review, architecture, security）、スコープドリフト検出手順なし",
+      "exclusions": ["preamble", "codex", "telemetry", "greptile", "eval-suite"]
+    },
+    "ship": {
+      "upstream": "ship/SKILL.md",
+      "status": "precision-gap",
+      "reason": "テスト失敗トリアージ（ブランチ起因 vs 既存）なし、プラン完了監査なし、bisectable粒度ルール簡略",
+      "exclusions": ["preamble", "codex", "telemetry", "greptile", "eval-suite", "todos-md", "distribution"]
+    },
+    "investigate": {
+      "upstream": "investigate/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "design-html": {
+      "upstream": "design-html/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "design-consultation": {
+      "upstream": "design-consultation/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "design-shotgun": {
+      "upstream": "design-shotgun/SKILL.md",
+      "status": "unaudited",
+      "reason": "$D バイナリなし。テキストベース"
+    },
+    "design-review": {
+      "upstream": "design-review/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "devex-review": {
+      "upstream": "devex-review/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "qa": {
+      "upstream": "qa/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "qa-only": {
+      "upstream": "qa-only/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "cso": {
+      "upstream": "cso/SKILL.md",
+      "status": "precision-gap",
+      "reason": "14フェーズのヘッダーのみ。具体的チェック項目・エクスプロイトシナリオ・指摘テンプレート欠落",
+      "exclusions": ["preamble", "codex", "telemetry"]
+    },
+    "benchmark": {
+      "upstream": "benchmark/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "benchmark-models": {
+      "upstream": "benchmark-models/SKILL.md",
+      "status": "unaudited",
+      "reason": "Copilot CLI マルチモデル環境向けに適応"
+    },
+    "health": {
+      "upstream": "health/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "browse": {
+      "upstream": "browse/SKILL.md",
+      "status": "unaudited",
+      "reason": "Bun コンパイル + Playwright。Puppeteer parity は次スプリント"
+    },
+    "open-gstack-browser": {
+      "upstream": "open-gstack-browser/SKILL.md",
+      "status": "unaudited",
+      "reason": "旧 /open-browser からリネーム"
+    },
+    "pair-agent": {
+      "upstream": "pair-agent/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "setup-browser-cookies": {
+      "upstream": "setup-browser-cookies/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "setup-deploy": {
+      "upstream": "setup-deploy/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "careful": {
+      "upstream": "careful/SKILL.md",
+      "status": "unaudited",
+      "reason": "preToolUse hook で実装"
+    },
+    "freeze": {
+      "upstream": "freeze/SKILL.md",
+      "status": "unaudited",
+      "reason": "preToolUse hook で実装"
+    },
+    "guard": {
+      "upstream": "guard/SKILL.md",
+      "status": "unaudited",
+      "reason": "careful + freeze 統合"
+    },
+    "unfreeze": {
+      "upstream": "unfreeze/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "context-save": {
+      "upstream": "context-save/SKILL.md",
+      "status": "unaudited",
+      "reason": "旧 /checkpoint save"
+    },
+    "context-restore": {
+      "upstream": "context-restore/SKILL.md",
+      "status": "unaudited",
+      "reason": "旧 /checkpoint resume"
+    },
+    "gstack-upgrade": {
+      "upstream": "gstack-upgrade/SKILL.md",
+      "status": "unaudited",
+      "reason": "plugin update で実現"
+    },
+    "learn": {
+      "upstream": "learn/SKILL.md",
+      "status": "unaudited",
+      "reason": "JSONL + Copilot memory デュアル書き込み"
+    },
+    "retro": {
+      "upstream": "retro/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "document-release": {
+      "upstream": "document-release/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "canary": {
+      "upstream": "canary/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "land-and-deploy": {
+      "upstream": "land-and-deploy/SKILL.md",
+      "status": "unaudited",
+      "reason": ""
+    },
+    "tdd": {
+      "upstream": null,
+      "status": "diverged",
+      "reason": "本家に対応なし。独自実装"
+    },
+    "sprint": {
+      "upstream": null,
+      "status": "diverged",
+      "reason": "本家に対応なし。独自スプリントオーケストレーター"
+    },
+    "status": {
+      "upstream": null,
+      "status": "diverged",
+      "reason": "本家に対応なし。gstack-copilot-jp 状態確認"
+    }
+  }
+}
