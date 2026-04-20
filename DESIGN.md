@@ -634,7 +634,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 | 作る | `/tdd` | 独自（維持。本家に実装されたら統合） |
 | | `/design-html` | 同一 |
 | | `/investigate` | 同一 |
-| | `/go` | 独自（維持。スプリントオーケストレーター） |
+| | `/sprint` | 独自（維持。スプリントオーケストレーター） |
 | レビュー | `/review` | 適応（`code-review` + `/model` 切替 + fallback） |
 | | `/design-review` | 同一 |
 | | `/devex-review` | 同一 |

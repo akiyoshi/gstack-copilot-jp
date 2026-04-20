@@ -18,9 +18,9 @@ describe('getting-started.md 品質', () => {
     expect(parseInt(match[1])).toBe(skillCount);
   });
 
-  it('/go の記載がある', () => {
+  it('/sprint の記載がある', () => {
     const content = readFileSync(gsPath, 'utf-8');
-    expect(content).toContain('/go');
+    expect(content).toContain('/sprint');
   });
 });
 
