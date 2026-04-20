@@ -70,6 +70,24 @@ Outside Voice が P0 以上の問題を検出した場合、自動修正を試�
 
 メジャー/マイナーバンプが必要な場合はユーザーに確認。
 
+#### VERSION/package.json ドリフト検出
+
+`VERSION` と `package.json` の両方が存在する場合、バージョンの一致を検証:
+
+```bash
+# VERSION と package.json のバージョンを比較
+VERSION_FILE=$(cat VERSION 2>/dev/null | tr -d '[:space:]')
+PKG_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
+if [ -n "$VERSION_FILE" ] && [ -n "$PKG_VERSION" ] && [ "$VERSION_FILE" != "$PKG_VERSION" ]; then
+  echo "DRIFT: VERSION=$VERSION_FILE package.json=$PKG_VERSION"
+fi
+```
+
+ドリフトを検出した場合:
+- `VERSION` を正として `package.json` の `version` フィールドを同期
+- 他に `version` フィールドを持つファイル（`copilot-plugin.json` 等）も同期
+- 修正内容を報告してから続行
+
 ### 5. コミットメッセージ生成
 
 Conventional Commits 形式で変更内容をまとめる。CHANGELOG は不要（git log で十分）。
