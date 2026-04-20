@@ -32,20 +32,20 @@
     },
     "autoplan": {
       "upstream": "autoplan/SKILL.md",
-      "status": "precision-gap",
-      "reason": "判断監査証跡フォーマット欠落、最終ゲート分離なし、再実行時差分表示なし",
+      "status": "adapted",
+      "reason": "再実行仕様追加。判断監査証跡あり。Copilot CLI向けに適応（preamble/codex/telemetry除外）",
       "exclusions": ["preamble", "codex", "telemetry", "codex-filesystem"]
     },
     "review": {
       "upstream": "review/SKILL.md",
-      "status": "precision-gap",
-      "reason": "specialist チェックリスト欠落（code-review, architecture, security）、スコープドリフト検出手順なし",
+      "status": "adapted",
+      "reason": "architectureチェックリスト追加。Outside Voice + slop検出 + doc staleness check。Copilot CLI向けに適応",
       "exclusions": ["preamble", "codex", "telemetry", "greptile", "eval-suite"]
     },
     "ship": {
       "upstream": "ship/SKILL.md",
-      "status": "precision-gap",
-      "reason": "テスト失敗トリアージ（ブランチ起因 vs 既存）なし、プラン完了監査なし、bisectable粒度ルール簡略",
+      "status": "adapted",
+      "reason": "プラン完了監査追加。Outside Voice + テスト失敗トリアージ + VERSION/package.jsonドリフト検出。Copilot CLI向けに適応",
       "exclusions": ["preamble", "codex", "telemetry", "greptile", "eval-suite", "todos-md", "distribution"]
     },
     "investigate": {
@@ -90,8 +90,8 @@
     },
     "cso": {
       "upstream": "cso/SKILL.md",
-      "status": "precision-gap",
-      "reason": "14フェーズのヘッダーのみ。具体的チェック項目・エクスプロイトシナリオ・指摘テンプレート欠落",
+      "status": "adapted",
+      "reason": "全14フェーズ展開済み。各フェーズに具体的チェック項目あり。Copilot CLI向けに適応（preamble/codex/telemetry除外）",
       "exclusions": ["preamble", "codex", "telemetry"]
     },
     "benchmark": {

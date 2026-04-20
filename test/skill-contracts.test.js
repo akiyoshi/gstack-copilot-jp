@@ -13,15 +13,24 @@ const SKILLS_DIR = join(ROOT, '.github', 'skills');
 
 /**
  * Markdown を見出しレベルでセクション分割する。
+ * コードブロック内の行は見出しとして扱わない。
  * 返り値: { heading: string, level: number, content: string, lineCount: number, listItems: number }[]
  */
 function parseSections(md) {
   const lines = md.split('\n');
   const sections = [];
   let current = null;
+  let inCodeBlock = false;
 
   for (const line of lines) {
-    const match = line.match(/^(#{1,6})\s+(.+)/);
+    // コードフェンスの開始/終了を追跡
+    if (line.trimStart().startsWith('```')) {
+      inCodeBlock = !inCodeBlock;
+      if (current) current.lines.push(line);
+      continue;
+    }
+
+    const match = !inCodeBlock && line.match(/^(#{1,6})\s+(.+)/);
     if (match) {
       if (current) {
         current.lineCount = current.lines.length;
