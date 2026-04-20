@@ -1,6 +1,6 @@
 {
   "name": "gstack-copilot-jp",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "description": "日本語のGitHub Copilotユーザーのための、AIソフトウェアファクトリー",
   "author": "akiyoshi",
   "license": "MIT",
