@@ -1,58 +1,59 @@
 # gstack-copilot-jp
 
-日本人のGitHub Copilotユーザーのための、AIソフトウェアファクトリー。
+日本語の GitHub Copilot ユーザーのための、AIソフトウェアファクトリー。
 
-[gstack](https://github.com/garrytan/gstack)（Garry Tan作）の思想とプロセスを、**日本語のGitHub Copilot向けスキル・エージェント**として一から再実装。
+[gstack](https://github.com/garrytan/gstack)（Garry Tan作）の思想とプロセスを、**GitHub Copilot CLI + 日本語**で使う最速の方法。
 
 ## 前提条件
 
-- Visual Studio Code v1.116 以降
-- GitHub Copilot 拡張（Chat対応）
+- GitHub Copilot CLI (`copilot` コマンド)
+- Bun v1.0+
+- Git
+- Linux / macOS / WSL (Ubuntu)
 
 ## クイックスタート
 
-### 1. クローン
+### 1. インストール
 
 ```bash
-git clone https://github.com/[your-username]/gstack-copilot-jp.git
+# 推奨: プラグインインストール
+copilot plugin install github:akiyoshi/gstack-copilot-jp
 ```
 
-### 2. ワークスペースに追加
-
-VS Code で `ファイル` → `ワークスペースにフォルダーを追加...` → クローンした `gstack-copilot-jp` フォルダを選択。
-
-これだけ。スキル・エージェント・ルールが自動認識される。
-
-> **なぜ動くのか**: VS Code v1.116+ では、ワークスペース内の `.github/skills/`、`.github/agents/`、`.github/instructions/`、`.github/prompts/` を Copilot が自動で読み込む。セットアップスクリプト不要、管理者権限不要、シンボリックリンク不要。
-
-### 3. 更新
+**フォールバック（開発者向け）:**
 
 ```bash
-cd gstack-copilot-jp && git pull
+git clone https://github.com/akiyoshi/gstack-copilot-jp.git
+cd gstack-copilot-jp && ./setup
 ```
 
-### 4. 使い始める
+### 2. 使い始める
 
 > **初めての方は [docs/getting-started.md](docs/getting-started.md) へ。** 最初に試すべき3つのスキルとトラブルシューティングをまとめている。
 
-VS Code Copilot Chat で `/` を入力 → スキル一覧が表示される。
+Copilot CLI でスキルを呼び出す:
 
 ```
 あなた: /office-hours
         カレンダーのブリーフィングアプリを作りたい
 
-Copilot: [痛みを聞く — 具体的なエピソードを引き出す]
-         [前提を挑戦する — 「ブリーフィングアプリ」ではなく「参謀AI」では？]
-         [3つの実装アプローチを工数見積もり付きで提示]
+Copilot: [痛みを聞く → 前提を挑戦 → 3つのアプローチを工数付きで提示]
 
-あなた: /plan-ceo-review
-Copilot: [デザインドキュメントを読み、10セクションのCEOレビューを実行]
+あなた: /go
+Copilot: [計画→実装→レビュー→出荷→振り返りを自動連鎖実行]
 
 あなた: /review
 Copilot: [diff分析 → 専門家サブエージェント並列dispatch → 自動修正 → レポート]
+```
 
-あなた: /ship
-Copilot: [テスト → レビュー → VERSION更新 → CHANGELOG → PR作成]
+### 3. 更新
+
+```bash
+# プラグイン
+copilot plugin update gstack-copilot-jp
+
+# git clone の場合
+cd gstack-copilot-jp && git pull
 ```
 
 ## スプリントプロセス
@@ -168,37 +169,43 @@ Copilot: $B goto https://staging.myapp.com
     testing.md          # pytest、フィクスチャ
 ```
 
-詳細は [rules/README.md](.github/rules/README.md) を参照。
+詳細は `copilot-instructions.md` を参照。
 
 ## サブエージェント
 
 `/review` 等のスキルは、専門家サブエージェントに処理を委譲する：
 
-| エージェント | ツール | 役割 |
-|------------|--------|------|
-| `reviewer` | read, search, edit | コードレビュー・修正 |
-| `adversarial` | read, search | 敵対的レビュー（read-only） |
-| `security` | read, search, execute | セキュリティ監査 |
-| `testing` | read, search, execute | テスト戦略・実装 |
-| `design-critic` | read, search | デザイン批評（read-only） |
-| `dx-tester` | read, search, execute, web | DX実地テスト |
-| `architect` | read, search | アーキテクチャレビュー（read-only） |
+| エージェント | 役割 |
+|------------|------|
+| `architect` | アーキテクチャレビュー |
+| `security` | セキュリティ監査 |
+| `testing` | テスト戦略・実装 |
+| `design-critic` | デザイン批評 |
+| `dx-tester` | DX実地テスト |
+
+Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェントも Outside Voice として使用する。
 
 ## gstackとの違い
 
 | 観点 | gstack | gstack-copilot-jp |
 |------|--------|------------------|
-| ターゲット | Claude Code | GitHub Copilot (VS Code) |
+| ターゲット | Claude Code | GitHub Copilot CLI |
 | 言語 | 英語 | 日本語 |
-| インストール | シンボリックリンク + スクリプト | ワークスペースにフォルダ追加のみ |
-| ブラウザ | Bun コンパイル済みバイナリ (~58MB) | Node.js + Playwright（コンパイル不要） |
-| ホスト | 8エージェント対応 | Copilot単一 |
-| セカンドオピニオン | Codex CLI依存 | model fallbackで汎用化 |
-| テンプレート | .tmpl + gen-skill-docs | 直接SKILL.md |
+| インストール | `./setup` + シンボリックリンク | `copilot plugin install` or `./setup` |
+| ブラウザ | Bun コンパイル済みバイナリ | Bun コンパイル済み（本家互換） |
+| ホスト | 10エージェント対応 | Copilot CLI 専用 |
+| 外部の目 | Codex CLI | `code-review` + `rubber-duck` + fallback |
+| テンプレート | .tmpl + gen-skill-docs | 直接 SKILL.md |
 
 ## アンインストール
 
-VS Codeのワークスペースから `gstack-copilot-jp` フォルダを削除するだけ。
+```bash
+# プラグイン
+copilot plugin uninstall gstack-copilot-jp
+
+# git clone の場合
+cd gstack-copilot-jp && ./setup --uninstall
+```
 
 ## ライセンス
 
