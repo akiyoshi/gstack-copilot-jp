@@ -16,7 +16,7 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | デザインレビュー、UI/UX | `/plan-design-review` |
 | 開発者体験、オンボーディング、API設計 | `/plan-devex-review` |
 | 全レビューを一括で | `/autoplan` |
-| 実装して、作って、あとはやっておいて | `/go` |
+| 実装して、作って、あとはやっておいて | `/sprint` |
 | デザイン相談、ブランド構築 | `/design-consultation` |
 | デザイン案を複数見たい | `/design-shotgun` |
 | デザインをHTMLに変換 | `/design-html` |
@@ -164,14 +164,14 @@ gstack-copilot-jp はプロセスだ。ツール集ではない。
 
 各スキルは前のスキルの成果物を読み、次のスキルが使える成果物を残す。
 
-`/go` はこのプロセスの「実行エンジン」。変更種別（docs/config/refactor/bugfix/new/high-risk）とリスクに応じて実装モード（tdd/investigate-first/direct-edit）、品質モード（review-lite/full-review/security-review）、リリースモード（ship/no-ship）を自動選択する。
+`/sprint` はこのプロセスの「実行エンジン」。変更種別（docs/config/refactor/bugfix/new/high-risk）とリスクに応じて実装モード（tdd/investigate-first/direct-edit）、品質モード（review-lite/full-review/security-review）、リリースモード（ship/no-ship）を自動選択する。
 
 ## プロアクティブスキル提案
 
 ブランチの状態から次のアクションを提案する:
 
 - **diff がある + テスト未実行** → 「`/review` でレビューしますか？」
-- **DESIGN.md が存在 + 実装なし** → 「`/go` で実装を始めますか？」
+- **DESIGN.md が存在 + 実装なし** → 「`/sprint` で実装を始めますか？」
 - **PR 作成済み + マージ待ち** → 「`/land-and-deploy` でマージしますか？」
 - **セッション開始時 + 前回の作業あり** → 「`/context-restore` で復帰しますか？」
 

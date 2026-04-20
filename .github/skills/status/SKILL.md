@@ -40,7 +40,7 @@ cat VERSION 2>/dev/null || echo "VERSION ファイルなし"
 ├──────────────────────────────────────┤
 │ 考える:   /office-hours              │
 │ 計画する: /autoplan, /plan-*-review  │
-│ 作る:     /go, /tdd, /investigate    │
+│ 作る:     /sprint, /tdd, /investigate │
 │ レビュー: /review, /design-review    │
 │ テスト:   /qa, /cso, /benchmark      │
 │           /health                    │

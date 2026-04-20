@@ -64,7 +64,7 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `/land-and-deploy` | ✓ | ✓ | same | — | |
 | `/make-pdf` | ✓ | — | planned | — | browse $B pdf 対応後に実装（次スプリント） |
 | `/tdd` | — | ✓ | diverged | 独自 | 本家に実装されたら統合 |
-| `/go` | — | ✓ | diverged | 独自 | スプリントオーケストレーター |
+| `/sprint` | — | ✓ | diverged | 独自 | スプリントオーケストレーター |
 | `/status` | — | ✓ | diverged | 独自 | gstack-copilot-jp 状態確認 |
 | `/codex` | ✓ | — | adapted | — | `/model` 切替 + `task` で再現 |
 | `/plan-tune` | ✓ | — | compatible | — | `store_memory` で簡易実装予定 |
