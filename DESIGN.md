@@ -682,7 +682,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 | bin/ | 18 | gstack-slug, gstack-config, gstack-env, gstack-diff-scope 等の本家互換ユーティリティ |
 | ブラウザ | 1 | Bun コンパイル + Playwright（本家互換） |
 | hookシステム | 4 | sessionStart, sessionEnd, preToolUse, postToolUse |
-| テスト | 4 | Vitest（Tier 1 静的検証）。JSONL スキーマ、構造、完全性、browse品質ゲート |
+| テスト | 8 | Vitest（Tier 1 静的検証）。test/ 3ファイル + browse/test/ 5ファイル（407テスト） |
 | 本家追跡 | v1.4.0.0 | `upstream-tracking.md` で互換性台帳を管理 |
 
 ## v1.0 仕様: Copilot CLI 専用 + 追随モデル

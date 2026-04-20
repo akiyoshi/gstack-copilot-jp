@@ -6,14 +6,14 @@ gstack-copilot-jp のヘッドレスブラウザの技術仕様。
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  GitHub Copilot (VS Code)                                       │
+│  GitHub Copilot CLI                                             │
 │                                                                 │
 │  "browse goto https://staging.myapp.com"                        │
 │       │                                                         │
 │       ▼                                                         │
 │  ┌──────────┐    HTTP POST     ┌──────────────┐                 │
-│  │ CLI      │ ──────────────── │ Node.js      │                 │
-│  │ cli.js   │  localhost:rand  │ HTTP server  │                 │
+│  │ CLI      │ ──────────────── │ Bun          │                 │
+│  │ cli.ts   │  localhost:rand  │ HTTP server  │                 │
 │  │          │  Bearer token    │              │                 │
 │  │ ~1ms     │ ◄──────────────  │  Playwright  │──── Chromium    │
 │  │ startup  │  plain text      │  API calls   │    (headless)   │
@@ -45,10 +45,10 @@ gstack-copilot-jp のヘッドレスブラウザの技術仕様。
 browse/
 ├── package.json              # playwright 依存
 ├── src/
-│   ├── cli.js                # シンクライアント — 状態ファイル読み取り、HTTP送信
-│   ├── server.js             # Node.js HTTP サーバー — コマンドルーティング
-│   ├── browser-manager.js    # Chromium ライフサイクル、タブ管理、@ref マップ
-│   └── commands.js           # 全コマンドハンドラ（50+コマンド）
+│   ├── cli.ts                # シンクライアント — 状態ファイル読み取り、HTTP送信
+│   ├── server.ts             # Bun HTTP サーバー — コマンドルーティング
+│   ├── browser-manager.ts    # Chromium ライフサイクル、タブ管理、@ref マップ
+│   └── commands.ts           # 全コマンドハンドラ（50+コマンド）
 └── bin/
     ├── browse.ps1            # Windows ラッパー
     └── browse.sh             # Unix ラッパー
@@ -208,27 +208,28 @@ CLI はプレーンテキスト → stdout。プロトコルフレーミング�
 ## 開発
 
 ### 前提条件
-- Node.js 18+
-- Playwright の Chromium（`npx playwright install chromium`）
+- Bun v1.0+
+- Playwright の Chromium（`bunx playwright install chromium`）
 
 ### クイックスタート
 
 ```bash
 cd browse
-npm install                      # 依存インストール
-npx playwright install chromium  # Chromium ダウンロード
-node src/cli.js goto https://example.com  # テスト
-node src/cli.js text             # ページテキスト取得
-node src/cli.js stop             # サーバー停止
+bun install                      # 依存インストール
+bunx playwright install chromium # Chromium ダウンロード
+bun run build                    # コンパイル（browse/dist/browse を生成）
+./dist/browse goto https://example.com  # テスト
+./dist/browse text               # ページテキスト取得
+./dist/browse stop               # サーバー停止
 ```
 
 ## gstack (オリジナル) との違い
 
 | 観点 | gstack | gstack-copilot-jp |
 |------|--------|------------------|
-| ランタイム | Bun + コンパイル済みバイナリ | Node.js（コンパイル不要） |
+| ランタイム | Bun + コンパイル済みバイナリ | Bun + コンパイル済みバイナリ（同一） |
 | サイドバー | Chrome拡張 + Side Panel | なし |
 | 反ボットステルス | カスタムパッチ | 基本的なUA設定のみ |
 | Cookie復号 | macOS Keychain / Linux libsecret | JSON ファイルまたは headed ログイン |
 | pair-agent | 専用トークン + ngrok | 状態ファイル共有 |
-| バイナリサイズ | ~58MB (Bun --compile) | 0（ソースから直接実行） |
+| バイナリサイズ | ~58MB (Bun --compile) | ~58MB (Bun --compile)（同一） |

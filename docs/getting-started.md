@@ -16,22 +16,26 @@ gstack-copilot-jp には40のスキルがある。全部を覚える必要はな
 
 ### 前提条件
 
-- Visual Studio Code **v1.116 以降**
-- GitHub Copilot 拡張（Chat対応）
+- GitHub Copilot CLI（`copilot` コマンド）
+- Bun v1.0+
+- Git
 
 ### 手順
 
 ```bash
-git clone https://github.com/[your-username]/gstack-copilot-jp.git
+# 推奨: プラグインインストール
+copilot plugin install github:akiyoshi/gstack-copilot-jp
+
+# または手動
+git clone https://github.com/akiyoshi/gstack-copilot-jp.git
+cd gstack-copilot-jp && ./setup
 ```
 
-VS Code → `ファイル` → `ワークスペースにフォルダーを追加...` → `gstack-copilot-jp` を選択。
-
-終わり。Copilot Chat で `/` を入力するとスキル一覧が出る。
+終わり。プロジェクトディレクトリで `copilot` を起動し、スキルを呼び出す。
 
 ## 最初の体験: `/office-hours`
 
-自分のプロジェクトフォルダで Copilot Chat を開き:
+自分のプロジェクトフォルダで Copilot CLI を開き:
 
 ```
 /office-hours
@@ -60,15 +64,16 @@ Copilotが6つの問いかけで「TODOアプリ」を磨く。終わると `DES
 
 ## よくある問題
 
-### スキルが表示されない
+### スキルが認識されない
 
-VS Code のバージョンを確認:
+Copilot CLI のバージョンとプラグインを確認:
 
+```bash
+copilot --version
+copilot plugin list
 ```
-ヘルプ → バージョン情報 → v1.116 以上か？
-```
 
-v1.116未満の場合、VS Codeを更新する。
+プラグインが表示されない場合、再インストール: `copilot plugin install github:akiyoshi/gstack-copilot-jp`
 
 ### `/browse` でChromiumが起動しない
 

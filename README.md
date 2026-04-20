@@ -72,9 +72,6 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | | `/autoplan` | オーケストレーター — 全レビュー一括実行 |
 | 作る | `/tdd` | TDDコーチ — RED→GREEN→REFACTOR サイクル |
 | | `/design-html` | デザインエンジニア — 本番品質HTML変換 |
-| | `/build-fix` | ビルドエンジニア — エラー自動修復 |
-| | `/clean` | コード清掃 — AI生成コードのスロップ除去 |
-| | `/loop` | タスクランナー — プラン自動ループ実行 |
 | | `/investigate` | デバッガー — Iron Law: 調査なし修正禁止 |
 | レビューする | `/review` | スタッフエンジニア — 専門家サブエージェント |
 | | `/design-review` | デザイナー兼エンジニア — UI実装修正 |
@@ -96,13 +93,11 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 
 | カテゴリ | スキル | 用途 |
 |---------|--------|------|
-| マルチモデル | `/multi-plan` | 複数モデルで並列設計分析→統合プラン |
-| | `/multi-execute` | プランに基づく自動実行 |
-| | `/second-opinion` | クロスモデル信頼度マトリクス |
+| マルチモデル | `/benchmark-models` | 複数モデルで同一プロンプト実行・比較 |
 | デザイン探索 | `/design-consultation` | デザインシステム構築 |
 | | `/design-shotgun` | 4-6個のデザイン案生成・比較 |
 | ブラウザ | `/browse` | ヘッドレスChromium QAテスト |
-| | `/open-browser` | 可視ブラウザ起動 |
+| | `/open-gstack-browser` | 可視ブラウザ起動 |
 | | `/setup-browser-cookies` | Cookie インポート |
 | | `/pair-agent` | マルチエージェント ブラウザ共有 |
 | 安全 | `/careful` | 破壊的コマンド警告 |
@@ -110,7 +105,7 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | | `/guard` | careful + freeze 統合 |
 | | `/unfreeze` | ロック解除 |
 | その他 | `/setup-deploy` | デプロイ環境設定 |
-| | `/upgrade` | 自己アップデート |
+| | `/gstack-upgrade` | 自己アップデート |
 
 ## ブラウザ
 
