@@ -706,7 +706,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
-| スキル | 39 | Phase 2 で 7 廃止、1 新規（health）。38 + health = 39 |
+| スキル | 40 | Phase 2 で 7 廃止、1 新規（health）、1 新規（benchmark-models）。38 + health + benchmark-models = 40 |
 | エージェント | 5 | architect, design-critic, dx-tester, security, testing |
 | ブラウザ | 1 | Bun コンパイル + Playwright（本家互換） |
 | hookシステム | 4 | sessionStart, sessionEnd, preToolUse, postToolUse |
