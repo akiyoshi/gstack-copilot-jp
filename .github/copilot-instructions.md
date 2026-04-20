@@ -164,6 +164,8 @@ gstack-copilot-jp はプロセスだ。ツール集ではない。
 
 各スキルは前のスキルの成果物を読み、次のスキルが使える成果物を残す。
 
+`/go` はこのプロセスの「実行エンジン」。変更種別（docs/config/refactor/bugfix/new/high-risk）とリスクに応じて実装モード（tdd/investigate-first/direct-edit）、品質モード（review-lite/full-review/security-review）、リリースモード（ship/no-ship）を自動選択する。
+
 ## プロアクティブスキル提案
 
 ブランチの状態から次のアクションを提案する:
