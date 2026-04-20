@@ -7,8 +7,21 @@ description: "編集ロック解除。/freeze と /guard による制限を解�
 
 `/freeze` または `/guard` による編集制限を解除する。
 
-確認メッセージ:
+## 解除処理
+
+1. `GSTACK_FREEZE_PATH` セッション変数をクリア
+2. `GSTACK_CAREFUL` セッション変数をクリア（`/guard` 経由の場合）
+
+## 確認メッセージ
+
 ```
-編集ロックを解除しました。全ファイルが編集可能です。
-/careful モードも解除しますか？ (Y/n)
+🔓 UNFREEZE 完了
+  解除された制限: src/auth/（freeze 範囲）
+  /careful モードも解除しますか？ (Y/n)
+```
+
+freeze のみの場合:
+```
+🔓 UNFREEZE 完了
+  編集ロックを解除しました。全ファイルが編集可能です。
 ```

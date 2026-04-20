@@ -19,16 +19,24 @@ description: "安全ガードレール。破壊的コマンドの実行前に警
 
 以下のパターンを含むコマンドの実行前に警告する：
 
-| パターン | リスク |
-|---------|--------|
-| `rm -rf` | ファイル/ディレクトリの完全削除 |
-| `DROP TABLE`, `DROP DATABASE` | データベースの完全削除 |
-| `git push --force`, `git push -f` | リモート履歴の上書き |
-| `git reset --hard` | ローカル変更の完全破棄 |
-| `truncate`, `DELETE FROM ... WHERE 1` | データの一括削除 |
-| `chmod -R 777` | セキュリティの無効化 |
-| `> /dev/null`, `> file` (上書き) | データの上書き |
-| `kill -9` | プロセスの強制終了 |
+| パターン | 例 | リスク |
+|---------|-----|--------|
+| `rm -rf` | `rm -rf /var/data` | ファイル/ディレクトリの完全削除 |
+| `DROP TABLE`, `DROP DATABASE` | `DROP TABLE users;` | データベースの完全削除 |
+| `git push --force`, `git push -f` | `git push -f origin main` | リモート履歴の上書き |
+| `git reset --hard` | `git reset --hard HEAD~3` | ローカル変更の完全破棄 |
+| `git clean -fd` | `git clean -fdx` | 未追跡ファイルの削除 |
+| `truncate`, `DELETE FROM ... WHERE 1` | `DELETE FROM orders;` | データの一括削除 |
+| `chmod -R 777` | `chmod -R 777 /app` | セキュリティの無効化 |
+| `> file` (上書き) | `> config.yml` | データの上書き |
+| `kill -9` | `kill -9 1234` | プロセスの強制終了 |
+| `docker system prune` | `docker system prune -a` | コンテナ/イメージの一括削除 |
+
+### 安全な例外
+
+以下のディレクトリへの `rm -rf` は警告しない（ビルド成果物・キャッシュ）:
+
+`node_modules`, `.next`, `dist`, `__pycache__`, `.cache`, `build`, `.turbo`, `coverage`
 
 ## 警告フォーマット
 
@@ -51,6 +59,14 @@ C) キャンセル
 
 有効化: スキル呼び出し時に `GSTACK_CAREFUL=1` を設定する。
 無効化: ユーザーが「careful解除」「careful off」と言ったら `GSTACK_CAREFUL=0` に戻す。
+
+## どう動くか
+
+1. ユーザーが `/careful` を呼ぶ → `GSTACK_CAREFUL=1` をセッション変数に設定
+2. bash ツール呼び出しのたびに、コマンド文字列を上記パターンと照合
+3. マッチした場合 → 警告フォーマットを表示し、ユーザーの確認を待つ
+4. 安全な例外リストに含まれるパスは警告をスキップ
+5. `careful off` で `GSTACK_CAREFUL=0` に戻す
 
 ## 重要ルール
 

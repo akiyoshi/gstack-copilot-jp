@@ -11,7 +11,19 @@ argument-hint: "編集を許可するディレクトリまたはファイルパ�
 - デバッグ中に関係ないファイルを触りたくない
 - 特定のディレクトリだけに変更を限定したい
 
-## 使い方
+## セットアップ
+
+ユーザーにディレクトリを聞く:
+```
+どのディレクトリに編集を限定しますか？
+→ (例: src/auth/ または src/auth/ src/db/)
+```
+
+### パス解決
+
+- 相対パスは `$(pwd)` を基準に**絶対パス**に変換する
+- 末尾 `/` は自動付与（`src/auth` → `src/auth/`）
+- ファイル単体の指定も可（`src/auth/login.ts`）
 
 ```
 /freeze src/auth/
@@ -21,18 +33,23 @@ argument-hint: "編集を許可するディレクトリまたはファイルパ�
 → 複数ディレクトリを指定可。
 ```
 
-## 動作
+## どう動くか
 
-- 指定されたパス以外のファイル編集を試みた場合 → 警告して中止
-- 読み取りは制限なし
-- `/unfreeze` で解除
+1. ユーザーが `/freeze <path>` を呼ぶ
+2. パスを絶対パスに解決し、`GSTACK_FREEZE_PATH` セッション変数に設定
+3. edit/create ツール呼び出しのたびに、対象ファイルの絶対パスが許可パスの配下か照合
+4. 範囲外 → `🔒 編集ロック: {path} は freeze 範囲外です` と表示して中止
+5. 読み取り（view, grep, glob）は制限なし
+6. `/unfreeze` で `GSTACK_FREEZE_PATH` をクリア
 
-## 実装
+## 確認メッセージ
 
-`preToolUse` hook (`bin/gstack-pre-tool-guard.sh`) が環境変数 `GSTACK_FREEZE_PATH` を検出すると、edit/create ツール実行前にパスをチェックする。
-
-有効化: スキル呼び出し時に `GSTACK_FREEZE_PATH=<許可パス>` を設定する。
-無効化: `/unfreeze` で `GSTACK_FREEZE_PATH` をクリアする。
+```
+🔒 FREEZE 有効
+  編集可能: src/auth/
+  他のファイルは読み取り専用です。
+  解除: /unfreeze
+```
 
 ## 重要ルール
 

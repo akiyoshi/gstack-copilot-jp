@@ -13,19 +13,24 @@ description: "gstack-copilot-jpの自己アップデート。Use when: アップ
 
 ### 1. 現在のバージョン確認
 ```bash
-cat ~/.copilot/skills/gstack-copilot-jp/VERSION 2>/dev/null || echo "不明"
+cat VERSION 2>/dev/null || echo "不明"
 ```
 
-### 2. 最新版の確認・取得
+### 2. リモートの最新版を確認
 ```bash
-cd ~/.gstack-copilot-jp-source  # ソースリポジトリの場所
-git fetch origin
-git log HEAD..origin/main --oneline
+# GitHub API で最新リリースを確認
+gh api repos/akiyoshi/gstack-copilot-jp/releases/latest --jq '.tag_name' 2>/dev/null
+# または git fetch
+git fetch origin --tags 2>/dev/null
+git log HEAD..origin/main --oneline 2>/dev/null
 ```
+
+新しいバージョンがない場合 → 「最新版です」と表示して終了。
 
 ### 3. アップデート実行
 ```bash
 git pull origin main
+npm install --prefer-offline 2>/dev/null  # 依存関係の更新（あれば）
 ```
 
 ### 4. 変更点の表示

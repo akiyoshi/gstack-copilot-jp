@@ -9,6 +9,15 @@ user-invocable: true
 
 本家 `/context-save`（v1.1.3）に対応。旧 `/checkpoint save` の後継。
 
+## サブコマンド
+
+| コマンド | 動作 |
+|---------|------|
+| `/context-save` | 現在の作業状態を保存（デフォルト） |
+| `/context-save {タイトル}` | タイトル指定で保存 |
+| `/context-restore` | 最新のチェックポイントから復帰（→ context-restore スキル） |
+| `/context-restore 一覧` | 保存済みチェックポイント一覧（→ context-restore スキル） |
+
 ## いつ使うか
 
 - セッションを中断する前に作業状態を保存したい
@@ -25,11 +34,17 @@ user-invocable: true
 ```bash
 echo "=== BRANCH ==="
 git rev-parse --abbrev-ref HEAD 2>/dev/null
+echo "=== COMMIT ==="
+git rev-parse --short HEAD 2>/dev/null
 echo "=== STATUS ==="
 git status --short 2>/dev/null
+echo "=== STASH ==="
+git stash list 2>/dev/null | head -3
 echo "=== RECENT LOG ==="
 git log --oneline -5 2>/dev/null
 ```
+
+コミットされていない変更がある場合は、チェックポイントの「ノート」に明記する。
 
 ## ステップ2: 会話コンテキストを要約
 
@@ -72,9 +87,11 @@ git log --oneline -5 2>/dev/null
 {git log --oneline -5}
 ```
 
-## ステップ4: 古いチェックポイント整理
+## ステップ4: 古いチェックポイント整理（自動クリーンアップ）
 
-チェックポイントが6件以上ある場合、最古のものを削除して最新5件を保持する。
+チェックポイントが6件以上ある場合、最古のものを削除して**最新5件**を保持する。
+
+削除前にユーザーへの通知は不要（自動実行）。削除されたチェックポイントのタイトルをログに記録する。
 
 ## ステップ5: 確認
 
