@@ -8,191 +8,214 @@
   "skills": {
     "office-hours": {
       "upstream": "office-hours/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "plan-ceo-review": {
       "upstream": "plan-ceo-review/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "mode-posture energy fix (v1.1.2.0) 反映済み"
     },
     "plan-eng-review": {
       "upstream": "plan-eng-review/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "plan-design-review": {
       "upstream": "plan-design-review/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "plan-devex-review": {
       "upstream": "plan-devex-review/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "autoplan": {
       "upstream": "autoplan/SKILL.md",
       "status": "adapted",
       "reason": "再実行仕様追加。判断監査証跡あり。Copilot CLI向けに適応（preamble/codex/telemetry除外）",
-      "exclusions": ["preamble", "codex", "telemetry", "codex-filesystem"]
+      "exclusions": [
+        "preamble",
+        "codex",
+        "telemetry",
+        "codex-filesystem"
+      ]
     },
     "review": {
       "upstream": "review/SKILL.md",
       "status": "adapted",
       "reason": "architectureチェックリスト追加。Outside Voice + slop検出 + doc staleness check。Copilot CLI向けに適応",
-      "exclusions": ["preamble", "codex", "telemetry", "greptile", "eval-suite"]
+      "exclusions": [
+        "preamble",
+        "codex",
+        "telemetry",
+        "greptile",
+        "eval-suite"
+      ]
     },
     "ship": {
       "upstream": "ship/SKILL.md",
       "status": "adapted",
       "reason": "プラン完了監査追加。Outside Voice + テスト失敗トリアージ + VERSION/package.jsonドリフト検出。Copilot CLI向けに適応",
-      "exclusions": ["preamble", "codex", "telemetry", "greptile", "eval-suite", "todos-md", "distribution"]
+      "exclusions": [
+        "preamble",
+        "codex",
+        "telemetry",
+        "greptile",
+        "eval-suite",
+        "todos-md",
+        "distribution"
+      ]
     },
     "investigate": {
       "upstream": "investigate/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "design-html": {
       "upstream": "design-html/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "design-consultation": {
       "upstream": "design-consultation/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "design-shotgun": {
       "upstream": "design-shotgun/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "$D バイナリなし。テキストベース"
     },
     "design-review": {
       "upstream": "design-review/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "devex-review": {
       "upstream": "devex-review/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "qa": {
       "upstream": "qa/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "qa-only": {
       "upstream": "qa-only/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "cso": {
       "upstream": "cso/SKILL.md",
       "status": "adapted",
       "reason": "全14フェーズ展開済み。各フェーズに具体的チェック項目あり。Copilot CLI向けに適応（preamble/codex/telemetry除外）",
-      "exclusions": ["preamble", "codex", "telemetry"]
+      "exclusions": [
+        "preamble",
+        "codex",
+        "telemetry"
+      ]
     },
     "benchmark": {
       "upstream": "benchmark/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "benchmark-models": {
       "upstream": "benchmark-models/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "Copilot CLI マルチモデル環境向けに適応"
     },
     "health": {
       "upstream": "health/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "browse": {
       "upstream": "browse/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "Bun コンパイル + Playwright。Puppeteer parity は次スプリント"
     },
     "open-gstack-browser": {
       "upstream": "open-gstack-browser/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "旧 /open-browser からリネーム"
     },
     "pair-agent": {
       "upstream": "pair-agent/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "setup-browser-cookies": {
       "upstream": "setup-browser-cookies/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "setup-deploy": {
       "upstream": "setup-deploy/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "careful": {
       "upstream": "careful/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "preToolUse hook で実装"
     },
     "freeze": {
       "upstream": "freeze/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "preToolUse hook で実装"
     },
     "guard": {
       "upstream": "guard/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "careful + freeze 統合"
     },
     "unfreeze": {
       "upstream": "unfreeze/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "context-save": {
       "upstream": "context-save/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "旧 /checkpoint save"
     },
     "context-restore": {
       "upstream": "context-restore/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "旧 /checkpoint resume"
     },
     "gstack-upgrade": {
       "upstream": "gstack-upgrade/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "plugin update で実現"
     },
     "learn": {
       "upstream": "learn/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": "JSONL + Copilot memory デュアル書き込み"
     },
     "retro": {
       "upstream": "retro/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "document-release": {
       "upstream": "document-release/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "canary": {
       "upstream": "canary/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "land-and-deploy": {
       "upstream": "land-and-deploy/SKILL.md",
-      "status": "unaudited",
+      "status": "vendored",
       "reason": ""
     },
     "tdd": {

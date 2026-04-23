@@ -21,53 +21,67 @@
 
 v1.0.0以降、本家は**マルチホストプラットフォーム**に進化（10ホスト対応、テンプレート生成パイプライン、Chrome拡張）。gstack-copilot-jpは**Copilot CLI専用**を維持する。マルチホスト基盤（`hosts/`, `model-overlays/`, `scripts/gen-skill-docs.ts`, `extension/`, `conductor.json`）は追跡対象外。方法論・スキル内容の改善のみを取り込む。
 
+## 状態モデル
+
+| 状態 | 意味 |
+|------|------|
+| `vendored` | upstream スキル固有部分を3層合成パイプラインで取り込み済み |
+| `compat-patched` | 互換レイヤー適用 + 動作確認済み |
+| `behavior-verified` | 日本語出力品質テスト通過 |
+| `adapted` | 意図的な独自改善を含む（upstream base + local patch） |
+| `diverged` | gstack-copilot-jp 独自。upstream に対応なし |
+| `planned` | 実装予定 |
+| `excluded` | 追跡対象外 |
+
 ## スキル互換性
 
-| スキル | 本家 | gstack-copilot-jp | ステータス | 分類 | 備考 |
-|--------|------|-------------------|-----------|------|------|
-| `/office-hours` | ✓ | ✓ | same | — | |
-| `/plan-ceo-review` | ✓ | ✓ | adapted | — | mode-posture energy fix (v1.1.2.0) 反映済み |
-| `/plan-eng-review` | ✓ | ✓ | same | — | |
-| `/plan-design-review` | ✓ | ✓ | same | — | |
-| `/plan-devex-review` | ✓ | ✓ | same | — | |
-| `/autoplan` | ✓ | ✓ | same | — | |
-| `/review` | ✓ | ✓ | adapted | — | Outside Voice + slop検出 + doc staleness check |
-| `/ship` | ✓ | ✓ | adapted | — | Outside Voice + CHANGELOG不要 + VERSION/package.json ドリフト検出 |
-| `/investigate` | ✓ | ✓ | same | — | |
-| `/design-html` | ✓ | ✓ | same | — | |
-| `/design-consultation` | ✓ | ✓ | same | — | |
-| `/design-shotgun` | ✓ | ✓ | adapted | — | $D なし。テキストベース |
-| `/design-review` | ✓ | ✓ | same | — | |
-| `/devex-review` | ✓ | ✓ | same | — | |
-| `/qa` | ✓ | ✓ | same | — | |
-| `/qa-only` | ✓ | ✓ | same | — | |
-| `/cso` | ✓ | ✓ | same | — | |
-| `/benchmark` | ✓ | ✓ | same | — | |
-| `/benchmark-models` | ✓ | ✓ | adapted | — | Copilot CLI マルチモデル環境向けに適応 |
-| `/health` | ✓ | ✓ | same | — | v1.1.x。typecheck/lint/test/deadcode 4軸スコアリング |
-| `/browse` | ✓ | ✓ | adapted | — | Bun コンパイル + Playwright。Puppeteer parity (load-html, --selector, --scale, file://) は次スプリント |
-| `/open-gstack-browser` | ✓ | ✓ | same | — | 旧 `/open-browser` からリネーム |
-| `/pair-agent` | ✓ | ✓ | same | — | |
-| `/setup-browser-cookies` | ✓ | ✓ | same | — | |
-| `/setup-deploy` | ✓ | ✓ | same | — | |
-| `/careful` | ✓ | ✓ | same | — | preToolUse hook で実装 |
-| `/freeze` | ✓ | ✓ | same | — | preToolUse hook で実装 |
-| `/guard` | ✓ | ✓ | same | — | careful + freeze 統合 |
-| `/unfreeze` | ✓ | ✓ | same | — | |
-| `/context-save` | ✓ | ✓ | same | — | 旧 `/checkpoint save` |
-| `/context-restore` | ✓ | ✓ | same | — | 旧 `/checkpoint resume` |
-| `/gstack-upgrade` | ✓ | ✓ | adapted | — | plugin update で実現 |
-| `/learn` | ✓ | ✓ | adapted | — | JSONL + Copilot memory デュアル書き込み + open agents learnings コンセプト |
-| `/retro` | ✓ | ✓ | same | — | |
-| `/document-release` | ✓ | ✓ | same | — | |
-| `/canary` | ✓ | ✓ | same | — | |
-| `/land-and-deploy` | ✓ | ✓ | same | — | |
-| `/make-pdf` | ✓ | — | planned | — | browse $B pdf 対応後に実装（次スプリント） |
-| `/tdd` | — | ✓ | diverged | 独自 | 本家に実装されたら統合 |
-| `/sprint` | — | ✓ | diverged | 独自 | スプリントオーケストレーター |
-| `/status` | — | ✓ | diverged | 独自 | gstack-copilot-jp 状態確認 |
-| `/codex` | ✓ | — | adapted | — | `/model` 切替 + `task` で再現 |
-| `/plan-tune` | ✓ | — | compatible | — | `store_memory` で簡易実装予定 |
+<!-- この表は upstream-tracking.json から生成。手動編集しない -->
+
+| スキル | 本家 | gstack-copilot-jp | ステータス | 備考 |
+|--------|------|-------------------|-----------|------|
+| `/office-hours` | ✓ | ✓ | vendored |  |
+| `/plan-ceo-review` | ✓ | ✓ | vendored | mode-posture energy fix (v1.1.2.0) 反映済み |
+| `/plan-eng-review` | ✓ | ✓ | vendored |  |
+| `/plan-design-review` | ✓ | ✓ | vendored |  |
+| `/plan-devex-review` | ✓ | ✓ | vendored |  |
+| `/autoplan` | ✓ | ✓ | adapted | 再実行仕様追加。判断監査証跡あり |
+| `/review` | ✓ | ✓ | adapted | architectureチェックリスト追加。Outside Voice + slop検出 |
+| `/ship` | ✓ | ✓ | adapted | プラン完了監査追加。VERSION/package.jsonドリフト検出 |
+| `/investigate` | ✓ | ✓ | vendored |  |
+| `/design-html` | ✓ | ✓ | vendored |  |
+| `/design-consultation` | ✓ | ✓ | vendored |  |
+| `/design-shotgun` | ✓ | ✓ | vendored | $D バイナリなし。テキストベース |
+| `/design-review` | ✓ | ✓ | vendored |  |
+| `/devex-review` | ✓ | ✓ | vendored |  |
+| `/qa` | ✓ | ✓ | vendored |  |
+| `/qa-only` | ✓ | ✓ | vendored |  |
+| `/cso` | ✓ | ✓ | adapted | 全14フェーズ展開済み |
+| `/benchmark` | ✓ | ✓ | vendored |  |
+| `/benchmark-models` | ✓ | ✓ | vendored |  |
+| `/health` | ✓ | ✓ | vendored |  |
+| `/browse` | ✓ | ✓ | vendored | Bun + Playwright |
+| `/open-gstack-browser` | ✓ | ✓ | vendored |  |
+| `/pair-agent` | ✓ | ✓ | vendored |  |
+| `/setup-browser-cookies` | ✓ | ✓ | vendored |  |
+| `/setup-deploy` | ✓ | ✓ | vendored |  |
+| `/careful` | ✓ | ✓ | vendored | preToolUse hook で実装 |
+| `/freeze` | ✓ | ✓ | vendored | preToolUse hook で実装 |
+| `/guard` | ✓ | ✓ | vendored | careful + freeze 統合 |
+| `/unfreeze` | ✓ | ✓ | vendored |  |
+| `/context-save` | ✓ | ✓ | vendored |  |
+| `/context-restore` | ✓ | ✓ | vendored |  |
+| `/gstack-upgrade` | ✓ | ✓ | vendored |  |
+| `/learn` | ✓ | ✓ | vendored |  |
+| `/retro` | ✓ | ✓ | vendored |  |
+| `/document-release` | ✓ | ✓ | vendored |  |
+| `/canary` | ✓ | ✓ | vendored |  |
+| `/land-and-deploy` | ✓ | ✓ | vendored |  |
+| `/tdd` | — | ✓ | diverged | 独自実装 |
+| `/sprint` | — | ✓ | diverged | 独自スプリントオーケストレーター |
+| `/status` | — | ✓ | diverged | gstack-copilot-jp 状態確認 |
+| `/make-pdf` | ✓ | — | planned | browse $B pdf 対応後に実装 |
+| `/codex` | ✓ | — | excluded | `/model` + `task` で代替 |
+| `/plan-tune` | ✓ | — | excluded | `store_memory` で代替 |
 
 ## 追跡対象外（マルチホスト基盤）
 
