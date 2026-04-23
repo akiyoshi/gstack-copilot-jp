@@ -395,10 +395,52 @@ fi
 
 echo "$FINAL" > "$SKILL_DIR/SKILL.md"
 
+# --- Layer 4: サイドカーファイルのコピー ---
+
+# upstream スキルディレクトリ内の SKILL.md, SKILL.md.tmpl 以外の .md ファイルを同期
+UPSTREAM_SKILL_DIR=$(dirname "$UPSTREAM_FILE")
+SIDECAR_COUNT=0
+
+if [ -d "$UPSTREAM_SKILL_DIR" ]; then
+  # トップレベルの .md サイドカー
+  for src in "$UPSTREAM_SKILL_DIR"/*.md; do
+    [ -f "$src" ] || continue
+    base=$(basename "$src")
+    case "$base" in
+      SKILL.md|SKILL.md.tmpl) continue ;;
+    esac
+    cp "$src" "$SKILL_DIR/$base"
+    SIDECAR_COUNT=$((SIDECAR_COUNT + 1))
+  done
+
+  # サブディレクトリ（specialists/ 等）
+  for subdir in "$UPSTREAM_SKILL_DIR"/*/; do
+    [ -d "$subdir" ] || continue
+    subname=$(basename "$subdir")
+    has_md=false
+    for src in "$subdir"*.md; do
+      [ -f "$src" ] || continue
+      has_md=true
+      break
+    done
+    if $has_md; then
+      mkdir -p "$SKILL_DIR/$subname"
+      for src in "$subdir"*.md; do
+        [ -f "$src" ] || continue
+        cp "$src" "$SKILL_DIR/$subname/"
+        SIDECAR_COUNT=$((SIDECAR_COUNT + 1))
+      done
+    fi
+  done
+fi
+
 echo ""
 echo "━━━ 完了 ━━━"
 echo "Output: $SKILL_DIR/SKILL.md"
 echo "Lines: $(wc -l < "$SKILL_DIR/SKILL.md")"
+if [ "$SIDECAR_COUNT" -gt 0 ]; then
+  echo "Sidecars: $SIDECAR_COUNT files copied"
+fi
 echo ""
 echo "検証:"
 echo "  bin/adapt-upstream-skill.sh $SKILL_NAME --validate"
