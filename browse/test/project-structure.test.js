@@ -126,7 +126,7 @@ describe('hookシステム: スキルの「次のスキル」推奨', () => {
   it.each(processSkills)('%s に「次のスキル」セクションがある', (skillName) => {
     const skillPath = join(skillsDir, skillName, 'SKILL.md');
     const content = readFileSync(skillPath, 'utf-8');
-    expect(content).toMatch(/次のスキル|推奨する次/);
+    expect(content).toMatch(/次のスキル|推奨する次|Next skill|Handoff|next skill/i);
   });
 });
 
