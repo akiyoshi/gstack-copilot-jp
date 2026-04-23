@@ -33,7 +33,7 @@
     },
     "autoplan": {
       "upstream": "autoplan/SKILL.md",
-      "status": "adapted",
+      "status": "vendored",
       "reason": "再実行仕様追加。判断監査証跡あり。Copilot CLI向けに適応（preamble/codex/telemetry除外）",
       "exclusions": [
         "preamble",
@@ -44,7 +44,7 @@
     },
     "review": {
       "upstream": "review/SKILL.md",
-      "status": "adapted",
+      "status": "vendored",
       "reason": "architectureチェックリスト追加。Outside Voice + slop検出 + doc staleness check。Copilot CLI向けに適応",
       "exclusions": [
         "preamble",
@@ -56,7 +56,7 @@
     },
     "ship": {
       "upstream": "ship/SKILL.md",
-      "status": "adapted",
+      "status": "vendored",
       "reason": "プラン完了監査追加。Outside Voice + テスト失敗トリアージ + VERSION/package.jsonドリフト検出。Copilot CLI向けに適応",
       "exclusions": [
         "preamble",
@@ -110,7 +110,7 @@
     },
     "cso": {
       "upstream": "cso/SKILL.md",
-      "status": "adapted",
+      "status": "vendored",
       "reason": "全14フェーズ展開済み。各フェーズに具体的チェック項目あり。Copilot CLI向けに適応（preamble/codex/telemetry除外）",
       "exclusions": [
         "preamble",
