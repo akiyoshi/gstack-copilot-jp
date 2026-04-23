@@ -37,9 +37,7 @@ Gather context before forming any hypothesis.
 Search for relevant learnings from previous sessions:
 
 ```bash
-  .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
-  .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
 fi
 ```
 

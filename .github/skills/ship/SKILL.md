@@ -958,9 +958,7 @@ Add a `## Verification Results` section to the PR body (Step 19):
 Search for relevant learnings from previous sessions:
 
 ```bash
-  .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
-  .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
 fi
 ```
 
@@ -1139,7 +1137,6 @@ echo "TEST_FW: ${TEST_FW:-unknown}"
 ### Read specialist hit rates (adaptive gating)
 
 ```bash
-.github/skills/bin/gstack-specialist-stats 2>/dev/null || true
 ```
 
 ### Select specialists
@@ -1163,7 +1160,6 @@ Based on the scope signals above, select which specialists to dispatch.
 
 After scope-based selection, apply adaptive gating based on specialist hit rates:
 
-For each conditional specialist that passed scope gating, check the `gstack-specialist-stats` output above:
 - If tagged `[GATE_CANDIDATE]` (0 findings in 10+ dispatches): skip it. Print: "[specialist] auto-gated (0 findings in N reviews)."
 - If tagged `[NEVER_GATE]`: always dispatch regardless of hit rate. Security and data-migration are insurance policy specialists — they should run even when silent.
 
@@ -1189,7 +1185,6 @@ Construct the prompt for each specialist. The prompt includes:
 3. Past learnings for this domain (if any exist):
 
 ```bash
-.github/skills/bin/gstack-learnings-search --type pitfall --query "{specialist domain}" --limit 5 2>/dev/null || true
 ```
 
 If learnings are found, include them: "Past learnings for this domain: {learnings}"

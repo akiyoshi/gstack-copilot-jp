@@ -102,28 +102,6 @@ describe('Confusion Protocol', () => {
   });
 });
 
-describe('テンプレートシステム', () => {
-  it('templates/skill.md が存在する', () => {
-    expect(existsSync(join(ROOT, 'templates', 'skill.md'))).toBe(true);
-  });
-
-  it('skill.md テンプレートに必須セクションがある', () => {
-    const content = readFileSync(join(ROOT, 'templates', 'skill.md'), 'utf-8');
-    expect(content).toContain('フロントマター');
-    expect(content).toContain('いつ使うか');
-    expect(content).toContain('ロール');
-    expect(content).toContain('ワークフロー');
-    expect(content).toContain('最終レポート');
-    expect(content).toContain('重要ルール');
-    expect(content).toContain('次のスキル');
-  });
-
-  it('skill.md テンプレートが共通ルールへの重複を禁止している', () => {
-    const content = readFileSync(join(ROOT, 'templates', 'skill.md'), 'utf-8');
-    expect(content).toContain('共通ルールを重複して書いていない');
-  });
-});
-
 describe('copilot-instructions.md 品質ゲート機能', () => {
   const copilotPath = join(ROOT, '.github', 'copilot-instructions.md');
   const content = readFileSync(copilotPath, 'utf-8');

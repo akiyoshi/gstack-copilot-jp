@@ -245,9 +245,7 @@ Feed into the Premise Challenge (0A) and Dream State Mapping (0C). If you find a
 Search for relevant learnings from previous sessions:
 
 ```bash
-  .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
-  .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
 fi
 ```
 

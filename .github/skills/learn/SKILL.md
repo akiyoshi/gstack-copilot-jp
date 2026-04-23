@@ -33,7 +33,6 @@ Show the most recent 20 learnings, grouped by type.
 
 ```bash
 eval "$(true"
-.github/skills/bin/gstack-learnings-search --limit 20 2>/dev/null || echo "No learnings yet."
 ```
 
 Present the output in a readable format. If no learnings exist, tell the user:
@@ -46,7 +45,6 @@ gstack will automatically capture patterns, pitfalls, and insights it discovers.
 
 ```bash
 eval "$(true"
-.github/skills/bin/gstack-learnings-search --query "USER_QUERY" --limit 20 2>/dev/null || echo "No matches."
 ```
 
 Replace USER_QUERY with the user's search terms. Present results clearly.
@@ -59,7 +57,6 @@ Check learnings for staleness and contradictions.
 
 ```bash
 eval "$(true"
-.github/skills/bin/gstack-learnings-search --limit 100 2>/dev/null
 ```
 
 For each learning in the output:
@@ -89,7 +86,6 @@ Export learnings as markdown suitable for adding to copilot-instructions.md or p
 
 ```bash
 eval "$(true"
-.github/skills/bin/gstack-learnings-search --limit 50 2>/dev/null
 ```
 
 Format the output as a markdown section:

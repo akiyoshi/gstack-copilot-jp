@@ -63,7 +63,6 @@ if [ -f "$_LEARN_FILE" ]; then
   _LEARN_COUNT=$(wc -l < "$_LEARN_FILE" 2>/dev/null | tr -d ' ')
   echo "LEARNINGS: $_LEARN_COUNT entries loaded"
   if [ "$_LEARN_COUNT" -gt 5 ] 2>/dev/null; then
-    .github/skills/bin/gstack-learnings-search --limit 3 2>/dev/null || true
   fi
 else
   echo "LEARNINGS: 0"
@@ -1299,9 +1298,7 @@ Pattern:
 Search for relevant learnings from previous sessions:
 
 ```bash
-  .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
-  .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
 fi
 ```
 

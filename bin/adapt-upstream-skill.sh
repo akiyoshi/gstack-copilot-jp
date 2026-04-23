@@ -144,6 +144,8 @@ CONVERTED=$(echo "$BODY" \
   | sed '/gstack-timeline-log/d' \
   | sed '/gstack-repo-mode/d' \
   | sed '/gstack-review-read/d' \
+  | sed '/gstack-learnings-search/d' \
+  | sed '/gstack-specialist-stats/d' \
   | sed 's|\.github/skills/bin/gstack-slug[^)]*)|true|g' \
   | sed 's|\.github/skills/bin/gstack-learnings-log[^}]*}||g' \
   \
