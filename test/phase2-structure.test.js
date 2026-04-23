@@ -98,7 +98,7 @@ describe('Phase 2: Skill Integrity', () => {
 describe('Phase 2: Outside Voice', () => {
   it('/review SKILL.md contains independent review mechanism', () => {
     const content = fs.readFileSync(
-      path.join(SKILLS_DIR, 'review', 'SKILL.md'), 'utf-8'
+      path.join(SKILLS_DIR, 'gstack-review', 'SKILL.md'), 'utf-8'
     )
     expect(content).toMatch(/Outside Voice|Adversarial|Cross-Model|Second Opinion|codex/i)
   })

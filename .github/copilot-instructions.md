@@ -20,7 +20,7 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | デザイン相談、ブランド構築 | `/design-consultation` |
 | デザイン案を複数見たい | `/design-shotgun` |
 | デザインをHTMLに変換 | `/design-html` |
-| コードレビュー、diff確認 | `/review` |
+| コードレビュー、diff確認 | `/gstack-review` |
 | デザイン実装レビュー | `/design-review` |
 | DX実装レビュー | `/devex-review` |
 | バグ、エラー、「なぜ壊れた？」 | `/investigate` |
@@ -50,7 +50,7 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | アップグレード | `/gstack-upgrade` |
 | セッション保存 | `/context-save` |
 | セッション復帰、どこまでやったっけ | `/context-restore` |
-| 状態確認、バージョン | `/status` |
+| 状態確認、バージョン | `/gstack-status` |
 
 ## 言語
 

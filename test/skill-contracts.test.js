@@ -123,7 +123,7 @@ describe('/cso semantic contract', () => {
 // --- P1: /review 契約 ---
 
 describe('/review semantic contract', () => {
-  const md = readSkill('review');
+  const md = readSkill('gstack-review');
   const sections = parseSections(md);
 
   it('スペシャリスト dispatch のトリガー条件が定義されている', () => {

@@ -45,7 +45,7 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `/plan-design-review` | ✓ | ✓ | vendored |  |
 | `/plan-devex-review` | ✓ | ✓ | vendored |  |
 | `/autoplan` | ✓ | ✓ | adapted | 再実行仕様追加。判断監査証跡あり |
-| `/review` | ✓ | ✓ | adapted | architectureチェックリスト追加。Outside Voice + slop検出 |
+| `/gstack-review` | ✓ | ✓ | adapted | architectureチェックリスト追加。Outside Voice + slop検出 |
 | `/ship` | ✓ | ✓ | adapted | プラン完了監査追加。VERSION/package.jsonドリフト検出 |
 | `/investigate` | ✓ | ✓ | vendored |  |
 | `/design-html` | ✓ | ✓ | vendored |  |
@@ -78,7 +78,7 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `/land-and-deploy` | ✓ | ✓ | vendored |  |
 | `/tdd` | — | ✓ | diverged | 独自実装 |
 | `/sprint` | — | ✓ | diverged | 独自スプリントオーケストレーター |
-| `/status` | — | ✓ | diverged | gstack-copilot-jp 状態確認 |
+| `/gstack-status` | — | ✓ | diverged | gstack-copilot-jp 状態確認 |
 | `/make-pdf` | ✓ | — | planned | browse $B pdf 対応後に実装 |
 | `/codex` | ✓ | — | excluded | `/model` + `task` で代替 |
 | `/plan-tune` | ✓ | — | excluded | `store_memory` で代替 |

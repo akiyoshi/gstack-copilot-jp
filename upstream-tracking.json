@@ -42,18 +42,6 @@
         "codex-filesystem"
       ]
     },
-    "review": {
-      "upstream": "review/SKILL.md",
-      "status": "vendored",
-      "reason": "architectureチェックリスト追加。Outside Voice + slop検出 + doc staleness check。Copilot CLI向けに適応",
-      "exclusions": [
-        "preamble",
-        "codex",
-        "telemetry",
-        "greptile",
-        "eval-suite"
-      ]
-    },
     "ship": {
       "upstream": "ship/SKILL.md",
       "status": "vendored",
@@ -228,7 +216,19 @@
       "status": "diverged",
       "reason": "本家に対応なし。独自スプリントオーケストレーター"
     },
-    "status": {
+    "gstack-review": {
+      "upstream": "review/SKILL.md",
+      "status": "vendored",
+      "reason": "architectureチェックリスト追加。Outside Voice + slop検出 + doc staleness check。Copilot CLI向けに適応",
+      "exclusions": [
+        "preamble",
+        "codex",
+        "telemetry",
+        "greptile",
+        "eval-suite"
+      ]
+    },
+    "gstack-status": {
       "upstream": null,
       "status": "diverged",
       "reason": "本家に対応なし。gstack-copilot-jp 状態確認"

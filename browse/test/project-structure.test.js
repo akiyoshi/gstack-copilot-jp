@@ -120,7 +120,7 @@ describe('hookシステム: スキルの「次のスキル」推奨', () => {
     'browse', 'open-gstack-browser', 'pair-agent',
     'setup-browser-cookies', 'setup-deploy', 'gstack-upgrade', 'benchmark',
     'benchmark-models', 'document-release', 'investigate', 'learn',
-    'review', 'ship',
+    'review', 'ship', 'gstack-review',
   ];
 
   const processSkills = skillDirs.filter(s => !exemptSkills.includes(s));

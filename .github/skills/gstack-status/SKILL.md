@@ -1,5 +1,5 @@
 ---
-name: status
+name: gstack-status
 description: "gstack-copilot-jp の状態確認。バージョン、利用可能スキル一覧、本家追随状態を表示。Use when: 状態確認、バージョン、status、スキル一覧。"
 user-invocable: true
 ---
