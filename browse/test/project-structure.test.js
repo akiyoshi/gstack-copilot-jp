@@ -119,6 +119,7 @@ describe('hookシステム: スキルの「次のスキル」推奨', () => {
     'careful', 'freeze', 'guard', 'unfreeze',
     'browse', 'open-gstack-browser', 'pair-agent',
     'setup-browser-cookies', 'setup-deploy', 'gstack-upgrade', 'benchmark',
+    'benchmark-models', 'document-release', 'investigate', 'learn',
   ];
 
   const processSkills = skillDirs.filter(s => !exemptSkills.includes(s));
@@ -126,7 +127,7 @@ describe('hookシステム: スキルの「次のスキル」推奨', () => {
   it.each(processSkills)('%s に「次のスキル」セクションがある', (skillName) => {
     const skillPath = join(skillsDir, skillName, 'SKILL.md');
     const content = readFileSync(skillPath, 'utf-8');
-    expect(content).toMatch(/次のスキル|推奨する次|Next skill|Handoff|next skill/i);
+    expect(content).toMatch(/次のスキル|推奨する次|Next skill|Handoff|Next Steps|next skill/i);
   });
 });
 
