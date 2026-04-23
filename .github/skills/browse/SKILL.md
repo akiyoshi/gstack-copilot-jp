@@ -229,7 +229,7 @@ Key routing rules:
 - "Review everything", full review pipeline → invoke /autoplan
 - Bugs, errors, "why is this broken", "wtf", "this doesn't work" → invoke /investigate
 - Test the site, find bugs, "does this work" → invoke /qa (or /qa-only for report only)
-- Code review, check the diff, "look at my changes" → invoke /review
+- Code review, check the diff, "look at my changes" → invoke /gstack-review
 - Visual polish, design audit, "this looks off" → invoke /design-review
 - Developer experience audit, try onboarding → invoke /devex-review
 - Ship, deploy, create a PR, "send it" → invoke /ship

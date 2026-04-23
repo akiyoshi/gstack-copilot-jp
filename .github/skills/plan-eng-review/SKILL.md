@@ -573,7 +573,6 @@ Every plan review MUST produce a "NOT in scope" section listing work that was co
 List existing code/flows that already partially solve sub-problems in this plan, and whether the plan reuses them or unnecessarily rebuilds them.
 
 ### plan.md updates
-After all review sections are complete, present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `the TODO format`.
 
 For each TODO, describe:
 * **What:** One-line description of the work.

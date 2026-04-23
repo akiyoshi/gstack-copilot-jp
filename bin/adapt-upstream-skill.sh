@@ -41,8 +41,27 @@ if [ -f "$TRACKING_JSON" ]; then
 fi
 
 # 本家の生成済み SKILL.md を検索（.tmpl ではなく生成済みを優先）
+# upstream のスキル名を upstream-tracking.json から解決
+UPSTREAM_SKILL_NAME="$SKILL_NAME"
+if [ -f "$TRACKING_JSON" ]; then
+  UPSTREAM_PATH=$(python3 -c "
+import json
+with open('$TRACKING_JSON') as f:
+    data = json.load(f)
+entry = data.get('skills', {}).get('$SKILL_NAME', {})
+upstream = entry.get('upstream', '')
+if upstream:
+    print(upstream.replace('/SKILL.md', ''))
+" 2>/dev/null || true)
+  if [ -n "$UPSTREAM_PATH" ]; then
+    UPSTREAM_SKILL_NAME="$UPSTREAM_PATH"
+  fi
+fi
+
 UPSTREAM_FILE=""
 for candidate in \
+  "$UPSTREAM_DIR/$UPSTREAM_SKILL_NAME/SKILL.md" \
+  "$UPSTREAM_DIR/skills/$UPSTREAM_SKILL_NAME/SKILL.md" \
   "$UPSTREAM_DIR/$SKILL_NAME/SKILL.md" \
   "$UPSTREAM_DIR/skills/$SKILL_NAME/SKILL.md"; do
   if [ -f "$candidate" ]; then
@@ -103,6 +122,9 @@ CONVERTED=$(echo "$BODY" \
   | sed 's|~/.claude/|.github/|g' \
   | sed 's/CLAUDE\.md/copilot-instructions.md/g' \
   | sed 's/TODOS\.md/plan.md/g' \
+  \
+  | sed 's|\.github/skills/review/|.github/skills/gstack-review/|g' \
+  | sed 's|/review\b|/gstack-review|g' \
   \
   | sed '/{{PREAMBLE}}/d' \
   | sed '/{{BROWSE_SETUP}}/d' \

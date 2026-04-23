@@ -228,7 +228,7 @@ Key routing rules:
 - "Review everything", full review pipeline → invoke /autoplan
 - Bugs, errors, "why is this broken", "wtf", "this doesn't work" → invoke /investigate
 - Test the site, find bugs, "does this work" → invoke /qa (or /qa-only for report only)
-- Code review, check the diff, "look at my changes" → invoke /review
+- Code review, check the diff, "look at my changes" → invoke /gstack-review
 - Visual polish, design audit, "this looks off" → invoke /design-review
 - Developer experience audit, try onboarding → invoke /devex-review
 - Ship, deploy, create a PR, "send it" → invoke /ship
@@ -1171,14 +1171,14 @@ Use ask_user:
 - **RECOMMENDATION:** Choose A for a quick safety check. Choose B if you want the full
   review experience. Choose C only if you're confident in the code.
 - A) Run a quick review (~2 min) — I'll scan the diff for common issues like SQL safety, race conditions, and security gaps (Completeness: 7/10)
-- B) Stop and run a full `/review` first — deeper analysis, more thorough (Completeness: 10/10)
+- B) Stop and run a full `/gstack-review` first — deeper analysis, more thorough (Completeness: 10/10)
 - C) Skip the review — I've reviewed this code myself and I'm confident (Completeness: 3/10)
 
 **If A (quick checklist):** Tell the user: "Running the review checklist against your diff now..."
 
 Read the review checklist:
 ```bash
-cat .github/skills/review/checklist.md 2>/dev/null || echo "Checklist not found"
+cat .github/skills/gstack-review/checklist.md 2>/dev/null || echo "Checklist not found"
 ```
 Apply each checklist item to the current diff. This is the same quick review that `/ship`
 runs in its Step 3.5. Auto-fix trivial issues (whitespace, imports). For critical findings
@@ -1189,7 +1189,7 @@ and tell the user: "I found and fixed a few issues during the review. The fixes 
 
 **If no issues found:** Tell the user: "Review checklist passed — no issues found in the diff."
 
-**If B:** **STOP.** "Good call — run `/review` for a thorough pre-landing review. When that's done, run `/land-and-deploy` again and I'll pick up right where we left off."
+**If B:** **STOP.** "Good call — run `/gstack-review` for a thorough pre-landing review. When that's done, run `/land-and-deploy` again and I'll pick up right where we left off."
 
 **If C:** Tell the user: "Understood — skipping review. You know this code best." Continue. Log the user's choice to skip review.
 
@@ -1329,7 +1329,7 @@ Use ask_user:
 - C) Merge anyway — I understand the warnings and want to proceed (Completeness: 3/10)
 
 If the user chooses B: **STOP.** Give specific next steps:
-- If reviews are stale: "Run `/review` or `/autoplan` to review the current code, then `/land-and-deploy` again."
+- If reviews are stale: "Run `/gstack-review` or `/autoplan` to review the current code, then `/land-and-deploy` again."
 - If E2E not run: "Run your E2E tests to make sure nothing is broken, then come back."
 - If docs not updated: "Run `/document-release` to update CHANGELOG and docs."
 - If PR body stale: "The PR description doesn't match what's actually in the diff — update it on GitHub."

@@ -84,7 +84,7 @@ argument-hint: "実装したい機能の説明、または「計画に基づい�
 | **investigate-first** | /investigate で根本原因特定 → 最小修正 → 回帰テスト |
 | **direct-edit** | 直接編集。必要に応じてテスト後付け |
 | **review-lite** | チェックリスト + スロップ検出のみ。サブエージェントなし |
-| **full-review** | /review の全ステップ。Outside Voice（`task` agents）含む |
+| **full-review** | /gstack-review の全ステップ。Outside Voice（`task` agents）含む |
 | **security-review** | full-review + /cso の daily モード |
 | **ship** | /ship の全パイプライン（テスト→バージョン→コミット→PR） |
 | **no-ship** | コミットのみ。PRは作らない |
@@ -182,7 +182,7 @@ for each task:
 - 自動修正可能な問題は修正
 
 ### full-review
-- /review の全ステップを実行
+- /gstack-review の全ステップを実行
 - Outside Voice: `task` ツールで `code-review` + `rubber-duck` エージェントを並列起動
 - スコープドリフト検出
 - ドキュメント鮮度チェック

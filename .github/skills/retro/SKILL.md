@@ -229,7 +229,7 @@ Key routing rules:
 - "Review everything", full review pipeline → invoke /autoplan
 - Bugs, errors, "why is this broken", "wtf", "this doesn't work" → invoke /investigate
 - Test the site, find bugs, "does this work" → invoke /qa (or /qa-only for report only)
-- Code review, check the diff, "look at my changes" → invoke /review
+- Code review, check the diff, "look at my changes" → invoke /gstack-review
 - Visual polish, design audit, "this looks off" → invoke /design-review
 - Developer experience audit, try onboarding → invoke /devex-review
 - Ship, deploy, create a PR, "send it" → invoke /ship
@@ -929,7 +929,7 @@ Include in the metrics table:
 
 If plan.md doesn't exist, skip the Backlog Health row.
 ```
-| Skill Usage | /ship(12) /qa(8) /review(5) · 3 safety hook fires |
+| Skill Usage | /ship(12) /qa(8) /gstack-review(5) · 3 safety hook fires |
 ```
 
 If the JSONL file doesn't exist or has no entries in the window, skip the Skill Usage row.

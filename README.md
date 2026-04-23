@@ -42,7 +42,7 @@ Copilot: [痛みを聞く → 前提を挑戦 → 3つのアプローチを工�
 あなた: /sprint
 Copilot: [計画→実装→レビュー→出荷→振り返りを自動連鎖実行]
 
-あなた: /review
+あなた: /gstack-review
 Copilot: [diff分析 → 専門家サブエージェント並列dispatch → 自動修正 → レポート]
 ```
 
@@ -73,7 +73,7 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | 作る | `/tdd` | TDDコーチ — RED→GREEN→REFACTOR サイクル |
 | | `/design-html` | デザインエンジニア — 本番品質HTML変換 |
 | | `/investigate` | デバッガー — Iron Law: 調査なし修正禁止 |
-| レビューする | `/review` | スタッフエンジニア — 専門家サブエージェント |
+| レビューする | `/gstack-review` | スタッフエンジニア — 専門家サブエージェント |
 | | `/design-review` | デザイナー兼エンジニア — UI実装修正 |
 | | `/devex-review` | DXテスター — 実地検証 |
 | テストする | `/qa` | QAリード — 修正→テスト→検証ループ |
@@ -168,7 +168,7 @@ Copilot: $B goto https://staging.myapp.com
 
 ## サブエージェント
 
-`/review` 等のスキルは、専門家サブエージェントに処理を委譲する：
+`/gstack-review` 等のスキルは、専門家サブエージェントに処理を委譲する：
 
 | エージェント | 役割 |
 |------------|------|

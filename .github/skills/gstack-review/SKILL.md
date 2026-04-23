@@ -6,7 +6,7 @@ argument-hint: "レビュー対象のブランチ名またはPR番号"
 
 # Pre-Landing PR Review
 
-You are running the `/review` workflow. Analyze the current branch's diff against the base branch for structural issues that tests don't catch.
+You are running the `/gstack-review` workflow. Analyze the current branch's diff against the base branch for structural issues that tests don't catch.
 
 ---
 
@@ -24,7 +24,7 @@ Before reviewing code quality, check: **did they build what was requested — no
 
 1. Read `plan.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
    Read commit messages (`git log origin/<base>..HEAD --oneline`).
-   **If no PR exists:** rely on commit messages and plan.md for stated intent — this is the common case since /review runs before /ship creates the PR.
+   **If no PR exists:** rely on commit messages and plan.md for stated intent — this is the common case since /gstack-review runs before /ship creates the PR.
 2. Identify the **stated intent** — what was this branch supposed to accomplish?
 3. Run `git diff origin/<base>...HEAD --stat` and compare the files changed against the stated intent.
 
@@ -227,17 +227,11 @@ Plan items: N DONE, M PARTIAL, K NOT DONE
 **No plan file found:** Use commit messages and plan.md as fallback sources (see above). If no intent sources at all, skip with: "No intent sources detected — skipping completion audit."
 
 ## Step 2: Read the checklist
-
-Read `the review checklist`.
-
 **If the file cannot be read, STOP and report the error.** Do not proceed without the checklist.
 
 ---
 
 ## Step 2.5: Check for Greptile review comments
-
-Read `.github/skills/review/greptile-triage.md` and follow the fetch, filter, classify, and **escalation detection** steps.
-
 **If no PR exists, `gh` fails, API returns an error, or there are zero Greptile comments:** Skip this step silently. Greptile integration is additive — the review works without it.
 
 **If Greptile comments are found:** Store the classifications (VALID & ACTIONABLE, VALID BUT ALREADY FIXED, FALSE POSITIVE, SUPPRESSED) — you will need them in Step 5.
@@ -384,17 +378,17 @@ echo "TEST_FW: ${TEST_FW:-unknown}"
 Based on the scope signals above, select which specialists to dispatch.
 
 **Always-on (dispatch on every review with 50+ changed lines):**
-1. **Testing** — read `.github/skills/review/specialists/testing.md`
-2. **Maintainability** — read `.github/skills/review/specialists/maintainability.md`
+1. **Testing** — read `.github/skills/gstack-review/specialists/testing.md`
+2. **Maintainability** — read `.github/skills/gstack-review/specialists/maintainability.md`
 
 **If DIFF_LINES < 50:** Skip all specialists. Print: "Small diff ($DIFF_LINES lines) — specialists skipped." Continue to Step 5.
 
 **Conditional (dispatch if the matching scope signal is true):**
-3. **Security** — if SCOPE_AUTH=true, OR if SCOPE_BACKEND=true AND DIFF_LINES > 100. Read `.github/skills/review/specialists/security.md`
-4. **Performance** — if SCOPE_BACKEND=true OR SCOPE_FRONTEND=true. Read `.github/skills/review/specialists/performance.md`
-5. **Data Migration** — if SCOPE_MIGRATIONS=true. Read `.github/skills/review/specialists/data-migration.md`
-6. **API Contract** — if SCOPE_API=true. Read `.github/skills/review/specialists/api-contract.md`
-7. **Design** — if SCOPE_FRONTEND=true. Use the existing design review checklist at `.github/skills/review/design-checklist.md`
+3. **Security** — if SCOPE_AUTH=true, OR if SCOPE_BACKEND=true AND DIFF_LINES > 100. Read `.github/skills/gstack-review/specialists/security.md`
+4. **Performance** — if SCOPE_BACKEND=true OR SCOPE_FRONTEND=true. Read `.github/skills/gstack-review/specialists/performance.md`
+5. **Data Migration** — if SCOPE_MIGRATIONS=true. Read `.github/skills/gstack-review/specialists/data-migration.md`
+6. **API Contract** — if SCOPE_API=true. Read `.github/skills/gstack-review/specialists/api-contract.md`
+7. **Design** — if SCOPE_FRONTEND=true. Use the existing design review checklist at `.github/skills/gstack-review/design-checklist.md`
 
 ### Adaptive gating
 
@@ -531,7 +525,7 @@ Remember these stats — you will need them for the review-log entry in Step 5.8
 If activated, dispatch one more subagent via the task tool (foreground, not background).
 
 The Red Team subagent receives:
-1. The red-team checklist from `.github/skills/review/specialists/red-team.md`
+1. The red-team checklist from `.github/skills/gstack-review/specialists/red-team.md`
 2. The merged specialist findings from Step 4.6 (so it knows what was already caught)
 3. The git diff command
 
@@ -816,7 +810,7 @@ High-confidence findings (agreed on by multiple sources) should be prioritized f
 
 ## Step 5.8: Persist Eng Review result
 
-After all review passes complete, persist the final `/review` outcome so `/ship` can
+After all review passes complete, persist the final `/gstack-review` outcome so `/ship` can
 recognize that Eng Review was run on this branch.
 
 Run:

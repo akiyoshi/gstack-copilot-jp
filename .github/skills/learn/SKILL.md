@@ -37,7 +37,7 @@ eval "$(true"
 ```
 
 Present the output in a readable format. If no learnings exist, tell the user:
-"No learnings recorded yet. As you use /review, /ship, /investigate, and other skills,
+"No learnings recorded yet. As you use /gstack-review, /ship, /investigate, and other skills,
 gstack will automatically capture patterns, pitfalls, and insights it discovers."
 
 ---

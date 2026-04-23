@@ -103,7 +103,7 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | スキル | 廃止理由 | 代替 |
 |--------|---------|------|
 | `/build-fix` | 通常の対話で代替 | — |
-| `/clean` | `/review` に統合 | `/review` ステップ 3.5 |
+| `/clean` | `/gstack-review` に統合 | `/review` ステップ 3.5 |
 | `/loop` | `/fleet` + `--autopilot` | — |
 | `/multi-plan` | `/model` + `/fleet` | — |
 | `/multi-execute` | `--autopilot` + `/fleet` | — |
@@ -153,4 +153,4 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | Checkpoint modes（explicit/continuous） | v1.0.0.0 | — | 見送り（Copilot CLIのセッション管理と仕組みが異なる） |
 | preamble-tier システム | v1.0.0.0 | — | 不要（テンプレート生成不使用） |
 | ETHOS.md Three Layers of Knowledge | v1.0.0.0 | ETHOS.md に反映 | ✓ 反映済み |
-| slop-scan 統合 | v0.16.3.0 | /review のスロップ検出で代替 | adapted |
+| slop-scan 統合 | v0.16.3.0 | /gstack-review のスロップ検出で代替 | adapted |

@@ -329,7 +329,7 @@ Windows ユーザーは WSL (Ubuntu) を使用する。PowerShell ネイティ�
 
 #### 3. 「外部の目」(Outside Voice) の実現
 
-本家で `⚠️ Codex連携なし` としていた `/review` と `/ship` の外部レビュー機能は、以下で代替する:
+本家で `⚠️ Codex連携なし` としていた `/gstack-review` と `/ship` の外部レビュー機能は、以下で代替する:
 
 | 本家の方法 | Copilot CLI での代替 |
 |-----------|---------------------|
@@ -337,7 +337,7 @@ Windows ユーザーは WSL (Ubuntu) を使用する。PowerShell ネイティ�
 | `codex review` (Codexによるコードレビュー) | Copilot CLI ビルトイン `code-review` エージェント |
 | Claude adversarial subagent | Copilot CLI ビルトイン `rubber-duck` エージェント (experimental) |
 
-これにより `/review` と `/ship` は「適応」として扱える。上流の役割を保ちながら、Copilot CLI 側の差分は fallback で吸収する。
+これにより `/gstack-review` と `/ship` は「適応」として扱える。上流の役割を保ちながら、Copilot CLI 側の差分は fallback で吸収する。
 
 #### 4. GitHub MCP サーバーの活用
 
@@ -564,7 +564,7 @@ Tier 1 は `bun test` で即座に実装可能。Tier 2 は `copilot -p --output
 | ファイル | 必須フィールド | 備考 |
 |---------|--------------|------|
 | `learnings.jsonl` | `ts`, `type`, `confidence`, `source`, `text`, `project` | `/learn` が書き込み |
-| `*-reviews.jsonl` | `ts`, `skill`, `branch`, `verdict`, `findings_count` | `/review`, `/ship` が書き込み |
+| `*-reviews.jsonl` | `ts`, `skill`, `branch`, `verdict`, `findings_count` | `/gstack-review`, `/ship` が書き込み |
 | `skill-usage.jsonl` | `ts`, `skill`, `duration_ms`, `success`, `version` | `sessionEnd` hook が書き込み |
 | `health-history.jsonl` | `ts`, `branch`, `score`, `typecheck`, `lint`, `test`, `deadcode`, `shell`, `duration_s` | `/health` が書き込み |
 
@@ -585,7 +585,7 @@ copilot plugin install github:username/gstack-copilot-jp
 
 本家は `./setup --prefix` / `--no-prefix` で `/qa` ↔ `/gstack-qa` を切り替える。plugin ではスキル名の衝突が起こりやすいため、この制御を plugin manifest に組み込む:
 
-- 既定は **プレフィックスなし** (`/qa`, `/review` 等) — 本家と同一
+- 既定は **プレフィックスなし** (`/qa`, `/gstack-review` 等) — 本家と同一
 - 他のスキルパックと併用する場合は `copilot-plugin.json` の `prefix: "gstack-"` で名前空間を分離
 - `copilot-instructions.md` のルーティングテーブルはプレフィックスに応じて自動生成
 
@@ -635,7 +635,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 | | `/design-html` | 同一 |
 | | `/investigate` | 同一 |
 | | `/sprint` | 独自（維持。スプリントオーケストレーター） |
-| レビュー | `/review` | 適応（`code-review` + `/model` 切替 + fallback） |
+| レビュー | `/gstack-review` | 適応（`code-review` + `/model` 切替 + fallback） |
 | | `/design-review` | 同一 |
 | | `/devex-review` | 同一 |
 | テスト | `/qa` | 同一 |
