@@ -1,125 +1,107 @@
 ---
 name: setup-browser-cookies
-description: "ブラウザCookieをヘッドレスセッションにインポート。認証済みページのQAテスト用。Chrome/Edge/Brave等のCookieをJSON形式でエクスポートし、browseセッションに注入。Use when: ログイン状態テスト、認証ページQA、cookie import。"
-argument-hint: "インポート元ブラウザまたはCookieファイル"
+description: "ブラウザCookieをヘッドレスセッションにインポート。認証済みページのQAテスト用。Chrome/Edge/Brave等のCookieをJSON形式でエクスポートし、browseセッションに注入。Use when: ログイン状態テスト、認証ページQA、cookie import。"
+argument-hint: "インポート元ブラウザまたはCookieファイル"
 ---
 
-# setup-browser-cookies — セッション管理
+# Setup Browser Cookies
 
-ブラウザの Cookie をヘッドレス browse セッションにインポートする。
-認証が必要なページの QA テストに使う。
+Import logged-in sessions from your real Chromium browser into the headless browse session.
 
-## いつ使うか
+## CDP mode check
 
-- ログイン状態のページをテストしたい
-- `/qa` で認証済みページを検証したい
-- ステージング環境のテストで認証が必要
+First, check if browse is already connected to the user's real browser:
+```bash
+$B status 2>/dev/null | grep -q "Mode: cdp" && echo "CDP_MODE=true" || echo "CDP_MODE=false"
+```
+If `CDP_MODE=true`: tell the user "Not needed — you're connected to your real browser via CDP. Your cookies and sessions are already available." and stop. No cookie import needed.
 
-## 方法1: headed モードでログイン（推奨）
+## How it works
 
-最もシンプル。可視 Chrome でログインし、セッションを引き継ぐ。
+1. Find the browse binary
+2. Run `cookie-import-browser` to detect installed browsers and open the picker UI
+3. User selects which cookie domains to import in their browser
+4. Cookies are decrypted and loaded into the Playwright session
+
+## Steps
+
+### 1. Find the browse binary
+
+## SETUP (run this check BEFORE any browse command)
 
 ```bash
-# 1. headed モードに切替
-$B connect
-
-# 2. ログインページに移動
-$B goto https://app.com/login
-
-# 3. ユーザーに案内
-# 「Chrome ウィンドウでログインしてください。完了したら教えてください。」
-
-# 4. ログイン完了後、headless に戻す
-$B disconnect
-
-# 5. Cookie が保持されているので、そのまま QA を継続
-$B goto https://app.com/dashboard
-$B text
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+B=""
+[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.claude/skills/gstack/browse/dist/browse"
+[ -z "$B" ] && B="$HOME/.claude/skills/gstack/browse/dist/browse"
+if [ -x "$B" ]; then
+  echo "READY: $B"
+else
+  echo "NEEDS_SETUP"
+fi
 ```
 
-## 方法2: Cookie JSON ファイルからインポート
+If `NEEDS_SETUP`:
+1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
+2. Run: `cd <SKILL_DIR> && ./setup`
+3. If `bun` is not installed:
+   ```bash
+   if ! command -v bun >/dev/null 2>&1; then
+     BUN_VERSION="1.3.10"
+     BUN_INSTALL_SHA="bab8acfb046aac8c72407bdcce903957665d655d7acaa3e11c7c4616beae68dd"
+     tmpfile=$(mktemp)
+     curl -fsSL "https://bun.sh/install" -o "$tmpfile"
+     actual_sha=$(shasum -a 256 "$tmpfile" | awk '{print $1}')
+     if [ "$actual_sha" != "$BUN_INSTALL_SHA" ]; then
+       echo "ERROR: bun install script checksum mismatch" >&2
+       echo "  expected: $BUN_INSTALL_SHA" >&2
+       echo "  got:      $actual_sha" >&2
+       rm "$tmpfile"; exit 1
+     fi
+     BUN_VERSION="$BUN_VERSION" bash "$tmpfile"
+     rm "$tmpfile"
+   fi
+   ```
 
-### ステップ1: Cookie エクスポート
-
-ブラウザ拡張機能「EditThisCookie」「Cookie-Editor」等を使い、JSON 形式でエクスポートする。
-
-必要なフォーマット:
-```json
-[
-  {
-    "name": "session_id",
-    "value": "abc123...",
-    "domain": ".example.com",
-    "path": "/",
-    "httpOnly": true,
-    "secure": true,
-    "sameSite": "Lax"
-  }
-]
-```
-
-### ステップ2: インポート
+### 2. Open the cookie picker
 
 ```bash
-$B cookie-import cookies.json
+$B cookie-import-browser
 ```
 
-### ステップ3: 確認
+This auto-detects installed Chromium browsers and opens
+an interactive picker UI in your default browser where you can:
+- Switch between installed browsers
+- Search domains
+- Click "+" to import a domain's cookies
+- Click trash to remove imported cookies
+
+Tell the user: **"Cookie picker opened — select the domains you want to import in your browser, then tell me when you're done."**
+
+### 3. Direct import (alternative)
+
+If the user specifies a domain directly (e.g., `/setup-browser-cookies github.com`), skip the UI:
 
 ```bash
-$B cookies example.com          # ドメインのCookie確認
-$B goto https://app.com/dashboard
-$B is visible ".user-menu"      # ログイン状態確認
+$B cookie-import-browser comet --domain github.com
 ```
 
-## 方法3: JavaScript でCookie設定
+Replace `comet` with the appropriate browser if specified.
 
-特定の Cookie のみ必要な場合:
+### 4. Verify
+
+After the user confirms they're done:
 
 ```bash
-$B goto https://app.com
-$B js "document.cookie = 'session_id=abc123; domain=.app.com; path=/; secure'"
-$B reload
-$B is visible ".user-menu"
+$B cookies
 ```
 
-## CDPモード（headed）の場合
+Show the user a summary of imported cookies (domain counts).
 
-headed モード（`$B connect` 済み）では、ユーザーが直接ブラウザでログインできるため、Cookie インポートは不要。
+## Notes
 
-```bash
-$B status
-# → Mode: headed なら Cookie インポートをスキップ
-# 「headed モードです。ブラウザで直接ログインしてください。」
-```
-
-## Cookie 確認コマンド
-
-インポート後、Cookie が正しく設定されたか検証:
-
-```bash
-$B cookies example.com
-# → session_id=abc123 (HttpOnly, Secure, SameSite=Lax)
-```
-
-## SameSite / HttpOnly の注意点
-
-- **HttpOnly Cookie**: `document.cookie` ではアクセス不可。方法2（JSON import）か方法1（headed ログイン）を使う
-- **SameSite=Strict**: クロスオリジンのナビゲーションで送信されない。テスト時は直接URLに移動する
-- **SameSite=None**: `Secure: true` が必須。HTTPS でなければ設定されない
-- **有効期限**: Session Cookie はブラウザ再起動で消える。永続 Cookie の `expires` を確認
-
-## トラブルシューティング
-
-| 問題 | 対処 |
-|------|------|
-| Cookie が効かない | `$B cookies` でドメイン・パスを確認 |
-| SameSite エラー | JSON の `sameSite` を `"None"` に変更、`secure: true` を確認 |
-| HttpOnly Cookie | ブラウザ拡張でエクスポートするか、headed モードを使用 |
-| 期限切れ | フレッシュな Cookie を再エクスポート |
-
-## セキュリティ注意
-
-- Cookie ファイルは**機密情報**。`.gitignore` に追加すること
-- テスト用アカウントの Cookie を使う。本番アカウントは避ける
-- `cookie-import` したファイルはテスト後に削除する
+- On macOS, the first import per browser may trigger a Keychain dialog — click "Allow" / "Always Allow"
+- On Linux, `v11` cookies may require `secret-tool`/libsecret access; `v10` cookies use Chromium's standard fallback key
+- Cookie picker is served on the same port as the browse server (no extra process)
+- Only domain names and cookie counts are shown in the UI — no cookie values are exposed
+- The browse session persists cookies between commands, so imported cookies work immediately

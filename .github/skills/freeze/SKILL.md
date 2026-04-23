@@ -1,58 +1,90 @@
 ---
 name: freeze
-description: "編集ロック。指定ディレクトリ以外のファイル編集を禁止。Use when: スコープを限定したい、他のファイルを触るな、freeze、edit lock。デバッグ中の事故防止。"
-argument-hint: "編集を許可するディレクトリまたはファイルパス"
+description: "編集ロック。指定ディレクトリ以外のファイル編集を禁止。Use when: スコープを限定したい、他のファイルを触るな、freeze、edit lock。デバッグ中の事故防止。"
+argument-hint: "編集を許可するディレクトリまたはファイルパス"
 ---
 
-# 編集ロック
+---
+name: freeze
+version: 0.1.0
+description: |
+  Restrict file edits to a specific directory for the session. Blocks Edit and
+  Write outside the allowed path. Use when debugging to prevent accidentally
+  "fixing" unrelated code, or when you want to scope changes to one module.
+  Use when asked to "freeze", "restrict edits", "only edit this folder",
+  or "lock down edits". (gstack)
+triggers:
+  - freeze edits to directory
+  - lock editing scope
+  - restrict file changes
+allowed-tools:
+  - Bash
+  - Read
+  - ask_user
+hooks:
+  PreToolUse:
+    - matcher: "Edit"
+      hooks:
+        - type: command
+          command: "bash ${CLAUDE_SKILL_DIR}/bin/check-freeze.sh"
+          statusMessage: "Checking freeze boundary..."
+    - matcher: "Write"
+      hooks:
+        - type: command
+          command: "bash ${CLAUDE_SKILL_DIR}/bin/check-freeze.sh"
+          statusMessage: "Checking freeze boundary..."
+---
 
-## いつ使うか
+# /freeze — Restrict Edits to a Directory
 
-- デバッグ中に関係ないファイルを触りたくない
-- 特定のディレクトリだけに変更を限定したい
+Lock file edits to a specific directory. Any Edit or Write operation targeting
+a file outside the allowed path will be **blocked** (not just warned).
 
-## セットアップ
-
-ユーザーにディレクトリを聞く:
-```
-どのディレクトリに編集を限定しますか？
-→ (例: src/auth/ または src/auth/ src/db/)
-```
-
-### パス解決
-
-- 相対パスは `$(pwd)` を基準に**絶対パス**に変換する
-- 末尾 `/` は自動付与（`src/auth` → `src/auth/`）
-- ファイル単体の指定も可（`src/auth/login.ts`）
-
-```
-/freeze src/auth/
-→ src/auth/ 配下のファイルのみ編集可。他は読み取り専用。
-
-/freeze src/auth/ src/db/
-→ 複数ディレクトリを指定可。
-```
-
-## どう動くか
-
-1. ユーザーが `/freeze <path>` を呼ぶ
-2. パスを絶対パスに解決し、`GSTACK_FREEZE_PATH` セッション変数に設定
-3. edit/create ツール呼び出しのたびに、対象ファイルの絶対パスが許可パスの配下か照合
-4. 範囲外 → `🔒 編集ロック: {path} は freeze 範囲外です` と表示して中止
-5. 読み取り（view, grep, glob）は制限なし
-6. `/unfreeze` で `GSTACK_FREEZE_PATH` をクリア
-
-## 確認メッセージ
-
-```
-🔒 FREEZE 有効
-  編集可能: src/auth/
-  他のファイルは読み取り専用です。
-  解除: /unfreeze
+```bash
+mkdir -p ~/.gstack/analytics
+echo '{"skill":"freeze","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 ```
 
-## 重要ルール
+## Setup
 
-- **読み取りは自由**: 制限は編集のみ
-- **ユーザーが明示的に解除するまで有効**
-- **`/investigate` は自動的にバグのあるモジュールにfreezeする**
+Ask the user which directory to restrict edits to. Use ask_user:
+
+- Question: "Which directory should I restrict edits to? Files outside this path will be blocked from editing."
+- Text input (not multiple choice) — the user types a path.
+
+Once the user provides a directory path:
+
+1. Resolve it to an absolute path:
+```bash
+FREEZE_DIR=$(cd "<user-provided-path>" 2>/dev/null && pwd)
+echo "$FREEZE_DIR"
+```
+
+2. Ensure trailing slash and save to the freeze state file:
+```bash
+FREEZE_DIR="${FREEZE_DIR%/}/"
+STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
+mkdir -p "$STATE_DIR"
+echo "$FREEZE_DIR" > "$STATE_DIR/freeze-dir.txt"
+echo "Freeze boundary set: $FREEZE_DIR"
+```
+
+Tell the user: "Edits are now restricted to `<path>/`. Any Edit or Write
+outside this directory will be blocked. To change the boundary, run `/freeze`
+again. To remove it, run `/unfreeze` or end the session."
+
+## How it works
+
+The hook reads `file_path` from the Edit/create tool input JSON, then checks
+whether the path starts with the freeze directory. If not, it returns
+`permissionDecision: "deny"` to block the operation.
+
+The freeze boundary persists for the session via the state file. The hook
+script reads it on every Edit/Write invocation.
+
+## Notes
+
+- The trailing `/` on the freeze directory prevents `/src` from matching `/src-old`
+- Freeze applies to Edit and create tools only — Read, Bash, Glob, Grep are unaffected
+- This prevents accidental edits, not a security boundary — Bash commands like `sed` can still modify files outside the boundary
+- To deactivate, run `/unfreeze` or end the conversation

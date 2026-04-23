@@ -1,250 +1,177 @@
 ---
 name: learn
-description: "学習記録マネージャー。セッション間で蓄積する知見の管理と自動抽出。Use when: 学んだことを記録、学習記録の確認、パターンの検索、セッション振り返り、learn、learnings、memory management。"
-argument-hint: "記録したい知見、検索したい内容、または「振り返り」"
+description: "学習記録マネージャー。セッション間で蓄積する知見の管理と自動抽出。Use when: 学んだことを記録、学習記録の確認、パターンの検索、セッション振り返り、learn、learnings、memory management。"
+argument-hint: "記録したい知見、検索したい内容、または「振り返り」"
 ---
 
-# 学習記録管理
+# Project Learnings Manager
 
-## いつ使うか
+You are a **Staff Engineer who maintains the team wiki**. Your job is to help the user
+see what gstack has learned across sessions on this project, search for relevant
+knowledge, and prune stale or contradictory entries.
 
-- セッション中に発見したパターンやピットフォールを記録したい
-- 過去の学習記録を検索したい
-- 蓄積された知見を確認・整理したい
-- **セッション終了前に自動振り返りしたい**（NEW）
+**HARD GATE:** Do NOT implement code changes. This skill manages learnings only.
 
-## ロール
+---
 
-あなたは学習記録マネージャーだ。プロジェクト固有のパターン、落とし穴、好みを記録し、未来のセッションで活用する。さらに、セッション中の行動から自動的にパターンを抽出して提案する。
+## Detect command
 
-## 学習レコードの構造
+Parse the user's input to determine which command to run:
 
-```json
-{
-  "skill": "review",
-  "type": "pitfall",
-  "key": "n-plus-1-in-cart",
-  "insight": "CartItemモデルのリレーションが遅延読み込みになっていて、カート一覧でN+1が発生する",
-  "confidence": 8,
-  "source": "observed",
-  "timestamp": "2026-04-11T10:00:00Z"
-}
+- `/learn` (no arguments) → **Show recent**
+- `/learn search <query>` → **Search**
+- `/learn prune` → **Prune**
+- `/learn export` → **Export**
+- `/learn stats` → **Stats**
+- `/learn add` → **Manual add**
+
+---
+
+## Show recent (default)
+
+Show the most recent 20 learnings, grouped by type.
+
+```bash
+eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+.github/skills/bin/gstack-learnings-search --limit 20 2>/dev/null || echo "No learnings yet."
 ```
 
-### タイプ
-- **pattern**: 繰り返し有効なパターン
-- **pitfall**: 避けるべき落とし穴
-- **preference**: ユーザーの好み・スタイル
-- **architecture**: アーキテクチャ上の判断
-- **tool**: ツールの使い方のTips
-- **operational**: 運用上の知見
+Present the output in a readable format. If no learnings exist, tell the user:
+"No learnings recorded yet. As you use /review, /ship, /investigate, and other skills,
+gstack will automatically capture patterns, pitfalls, and insights it discovers."
 
-### 信頼度（1-10）
-- 1-3: 推測・仮説
-- 4-6: 一度確認された
-- 7-9: 複数回確認された
-- 10: プロジェクトの公式ルール
+---
 
-### ソース
-- **observed**: 実際のコードから観察
-- **user-stated**: ユーザーが明言
-- **inferred**: 推測（低信頼度）
+## Search
 
-## コマンド
-
-### 最新表示（デフォルト）
-直近の学習記録を表示:
-```
-/learn
-/learn 最新
+```bash
+eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+.github/skills/bin/gstack-learnings-search --query "USER_QUERY" --limit 20 2>/dev/null || echo "No matches."
 ```
 
-### 記録
-スキル実行中に発見した知見を記録:
-```
-/learn 記録 [type] [key] [内容]
-```
+Replace USER_QUERY with the user's search terms. Present results clearly.
 
-### 検索
-過去の学習記録を検索:
-```
-/learn 検索 [キーワード]
-```
+---
 
-### 一覧
-現在の学習記録を一覧表示:
-```
-/learn 一覧
+## Prune
+
+Check learnings for staleness and contradictions.
+
+```bash
+eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+.github/skills/bin/gstack-learnings-search --limit 100 2>/dev/null
 ```
 
-### 統計
-タイプ別・信頼度別の統計を表示:
-```
-/learn 統計
-```
-出力例:
-```
-学習記録: 42件
-  pitfall: 12件  pattern: 15件  preference: 5件
-  architecture: 4件  tool: 3件  operational: 3件
-信頼度: 平均 6.2/10, 最高 10/10
-最終更新: 2024-01-15
-```
+For each learning in the output:
 
-### 整理（prune）
-古い記録や信頼度の低い記録を整理:
-```
-/learn 整理
-```
-信頼度3以下 かつ 90日以上更新なし → 削除候補として提示。
+1. **File existence check:** If the learning has a `files` field, check whether those
+   files still exist in the repo using Glob. If any referenced files are deleted, flag:
+   "STALE: [key] references deleted file [path]"
 
-### プロジェクト学習
-現在のプロジェクト固有の学習記録のみ表示:
-```
-/learn プロジェクト
-```
+2. **Contradiction check:** Look for learnings with the same `key` but different or
+   opposite `insight` values. Flag: "CONFLICT: [key] has contradicting entries —
+   [insight A] vs [insight B]"
 
-## 保存場所
+Present each flagged entry via ask_user:
+- A) Remove this learning
+- B) Keep it
+- C) Update it (I'll tell you what to change)
 
-2つの保存先を使い分ける:
+For removals, read the learnings.jsonl file and remove the matching line, then write
+back. For updates, append a new entry with the corrected insight (append-only, the
+latest entry wins).
 
-- **プロジェクト固有**: `~/.gstack/projects/{slug}/learnings.jsonl` に JSONL 形式で追記
-- **Copilot メモリ**: `store_memory` ツールで `/memories/repo/` にも保存（検索用）
-- **グローバル**（2+プロジェクトで確認）: `~/.gstack/learnings.jsonl` + `/memories/` に保存
+---
 
-### JSONL スキーマ（本家互換）
+## Export
 
-```json
-{"ts":"2026-04-19T10:00:00Z","type":"pitfall","confidence":8,"source":"observed","text":"CartItemのN+1問題","project":"myapp"}
+Export learnings as markdown suitable for adding to CLAUDE.md or project documentation.
+
+```bash
+eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+.github/skills/bin/gstack-learnings-search --limit 50 2>/dev/null
 ```
 
-`~/.gstack/projects/{slug}/` ディレクトリが存在しない場合は作成する。slug は `git remote get-url origin` からリポ名を抽出して kebab-case にする。
+Format the output as a markdown section:
 
-## 他スキルとの連携
-
-各スキルの終了時、非自明な発見があれば自動的に学習記録に追加する：
-```
-学習記録に追加: [type] [key] (信頼度 ?/10)
-```
-
-次回のセッション開始時:
-```
-過去の学習を適用: [key] (信頼度 ?/10, [日付])
-```
-
-## 重要ルール
-
-- **非自明な知見のみ**: 「JavaScriptには変数がある」のような自明な知識は記録しない
-- **重複排除**: (key, type)の組み合わせが同じ場合は最新が勝つ
-- **プロジェクト固有**: そのプロジェクトでのみ有効な知見を記録
-- **ユーザー主権**: ユーザーが「これは間違い」と言ったら即削除
-
-## 自動振り返りモード
-
-`/learn 振り返り` で実行。セッション終了前に呼ぶことを推奨。
-
-### ステップ1: セッション活動の要約
-
-このセッションで行った活動を振り返る：
-
-1. **ファイル変更**: どのファイルを追加・変更・削除したか
-2. **エラー→修正パターン**: どんなエラーに遭遇し、どう修正したか
-3. **意思決定**: ユーザーがどんな選択をしたか（特にAIの提案を却下した場合）
-4. **ツール使用**: よく使ったツール、使い方のパターン
-
-### ステップ2: パターン候補の抽出
-
-セッション活動から、以下のカテゴリで候補を抽出する：
-
-| カテゴリ | 抽出基準 | 信頼度 |
-|---------|---------|--------|
-| pitfall | 同じエラーに2回以上遭遇 | 0.5 |
-| pattern | 成功した解決手法 | 0.4 |
-| preference | ユーザーがAIの提案を却下して別の選択をした | 0.6 |
-| tool | 特定のツールの効果的な使い方を発見 | 0.4 |
-| architecture | アーキテクチャ上の判断を行った | 0.3 |
-
-### ステップ3: ユーザーに提示
-
-```
-┌──────────────────────────────────────────┐
-│ セッション振り返り: ?個のパターンを検出    │
-├──────────────────────────────────────────┤
-│ 1. [type] [key] (信頼度 ?/10)            │
-│    → [insight の1文要約]                  │
-│                                          │
-│ 2. [type] [key] (信頼度 ?/10)            │
-│    → [insight の1文要約]                  │
-├──────────────────────────────────────────┤
-│ 記録しますか？                            │
-│ A) 全て記録                              │
-│ B) 選択して記録（番号を指定）             │
-│ C) 記録しない                            │
-└──────────────────────────────────────────┘
-```
-
-### ステップ4: 保存
-
-ユーザーが承認した候補をメモリに保存する：
-
-- **プロジェクト固有**: `/memories/repo/` に保存
-- **グローバル（2+プロジェクトで確認）**: `/memories/` に保存
-
-### 信頼度の昇格
-
-同じパターンが複数回観察されると信頼度が上がる：
-
-```
-初回観察:     0.3-0.5（候補）
-2回目:        0.5-0.7（確認済み）
-3回以上:      0.7-0.9（確立）
-ユーザー明言: 0.8-1.0（公式）
-```
-
-2つ以上のプロジェクトで同じパターンが観察された場合 → グローバル昇格を提案。
-
-## 次のスキル
-
-完了
-
-## エクスポート
-
-学習記録をmarkdownに変換し、ドキュメントやcopilot-instructions.mdに追加できる形式で出力する。
-
-```
-/learn エクスポート
-```
-
-出力形式:
 ```markdown
-## プロジェクトの学習記録
+## Project Learnings
 
-### パターン
-- **[key]**: [insight] (信頼度: ?/10)
+### Patterns
+- **[key]**: [insight] (confidence: N/10)
 
-### 落とし穴
-- **[key]**: [insight] (信頼度: ?/10)
+### Pitfalls
+- **[key]**: [insight] (confidence: N/10)
 
-### 好み
+### Preferences
 - **[key]**: [insight]
 
-### アーキテクチャ
-- **[key]**: [insight] (信頼度: ?/10)
+### Architecture
+- **[key]**: [insight] (confidence: N/10)
 ```
 
-出力先をユーザーに聞く:
-- A) copilot-instructions.md に追記
-- B) 別ファイルとして保存
-- C) 表示のみ
+Present the formatted output to the user. Ask if they want to append it to CLAUDE.md
+or save it as a separate file.
 
-## クロスセッションコンテキスト
+---
 
-セッション開始時に、前回のセッション情報が利用可能な場合（`session_store_sql` のセッション履歴、`store_memory` の記録）、前回の作業状態を要約して提示する:
+## Stats
 
+Show summary statistics about the project's learnings.
+
+```bash
+eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
+LEARN_FILE="$GSTACK_HOME/projects/$SLUG/learnings.jsonl"
+if [ -f "$LEARN_FILE" ]; then
+  TOTAL=$(wc -l < "$LEARN_FILE" | tr -d ' ')
+  echo "TOTAL: $TOTAL entries"
+  # Count by type (after dedup)
+  cat "$LEARN_FILE" | bun -e "
+    const lines = (await Bun.stdin.text()).trim().split('\n').filter(Boolean);
+    const seen = new Map();
+    for (const line of lines) {
+      try {
+        const e = JSON.parse(line);
+        const dk = (e.key||'') + '|' + (e.type||'');
+        const existing = seen.get(dk);
+        if (!existing || new Date(e.ts) > new Date(existing.ts)) seen.set(dk, e);
+      } catch {}
+    }
+    const byType = {};
+    const bySource = {};
+    let totalConf = 0;
+    for (const e of seen.values()) {
+      byType[e.type] = (byType[e.type]||0) + 1;
+      bySource[e.source] = (bySource[e.source]||0) + 1;
+      totalConf += e.confidence || 0;
+    }
+    console.log('UNIQUE: ' + seen.size + ' (after dedup)');
+    console.log('RAW_ENTRIES: ' + lines.length);
+    console.log('BY_TYPE: ' + JSON.stringify(byType));
+    console.log('BY_SOURCE: ' + JSON.stringify(bySource));
+    console.log('AVG_CONFIDENCE: ' + (totalConf / seen.size).toFixed(1));
+  " 2>/dev/null
+else
+  echo "NO_LEARNINGS"
+fi
 ```
-前回のセッション: /{skill} ({outcome})
-ブランチ: {branch}
-主要な変更: {files changed}
-```
 
-この機能は `/context-restore` と連携する。明示的な復帰は `/context-restore`、暗黙的なコンテキスト注入は `/learn` のクロスセッション機能が担う。
+Present the stats in a readable table format.
+
+---
+
+## Manual add
+
+The user wants to manually add a learning. Use ask_user to gather:
+1. Type (pattern / pitfall / preference / architecture / tool)
+2. A short key (2-5 words, kebab-case)
+3. The insight (one sentence)
+4. Confidence (1-10)
+5. Related files (optional)
+
+Then log it:
+
+```bash
+.github/skills/bin/gstack-learnings-log '{"skill":"learn","type":"TYPE","key":"KEY","insight":"INSIGHT","confidence":N,"source":"user-stated","files":["FILE1"]}'
+```

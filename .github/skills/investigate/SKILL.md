@@ -1,117 +1,242 @@
 ---
 name: investigate
-description: "根本原因デバッガー。Iron Law: 調査なしの修正は禁止。Use when: バグ調査、エラー原因、why is this broken、デバッグ、investigate、root cause。5フェーズの体系的デバッグ。3回失敗→エスカレート。"
-argument-hint: "バグの症状、エラーメッセージ、または問題の説明"
+description: "根本原因デバッガー。Iron Law: 調査なしの修正は禁止。Use when: バグ調査、エラー原因、why is this broken、デバッグ、investigate、root cause。5フェーズの体系的デバッグ。3回失敗→エスカレート。"
+argument-hint: "バグの症状、エラーメッセージ、または問題の説明"
 ---
 
-# 根本原因デバッグ
+# Systematic Debugging
 
-## いつ使うか
+## Iron Law
 
-- バグの原因がわからない
-- エラーが再現するが修正方法が不明
-- 「なぜこうなった？」を体系的に調べたい
+**NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.**
 
-## Iron Law（鉄の掟）
+Fixing symptoms creates whack-a-mole debugging. Every fix that doesn't address root cause makes the next bug harder to find. Find the root cause, then fix it.
 
-**調査なしの修正は禁止。**
+---
 
-推測に基づく修正 → 別のバグを生む → 更なる推測 →カオス。
-まず原因を特定し、次に修正する。順番を守れ。
 
-## スコープロック
 
-調査開始時、バグが存在するモジュールを特定し、**そのモジュール以外の編集を禁止する**。
-- 関係ないファイルの「ついで修正」は禁止
-- 修正は原因特定後、フェーズ4でのみ行う
-- スコープ外の問題を発見した場合 → メモに残し、調査完了後に別途対応
+## Phase 1: Root Cause Investigation
 
-## フェーズ1: 根本原因調査
+Gather context before forming any hypothesis.
 
-1. エラーメッセージを正確に記録
-2. 再現手順を特定
-3. 発生環境（OS、ランタイム、バージョン）を確認
-4. いつから発生しているか確認:
+1. **Collect symptoms:** Read the error messages, stack traces, and reproduction steps. If the user hasn't provided enough context, ask ONE question at a time via ask_user.
+
+2. **Read the code:** Trace the code path from the symptom back to potential causes. Use Grep to find all references, Read to understand the logic.
+
+3. **Check recent changes:**
    ```bash
-   git log --oneline --since="1 week ago" -- [関連ファイル]
+   git log --oneline -20 -- <affected-files>
    ```
-5. 関連するスタックトレースを収集
-6. 影響範囲を特定（他の機能に波及しているか）
+   Was this working before? What changed? A regression means the root cause is in the diff.
 
-## フェーズ2: パターン分析
+4. **Reproduce:** Can you trigger the bug deterministically? If not, gather more evidence before proceeding.
 
-症状を以下のパターンカテゴリと照合する:
+5. **Check investigation history:** Search prior learnings for investigations on the same files. Recurring bugs in the same area are an architectural smell. If prior investigations exist, note patterns and check if the root cause was structural.
 
-| パターン | 症状 | 典型的な原因 |
-|---------|------|------------|
-| レースコンディション | 間欠的な失敗、タイミング依存 | 非同期処理の競合、ロック不足 |
-| nil/null伝搬 | 予期しないTypeError/NPE | 入力バリデーション欠落、Optional未チェック |
-| 古いキャッシュ | 更新が反映されない | キャッシュ無効化の欠落、TTL設定ミス |
-| 状態破壊 | 操作後にデータ不整合 | 部分的なトランザクション、楽観ロックの欠落 |
-| 統合障害 | 外部サービスとの通信失敗 | API契約変更、タイムアウト設定、リトライ不足 |
-| 境界値 | 特定の入力でのみ発生 | off-by-one、オーバーフロー、空配列 |
-| 環境依存 | 特定環境でのみ発生 | 環境変数、パスの違い、権限 |
+## Prior Learnings
 
-パターンが合致したら、検証方法を即座に特定する。
+Search for relevant learnings from previous sessions:
 
-## フェーズ3: 仮説の生成と検証
-
-症状とパターン分析に基づき、3-5個の仮説を立てる：
-
-| # | 仮説 | 確率 | 検証方法 |
-|---|------|------|---------|
-| 1 | [仮説] | 高/中/低 | [具体的な検証手順] |
-| 2 | [仮説] | 高/中/低 | [具体的な検証手順] |
-| 3 | [仮説] | 高/中/低 | [具体的な検証手順] |
-
-確率の高い順に検証する:
-
-1. ログやデバッグ出力で確認
-2. テストケースを書いて再現
-3. 二分探索（git bisect）で導入時点を特定
-
-**3回連続で仮説が外れた場合:**
-→ エスカレート。ユーザーに状況を報告し、追加のコンテキストを求める。新しい視点が必要。
-
-## フェーズ4: 修正
-
-根本原因が特定された後:
-
-1. **最小限の修正**を作成（原因に直接対処する変更のみ）
-2. **回帰テスト**を作成（このバグが二度と発生しないことを保証）
-3. テストスイートを実行して修正を検証
-4. 関連するコードパスに同様の問題がないか確認（同じパターンの他の箇所）
-
-## フェーズ5: 検証と報告
-
-1. テストを新しいプロセスで実行（キャッシュの影響を排除）
-2. 修正前の状態で回帰テストが失敗することを確認（テストの有効性検証）
-3. 修正後の状態で全テストが通ることを確認
-4. 学んだパターンを `store_memory` で記録（将来の同種バグに備える）
-
-```
-┌────────────────────────────────────┐
-│ INVESTIGATION REPORT               │
-├────────────────────────────────────┤
-│ 症状: [1文で]                      │
-│ 根本原因: [1文で]                  │
-│ パターン: [カテゴリ名]             │
-│ 導入時点: [コミットハッシュ]        │
-│ 修正: [ファイル:行の変更内容]       │
-│ 回帰テスト: [テストファイル名]      │
-│ 仮説検証: ?/?個が正解              │
-│ 類似問題: ?箇所で同様のパターン    │
-└────────────────────────────────────┘
+```bash
+_CROSS_PROJ=$(.github/skills/bin/gstack-config get cross_project_learnings 2>/dev/null || echo "unset")
+echo "CROSS_PROJECT: $_CROSS_PROJ"
+if [ "$_CROSS_PROJ" = "true" ]; then
+  .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
+else
+  .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
+fi
 ```
 
-## 重要ルール
+If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
 
-- **推測で修正するな**: 原因を特定してから修正する
-- **スコープロック**: バグのあるモジュール以外を触らない
-- **3回失敗→エスカレート**: 無限ループに入らない
-- **回帰テスト必須**: 修正には必ずテストを添える
-- **パターンを記録**: 新しいバグパターンを発見したら `store_memory` で記録
+> gstack can search learnings from your other projects on this machine to find
+> patterns that might apply here. This stays local (no data leaves your machine).
+> Recommended for solo developers. Skip if you work on multiple client codebases
+> where cross-contamination would be a concern.
 
-## 次のスキル
+Options:
+- A) Enable cross-project learnings (recommended)
+- B) Keep learnings project-scoped only
 
-原因特定後 → `/tdd`（修正実装）
+If A: run `.github/skills/bin/gstack-config set cross_project_learnings true`
+If B: run `.github/skills/bin/gstack-config set cross_project_learnings false`
+
+Then re-run the search with the appropriate flag.
+
+If learnings are found, incorporate them into your analysis. When a review finding
+matches a past learning, display:
+
+**"Prior learning applied: [key] (confidence N/10, from [date])"**
+
+This makes the compounding visible. The user should see that gstack is getting
+smarter on their codebase over time.
+
+Output: **"Root cause hypothesis: ..."** — a specific, testable claim about what is wrong and why.
+
+---
+
+## Scope Lock
+
+After forming your root cause hypothesis, lock edits to the affected module to prevent scope creep.
+
+```bash
+[ -x "${CLAUDE_SKILL_DIR}/../freeze/bin/check-freeze.sh" ] && echo "FREEZE_AVAILABLE" || echo "FREEZE_UNAVAILABLE"
+```
+
+**If FREEZE_AVAILABLE:** Identify the narrowest directory containing the affected files. Write it to the freeze state file:
+
+```bash
+STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
+mkdir -p "$STATE_DIR"
+echo "<detected-directory>/" > "$STATE_DIR/freeze-dir.txt"
+echo "Debug scope locked to: <detected-directory>/"
+```
+
+Substitute `<detected-directory>` with the actual directory path (e.g., `src/auth/`). Tell the user: "Edits restricted to `<dir>/` for this debug session. This prevents changes to unrelated code. Run `/unfreeze` to remove the restriction."
+
+If the bug spans the entire repo or the scope is genuinely unclear, skip the lock and note why.
+
+**If FREEZE_UNAVAILABLE:** Skip scope lock. Edits are unrestricted.
+
+---
+
+## Phase 2: Pattern Analysis
+
+Check if this bug matches a known pattern:
+
+| Pattern | Signature | Where to look |
+|---------|-----------|---------------|
+| Race condition | Intermittent, timing-dependent | Concurrent access to shared state |
+| Nil/null propagation | NoMethodError, TypeError | Missing guards on optional values |
+| State corruption | Inconsistent data, partial updates | Transactions, callbacks, hooks |
+| Integration failure | Timeout, unexpected response | External API calls, service boundaries |
+| Configuration drift | Works locally, fails in staging/prod | Env vars, feature flags, DB state |
+| Stale cache | Shows old data, fixes on cache clear | Redis, CDN, browser cache, Turbo |
+
+Also check:
+- `TODOS.md` for related known issues
+- `git log` for prior fixes in the same area — **recurring bugs in the same files are an architectural smell**, not a coincidence
+
+**External pattern search:** If the bug doesn't match a known pattern above, web_search for:
+- "{framework} {generic error type}" — **sanitize first:** strip hostnames, IPs, file paths, SQL, customer data. Search the error category, not the raw message.
+- "{library} {component} known issues"
+
+If web_search is unavailable, skip this search and proceed with hypothesis testing. If a documented solution or known dependency bug surfaces, present it as a candidate hypothesis in Phase 3.
+
+---
+
+## Phase 3: Hypothesis Testing
+
+Before writing ANY fix, verify your hypothesis.
+
+1. **Confirm the hypothesis:** Add a temporary log statement, assertion, or debug output at the suspected root cause. Run the reproduction. Does the evidence match?
+
+2. **If the hypothesis is wrong:** Before forming the next hypothesis, consider searching for the error. **Sanitize first** — strip hostnames, IPs, file paths, SQL fragments, customer identifiers, and any internal/proprietary data from the error message. Search only the generic error type and framework context: "{component} {sanitized error type} {framework version}". If the error message is too specific to sanitize safely, skip the search. If web_search is unavailable, skip and proceed. Then return to Phase 1. Gather more evidence. Do not guess.
+
+3. **3-strike rule:** If 3 hypotheses fail, **STOP**. Use ask_user:
+   ```
+   3 hypotheses tested, none match. This may be an architectural issue
+   rather than a simple bug.
+
+   A) Continue investigating — I have a new hypothesis: [describe]
+   B) Escalate for human review — this needs someone who knows the system
+   C) Add logging and wait — instrument the area and catch it next time
+   ```
+
+**Red flags** — if you see any of these, slow down:
+- "Quick fix for now" — there is no "for now." Fix it right or escalate.
+- Proposing a fix before tracing data flow — you're guessing.
+- Each fix reveals a new problem elsewhere — wrong layer, not wrong code.
+
+---
+
+## Phase 4: Implementation
+
+Once root cause is confirmed:
+
+1. **Fix the root cause, not the symptom.** The smallest change that eliminates the actual problem.
+
+2. **Minimal diff:** Fewest files touched, fewest lines changed. Resist the urge to refactor adjacent code.
+
+3. **Write a regression test** that:
+   - **Fails** without the fix (proves the test is meaningful)
+   - **Passes** with the fix (proves the fix works)
+
+4. **Run the full test suite.** Paste the output. No regressions allowed.
+
+5. **If the fix touches >5 files:** Use ask_user to flag the blast radius:
+   ```
+   This fix touches N files. That's a large blast radius for a bug fix.
+   A) Proceed — the root cause genuinely spans these files
+   B) Split — fix the critical path now, defer the rest
+   C) Rethink — maybe there's a more targeted approach
+   ```
+
+---
+
+## Phase 5: Verification & Report
+
+**Fresh verification:** Reproduce the original bug scenario and confirm it's fixed. This is not optional.
+
+Run the test suite and paste the output.
+
+Output a structured debug report:
+```
+DEBUG REPORT
+════════════════════════════════════════
+Symptom:         [what the user observed]
+Root cause:      [what was actually wrong]
+Fix:             [what was changed, with file:line references]
+Evidence:        [test output, reproduction attempt showing fix works]
+Regression test: [file:line of the new test]
+Related:         [TODOS.md items, prior bugs in same area, architectural notes]
+Status:          DONE | DONE_WITH_CONCERNS | BLOCKED
+════════════════════════════════════════
+```
+
+Log the investigation as a learning for future sessions. Use `type: "investigation"` and include the affected files so future investigations on the same area can find this:
+
+```bash
+.github/skills/bin/gstack-learnings-log '{"skill":"investigate","type":"investigation","key":"ROOT_CAUSE_KEY","insight":"ROOT_CAUSE_SUMMARY","confidence":9,"source":"observed","files":["affected/file1.ts","affected/file2.ts"]}'
+```
+
+## Capture Learnings
+
+If you discovered a non-obvious pattern, pitfall, or architectural insight during
+this session, log it for future sessions:
+
+```bash
+.github/skills/bin/gstack-learnings-log '{"skill":"investigate","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+```
+
+**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
+(user stated), `architecture` (structural decision), `tool` (library/framework insight),
+`operational` (project environment/CLI/workflow knowledge).
+
+**Sources:** `observed` (you found this in the code), `user-stated` (user told you),
+`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+
+**Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
+An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
+
+**files:** Include the specific file paths this learning references. This enables
+staleness detection: if those files are later deleted, the learning can be flagged.
+
+**Only log genuine discoveries.** Don't log obvious things. Don't log things the user
+already knows. A good test: would this insight save time in a future session? If yes, log it.
+
+
+
+---
+
+## Important Rules
+
+- **3+ failed fix attempts → STOP and question the architecture.** Wrong architecture, not failed hypothesis.
+- **Never apply a fix you cannot verify.** If you can't reproduce and confirm, don't ship it.
+- **Never say "this should fix it."** Verify and prove it. Run the tests.
+- **If fix touches >5 files → ask_user** about blast radius before proceeding.
+- **Completion status:**
+  - DONE — root cause found, fix applied, regression test written, all tests pass
+  - DONE_WITH_CONCERNS — fixed but cannot fully verify (e.g., intermittent bug, requires staging)
+  - BLOCKED — root cause unclear after investigation, escalated
