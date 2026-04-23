@@ -88,7 +88,7 @@ describe('Phase 2: Skill Integrity', () => {
     const routing = fs.readFileSync(
       path.join(ROOT, '.github', 'copilot-instructions.md'), 'utf-8'
     )
-    const activeSkills = ['/review', '/ship', '/health', '/sprint', '/tdd', '/gstack-upgrade']
+    const activeSkills = ['/gstack-review', '/ship', '/health', '/sprint', '/tdd', '/gstack-upgrade']
     for (const skill of activeSkills) {
       expect(routing, `routing missing ${skill}`).toContain(skill)
     }
@@ -96,7 +96,7 @@ describe('Phase 2: Skill Integrity', () => {
 })
 
 describe('Phase 2: Outside Voice', () => {
-  it('/review SKILL.md contains independent review mechanism', () => {
+  it('/gstack-review SKILL.md contains independent review mechanism', () => {
     const content = fs.readFileSync(
       path.join(SKILLS_DIR, 'gstack-review', 'SKILL.md'), 'utf-8'
     )
