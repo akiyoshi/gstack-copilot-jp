@@ -32,55 +32,28 @@ triggers:
 ## Preamble (run first)
 
 ```bash
-_UPD=$(.github/skills/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 mkdir -p ~/.gstack/sessions
 touch ~/.gstack/sessions/"$PPID"
-_SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
 find ~/.gstack/sessions -mmin +120 -type f -exec rm {} + 2>/dev/null || true
-_PROACTIVE=$(.github/skills/bin/gstack-config get proactive 2>/dev/null || echo "true")
-_PROACTIVE_PROMPTED=$([ -f ~/.gstack/.proactive-prompted ] && echo "yes" || echo "no")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
-_SKILL_PREFIX=$(.github/skills/bin/gstack-config get skill_prefix 2>/dev/null || echo "false")
-echo "PROACTIVE: $_PROACTIVE"
-echo "PROACTIVE_PROMPTED: $_PROACTIVE_PROMPTED"
-echo "SKILL_PREFIX: $_SKILL_PREFIX"
-source <(.github/skills/bin/gstack-repo-mode 2>/dev/null) || true
-REPO_MODE=${REPO_MODE:-unknown}
-echo "REPO_MODE: $REPO_MODE"
-_LAKE_SEEN=$([ -f ~/.gstack/.completeness-intro-seen ] && echo "yes" || echo "no")
-echo "LAKE_INTRO: $_LAKE_SEEN"
-_TEL=$(.github/skills/bin/gstack-config get telemetry 2>/dev/null || true)
-_TEL_PROMPTED=$([ -f ~/.gstack/.telemetry-prompted ] && echo "yes" || echo "no")
-_TEL_START=$(date +%s)
-_SESSION_ID="$$-$(date +%s)"
+_TEL=$(
 echo "TELEMETRY: ${_TEL:-off}"
-echo "TEL_PROMPTED: $_TEL_PROMPTED"
 # Writing style verbosity (V1: default = ELI10, terse = tighter V0 prose.
 # Read on every skill run so terse mode takes effect without a restart.)
-_EXPLAIN_LEVEL=$(.github/skills/bin/gstack-config get explain_level 2>/dev/null || echo "default")
-if [ "$_EXPLAIN_LEVEL" != "default" ] && [ "$_EXPLAIN_LEVEL" != "terse" ]; then _EXPLAIN_LEVEL="default"; fi
-echo "EXPLAIN_LEVEL: $_EXPLAIN_LEVEL"
 # Question tuning (see /plan-tune). Observational only in V1.
-_QUESTION_TUNING=$(.github/skills/bin/gstack-config get question_tuning 2>/dev/null || echo "false")
-echo "QUESTION_TUNING: $_QUESTION_TUNING"
-mkdir -p ~/.gstack/analytics
 if [ "$_TEL" != "off" ]; then
-echo '{"skill":"plan-design-review","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 fi
 # zsh-compatible: use find instead of glob to avoid NOMATCH error
-for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do
   if [ -f "$_PF" ]; then
-    if [ "$_TEL" != "off" ] && [ -x ".github/skills/bin/gstack-telemetry-log" ]; then
-      .github/skills/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true
     fi
     rm -f "$_PF" 2>/dev/null || true
   fi
   break
 done
 # Learnings count
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" 2>/dev/null || true
+eval "$(true" 2>/dev/null || true
 _LEARN_FILE="${GSTACK_HOME:-$HOME/.gstack}/projects/${SLUG:-unknown}/learnings.jsonl"
 if [ -f "$_LEARN_FILE" ]; then
   _LEARN_COUNT=$(wc -l < "$_LEARN_FILE" 2>/dev/null | tr -d ' ')
@@ -92,31 +65,25 @@ else
   echo "LEARNINGS: 0"
 fi
 # Session timeline: record skill start (local-only, never sent anywhere)
-.github/skills/bin/gstack-timeline-log '{"skill":"plan-design-review","event":"started","branch":"'"$_BRANCH"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null &
-# Check if CLAUDE.md has routing rules
+# Check if copilot-instructions.md has routing rules
 _HAS_ROUTING="no"
-if [ -f CLAUDE.md ] && grep -q "## Skill routing" CLAUDE.md 2>/dev/null; then
+if [ -f copilot-instructions.md ] && grep -q "## Skill routing" copilot-instructions.md 2>/dev/null; then
   _HAS_ROUTING="yes"
 fi
-_ROUTING_DECLINED=$(.github/skills/bin/gstack-config get routing_declined 2>/dev/null || echo "false")
+_ROUTING_DECLINED=$(
 echo "HAS_ROUTING: $_HAS_ROUTING"
 echo "ROUTING_DECLINED: $_ROUTING_DECLINED"
 # Vendoring deprecation: detect if CWD has a vendored gstack copy
 _VENDORED="no"
-if [ -d ".claude/skills/gstack" ] && [ ! -L ".claude/skills/gstack" ]; then
-  if [ -f ".claude/skills/gstack/VERSION" ] || [ -d ".claude/skills/gstack/.git" ]; then
     _VENDORED="yes"
   fi
 fi
 echo "VENDORED_GSTACK: $_VENDORED"
 echo "MODEL_OVERLAY: claude"
 # Checkpoint mode (explicit = no auto-commit, continuous = WIP commits as you go)
-_CHECKPOINT_MODE=$(.github/skills/bin/gstack-config get checkpoint_mode 2>/dev/null || echo "explicit")
-_CHECKPOINT_PUSH=$(.github/skills/bin/gstack-config get checkpoint_push 2>/dev/null || echo "false")
-echo "CHECKPOINT_MODE: $_CHECKPOINT_MODE"
+_CHECKPOINT_PUSH=$(
 echo "CHECKPOINT_PUSH: $_CHECKPOINT_PUSH"
 # Detect spawned session (OpenClaw or other orchestrator)
-[ -n "$OPENCLAW_SESSION" ] && echo "SPAWNED_SESSION: true" || true
 ```
 
 If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills AND do not
@@ -132,13 +99,11 @@ of `/qa`, `/gstack-ship` instead of `/ship`). Disk paths are unaffected — alwa
 
 If output shows `UPGRADE_AVAILABLE <old> <new>`: read `.github/skills/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise ask_user with 4 options, write snooze state if declined).
 
-If output shows `JUST_UPGRADED <from> <to>` AND `SPAWNED_SESSION` is NOT set: tell
 the user "Running gstack v{to} (just updated!)" and then check for new features to
 surface. For each per-feature marker below, if the marker file is missing AND the
 feature is plausibly useful for this user, use ask_user to let them try it.
 Fire once per feature per user, NOT once per upgrade.
 
-**In spawned sessions (`SPAWNED_SESSION` = "true"): SKIP feature discovery entirely.**
 Just print "Running gstack v{to}" and continue. Orchestrators do not want interactive
 prompts from sub-sessions.
 
@@ -150,7 +115,6 @@ prompts from sub-sessions.
    anywhere unless you turn that on. Want to try it?"
    Options: A) Enable continuous mode, B) Show me first (print the section from
    the preamble Continuous Checkpoint Mode), C) Skip.
-   If A: run `.github/skills/bin/gstack-config set checkpoint_mode continuous`.
    Always: `touch .github/skills/.feature-prompted-continuous-checkpoint`
 
 2. `.github/skills/.feature-prompted-model-overlay` →
@@ -176,7 +140,6 @@ Options:
 - B) Restore V0 prose — set `explain_level: terse`
 
 If A: leave `explain_level` unset (defaults to `default`).
-If B: run `.github/skills/bin/gstack-config set explain_level terse`.
 
 Always run (regardless of choice):
 ```bash
@@ -198,20 +161,15 @@ touch ~/.gstack/.completeness-intro-seen
 
 Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
 
-If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,
 ask the user about telemetry. Use ask_user:
 
 > Help gstack get better! Community mode shares usage data (which skills you use, how long
 > they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
 > No code, file paths, or repo names are ever sent.
-> Change anytime with `gstack-config set telemetry off`.
 
 Options:
 - A) Help gstack get better! (recommended)
 - B) No thanks
-
-If A: run `.github/skills/bin/gstack-config set telemetry community`
-
 If B: ask a follow-up ask_user:
 
 > How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
@@ -220,18 +178,10 @@ If B: ask a follow-up ask_user:
 Options:
 - A) Sure, anonymous is fine
 - B) No thanks, fully off
-
-If B→A: run `.github/skills/bin/gstack-config set telemetry anonymous`
-If B→B: run `.github/skills/bin/gstack-config set telemetry off`
-
 Always run:
 ```bash
 touch ~/.gstack/.telemetry-prompted
 ```
-
-This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
-
-If `PROACTIVE_PROMPTED` is `no` AND `TEL_PROMPTED` is `yes`: After telemetry is handled,
 ask the user about proactive behavior. Use ask_user:
 
 > gstack can proactively figure out when you might need a skill while you work —
@@ -241,10 +191,6 @@ ask the user about proactive behavior. Use ask_user:
 Options:
 - A) Keep it on (recommended)
 - B) Turn it off — I'll type /commands myself
-
-If A: run `.github/skills/bin/gstack-config set proactive true`
-If B: run `.github/skills/bin/gstack-config set proactive false`
-
 Always run:
 ```bash
 touch ~/.gstack/.proactive-prompted
@@ -253,19 +199,19 @@ touch ~/.gstack/.proactive-prompted
 This only happens once. If `PROACTIVE_PROMPTED` is `yes`, skip this entirely.
 
 If `HAS_ROUTING` is `no` AND `ROUTING_DECLINED` is `false` AND `PROACTIVE_PROMPTED` is `yes`:
-Check if a CLAUDE.md file exists in the project root. If it does not exist, create it.
+Check if a copilot-instructions.md file exists in the project root. If it does not exist, create it.
 
 Use ask_user:
 
-> gstack works best when your project's CLAUDE.md includes skill routing rules.
+> gstack works best when your project's copilot-instructions.md includes skill routing rules.
 > This tells Claude to use specialized workflows (like /ship, /investigate, /qa)
 > instead of answering directly. It's a one-time addition, about 15 lines.
 
 Options:
-- A) Add routing rules to CLAUDE.md (recommended)
+- A) Add routing rules to copilot-instructions.md (recommended)
 - B) No thanks, I'll invoke skills manually
 
-If A: Append this section to the end of CLAUDE.md:
+If A: Append this section to the end of copilot-instructions.md:
 
 ```markdown
 
@@ -295,7 +241,6 @@ Key routing rules:
 - Post-deploy monitoring → invoke /canary
 - Update docs after shipping → invoke /document-release
 - Weekly retro, "how'd we do" → invoke /retro
-- Second opinion, codex review → invoke /codex
 - Safety mode, careful mode, lock it down → invoke /careful or /guard
 - Restrict edits to a directory → invoke /freeze or /unfreeze
 - Upgrade gstack → invoke /gstack-upgrade
@@ -311,20 +256,14 @@ Key routing rules:
 - Code quality dashboard → invoke /health
 ```
 
-Then commit the change: `git add CLAUDE.md && git commit -m "chore: add gstack skill routing rules to CLAUDE.md"`
-
-If B: run `.github/skills/bin/gstack-config set routing_declined true`
-Say "No problem. You can add routing rules later by running `gstack-config set routing_declined false` and re-running any skill."
-
+Then commit the change: `git add copilot-instructions.md && git commit -m "chore: add gstack skill routing rules to copilot-instructions.md"`
 This only happens once per project. If `HAS_ROUTING` is `yes` or `ROUTING_DECLINED` is `true`, skip this entirely.
 
 If `VENDORED_GSTACK` is `yes`: This project has a vendored copy of gstack at
-`.claude/skills/gstack/`. Vendoring is deprecated. We will not keep vendored copies
 up to date, so this project's gstack will fall behind.
 
 Use ask_user (one-time per project, check for `~/.gstack/.vendoring-warned-$SLUG` marker):
 
-> This project has gstack vendored in `.claude/skills/gstack/`. Vendoring is deprecated.
 > We won't keep this copy up to date, so you'll fall behind on new features and fixes.
 >
 > Want to migrate to team mode? It takes about 30 seconds.
@@ -334,23 +273,19 @@ Options:
 - B) No, I'll handle it myself
 
 If A:
-1. Run `git rm -r .claude/skills/gstack/`
-2. Run `echo '.claude/skills/gstack/' >> .gitignore`
 3. Run `.github/skills/bin/gstack-team-init required` (or `optional`)
-4. Run `git add .claude/ .gitignore CLAUDE.md && git commit -m "chore: migrate gstack from vendored to team mode"`
 5. Tell the user: "Done. Each developer now runs: `cd .github/skills/gstack && ./setup --team`"
 
 If B: say "OK, you're on your own to keep the vendored copy up to date."
 
 Always run (regardless of choice):
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" 2>/dev/null || true
+eval "$(true" 2>/dev/null || true
 touch ~/.gstack/.vendoring-warned-${SLUG:-unknown}
 ```
 
 This only happens once per project. If the marker file exists, skip entirely.
 
-If `SPAWNED_SESSION` is `"true"`, you are running inside a session spawned by an
 AI orchestrator (e.g., OpenClaw). In spawned sessions:
 - Do NOT use ask_user for interactive prompts. Auto-choose the recommended option.
 - Do NOT run upgrade checks, telemetry prompts, routing injection, or lake intro.
@@ -431,7 +366,7 @@ After compaction or at session start, check for recent project artifacts.
 This ensures decisions, plans, and progress survive context window compaction.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 _PROJ="${GSTACK_HOME:-$HOME/.gstack}/projects/${SLUG:-unknown}"
 if [ -d "$_PROJ" ]; then
   echo "--- RECENT ARTIFACTS ---"
@@ -481,9 +416,6 @@ available]. [Health score if available]." Keep it to 2-3 sentences.
 Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
 
 Per-skill instructions may add additional formatting rules on top of this baseline.
-
-## Writing Style (skip entirely if `EXPLAIN_LEVEL: terse` appears in the preamble echo OR the user's current message explicitly requests terse / no-explanations output)
-
 These rules apply to every ask_user, every response you write to the user, and every review finding. They compose with the ask_user Format section above: Format = *how* a question is structured; Writing Style = *the prose quality of the content inside it*.
 
 1. **Jargon gets a one-sentence gloss on first use per skill invocation.** Even if the user's own prompt already contained the term — users often paste jargon from someone else's plan. Gloss unconditionally on first use. No cross-invocation memory: a new skill fire is a new first-use opportunity. Example: "race condition (two things happen at the same time and step on each other)".
@@ -580,9 +512,6 @@ These rules apply to every ask_user, every response you write to the user, and e
 - buffer overflow
 
 Terms not on this list are assumed plain-English enough.
-
-Terse mode (EXPLAIN_LEVEL: terse): skip this entire section. Emit output in V0 prose style — no glosses, no outcome-framing layer, shorter responses. Power users who know the terms get tighter output this way.
-
 ## Completeness Principle — Boil the Lake
 
 AI makes completeness near-free. Always recommend the complete option over shortcuts — the delta is minutes with CC+gstack. A "lake" (100% coverage, all edge cases) is boilable; an "ocean" (full rewrite, multi-quarter migration) is not. Boil lakes, flag oceans.
@@ -613,7 +542,6 @@ This does NOT apply to routine coding, small features, or obvious changes.
 
 ## Continuous Checkpoint Mode
 
-If `CHECKPOINT_MODE` is `"continuous"` (from preamble output): auto-commit work as
 you go with `WIP:` prefix so session state survives crashes and context switches.
 
 **When to commit (continuous mode only):**
@@ -651,7 +579,6 @@ commits on the current branch to reconstruct session state. When `/ship` runs, i
 filter-squashes WIP commits only (preserving non-WIP commits) via
 `git rebase --autosquash` so the PR contains clean bisectable commits.
 
-If `CHECKPOINT_MODE` is `"explicit"` (the default): no auto-commit behavior. Commit
 only when the user explicitly asks, or when a skill workflow (like /ship) runs a
 commit step. Ignore this section entirely.
 
@@ -669,9 +596,6 @@ or calling /context-save to save progress and start fresh.
 This is a soft nudge, not a measurable feature. No thresholds, no enforcement. The
 goal is self-awareness during long sessions. If the session stays short, skip it.
 Progress summaries must NEVER mutate git state — they are reporting, not committing.
-
-## Question Tuning (skip entirely if `QUESTION_TUNING: false`)
-
 **Before each ask_user.** Pick a registered `question_id` (see
 `scripts/question-registry.ts`) or an ad-hoc `{skill}-{slug}`. Check preference:
 `.github/skills/bin/gstack-question-preference --check "<id>"`.
@@ -682,7 +606,6 @@ Progress summaries must NEVER mutate git state — they are reporting, not commi
 
 **After the user answers.** Log it (non-fatal — best-effort):
 ```bash
-.github/skills/bin/gstack-question-log '{"skill":"plan-design-review","question_id":"<id>","question_summary":"<short>","category":"<approval|clarification|routing|cherry-pick|feedback-loop>","door_type":"<one-way|two-way>","options_count":N,"user_choice":"<key>","recommended":"<key>","session_id":"'"$_SESSION_ID"'"}' 2>/dev/null || true
 ```
 
 **Offer inline tune (two-way only, skip on one-way).** Add one line:
@@ -707,7 +630,6 @@ retry. On success, confirm inline: "Set `<id>` → `<preference>`. Active immedi
 
 ## Repo Ownership — See Something, Say Something
 
-`REPO_MODE` controls how to handle issues outside your branch:
 - **`solo`** — You own everything. Investigate and offer to fix proactively.
 - **`collaborative`** / **`unknown`** — Flag via ask_user, don't fix (may be someone else's).
 
@@ -720,7 +642,6 @@ Before building anything unfamiliar, **search first.** See `.github/skills/ETHOS
 
 **Eureka:** When first-principles reasoning contradicts conventional wisdom, name it and log:
 ```bash
-jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" '{ts:$ts,skill:$skill,branch:$branch,insight:$insight}' >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
 ```
 
 ## Completion Status Protocol
@@ -759,7 +680,7 @@ Before completing, reflect on this session:
 If yes, log an operational learning for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"SKILL_NAME","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"observed"}'
+'
 ```
 
 Replace SKILL_NAME with the current skill name. Only log genuine operational discoveries.
@@ -774,7 +695,6 @@ Determine the outcome from the workflow result (success if completed normally, e
 if it failed, abort if the user interrupted).
 
 **PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
-`~/.gstack/analytics/` (user config directory, not project files). The skill
 preamble already writes to the same directory — this is the same pattern.
 Skipping this command loses session duration and outcome data.
 
@@ -782,19 +702,10 @@ Run this bash:
 
 ```bash
 _TEL_END=$(date +%s)
-_TEL_DUR=$(( _TEL_END - _TEL_START ))
-rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 # Session timeline: record skill completion (local-only, never sent anywhere)
-.github/skills/bin/gstack-timeline-log '{"skill":"SKILL_NAME","event":"completed","branch":"'$(git branch --show-current 2>/dev/null || echo unknown)'","outcome":"OUTCOME","duration_s":"'"$_TEL_DUR"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null || true
-# Local analytics (gated on telemetry setting)
 if [ "$_TEL" != "off" ]; then
-echo '{"skill":"SKILL_NAME","duration_s":"'"$_TEL_DUR"'","outcome":"OUTCOME","browse":"USED_BROWSE","session":"'"$_SESSION_ID"'","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 fi
 # Remote telemetry (opt-in, requires binary)
-if [ "$_TEL" != "off" ] && [ -x .github/skills/bin/gstack-telemetry-log ]; then
-  .github/skills/bin/gstack-telemetry-log \
-    --skill "SKILL_NAME" --duration "$_TEL_DUR" --outcome "OUTCOME" \
-    --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 fi
 ```
 
@@ -804,31 +715,8 @@ If you cannot determine the outcome, use "unknown". The local JSONL always logs.
 remote binary only runs if telemetry is not off and the binary exists.
 
 ## Plan Mode Safe Operations
-
-In plan mode, these are always allowed (they inform the plan, don't modify source):
-`$B` (browse), `$D` (design), `codex exec`/`codex review`, writes to `~/.gstack/`,
-writes to the plan file, `open` for generated artifacts.
-
 ## Skill Invocation During Plan Mode
-
-If the user invokes a skill in plan mode, that skill takes precedence over generic plan mode behavior. Treat it as executable instructions, not reference. Follow step
-by step. ask_user calls satisfy plan mode's end-of-turn requirement. At a STOP
-point, stop immediately. Do not continue the workflow past a STOP point and do not call ExitPlanMode there. Commands marked "PLAN
-MODE EXCEPTION — ALWAYS RUN" execute. Other writes need to be already permitted
-above or explicitly exception-marked. Call ExitPlanMode only after the skill
-workflow completes — only then call ExitPlanMode (or if the user tells you to cancel the skill or leave plan mode).
-
 ## Plan Status Footer
-
-In plan mode, before ExitPlanMode: if the plan file lacks a `## GSTACK REVIEW REPORT`
-section, run `.github/skills/bin/gstack-review-read` and append a report.
-With JSONL entries (before `---CONFIG---`), format the standard runs/status/findings
-table. With `NO_REVIEWS` or empty, append a 5-row placeholder table (CEO/Codex/Eng/
-Design/DX Review) with all zeros and verdict "NO REVIEWS YET — run `/autoplan`".
-If a richer review report already exists, skip — review skills wrote it.
-
-PLAN MODE EXCEPTION — always allowed (it's the plan file).
-
 ## Step 0: Detect platform and base branch
 
 First, detect the git hosting platform from the remote URL:
@@ -1041,9 +929,9 @@ git diff <base> --stat
 
 Then read:
 - The plan file (current plan or branch diff)
-- CLAUDE.md — project conventions
+- copilot-instructions.md — project conventions
 - DESIGN.md — if it exists, ALL design decisions calibrate against it
-- TODOS.md — any design-related TODOs this plan touches
+- plan.md — any design-related TODOs this plan touches
 
 Map:
 * What is the UI scope of this plan? (pages, components, interactions)
@@ -1064,16 +952,12 @@ Report findings before proceeding to Step 0.
 ```bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 D=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/design/dist/design" ] && D="$_ROOT/.claude/skills/gstack/design/dist/design"
-[ -z "$D" ] && D="$HOME/.claude/skills/gstack/design/dist/design"
 if [ -x "$D" ]; then
   echo "DESIGN_READY: $D"
 else
   echo "DESIGN_NOT_AVAILABLE"
 fi
 B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.claude/skills/gstack/browse/dist/browse"
-[ -z "$B" ] && B="$HOME/.claude/skills/gstack/browse/dist/browse"
 if [ -x "$B" ]; then
   echo "BROWSE_READY: $B"
 else
@@ -1090,15 +974,9 @@ comparison boards. The user just needs to see the HTML file in any browser.
 
 If `DESIGN_READY`: the design binary is available for visual mockup generation.
 Commands:
-- `$D generate --brief "..." --output /path.png` — generate a single mockup
-- `$D variants --brief "..." --count 3 --output-dir /path/` — generate N style variants
-- `$D compare --images "a.png,b.png,c.png" --output /path/board.html --serve` — comparison board + HTTP server
-- `$D serve --html /path/board.html` — serve comparison board and collect feedback via HTTP
-- `$D check --image /path.png --brief "..."` — vision quality gate
-- `$D iterate --session /path/session.json --feedback "..." --output /path.png` — iterate
 
 **CRITICAL PATH RULE:** All design artifacts (mockups, comparison boards, approved.json)
-MUST be saved to `~/.gstack/projects/$SLUG/designs/`, NEVER to `.context/`,
+MUST be saved to `./designs/`, NEVER to `.context/`,
 `docs/designs/`, `/tmp/`, or any project-local directory. Design artifacts are USER
 data, not project files. They persist across branches, conversations, and workspaces.
 
@@ -1139,20 +1017,19 @@ The ONLY time you skip mockups is when:
 If the user explicitly says "skip mockups" or "text only", respect that. Otherwise, generate.
 
 **PLAN MODE EXCEPTION — ALWAYS RUN:** These commands write design artifacts to
-`~/.gstack/projects/$SLUG/designs/` (user config directory, not project files).
+`./designs/` (user config directory, not project files).
 Mockups are design artifacts that inform the plan, not code changes. The gstack
 designer outputs PNGs and HTML comparison boards for human review during the
 planning phase. Generating mockups during planning is the whole point.
 
 Allowed commands under this exception:
-- `mkdir -p ~/.gstack/projects/$SLUG/designs/...`
-- `$D generate`, `$D variants`, `$D compare`, `$D iterate`, `$D evolve`, `$D check`
+- `mkdir -p ./designs/...`
 - `open` (fallback for viewing boards when `$B` is not available)
 
 First, set up the output directory. Name it after the screen/feature being designed and today's date:
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 _DESIGN_DIR="$HOME/.gstack/projects/$SLUG/designs/<screen-name>-$(date +%Y%m%d)"
 mkdir -p "$_DESIGN_DIR"
 echo "DESIGN_DIR: $_DESIGN_DIR"
@@ -1168,13 +1045,11 @@ The sequential constraint here is specific to plan-design-review's inline patter
 For each UI screen/section in scope, construct a design brief from the plan's description (and DESIGN.md if present) and generate variants:
 
 ```bash
-$D variants --brief "<description assembled from plan + DESIGN.md constraints>" --count 3 --output-dir "$_DESIGN_DIR/"
 ```
 
 After generation, run a cross-model quality check on each variant:
 
 ```bash
-$D check --image "$_DESIGN_DIR/variant-A.png" --brief "<the original brief>"
 ```
 
 Flag any variants that fail the quality check. Offer to regenerate failures.
@@ -1189,7 +1064,6 @@ feedback output. Showing mockups inline is a degraded experience.
 Create the comparison board and serve it over HTTP:
 
 ```bash
-$D compare --images "$_DESIGN_DIR/variant-A.png,$_DESIGN_DIR/variant-B.png,$_DESIGN_DIR/variant-C.png" --output "$_DESIGN_DIR/design-board.html" --serve
 ```
 
 This command generates the board HTML, starts an HTTP server on a random port,
@@ -1251,8 +1125,6 @@ the approved variant.
 1. Read `regenerateAction` from the JSON (`"different"`, `"match"`, `"more_like_B"`,
    `"remix"`, or custom text)
 2. If `regenerateAction` is `"remix"`, read `remixSpec` (e.g. `{"layout":"A","colors":"B"}`)
-3. Generate new variants with `$D iterate` or `$D variants` using updated brief
-4. Create new board: `$D compare --images "..." --output "$_DESIGN_DIR/design-board.html"`
 5. Reload the board in the user's browser (same tab):
    `curl -s -X POST http://127.0.0.1:PORT/api/reload -H 'Content-Type: application/json' -d '{"html":"$_DESIGN_DIR/design-board.html"}'`
 6. The board auto-refreshes. **ask_user again** with the same board URL to
@@ -1262,7 +1134,6 @@ the approved variant.
 ask_user response instead of using the board. Use their text response
 as the feedback.
 
-**POLLING FALLBACK:** Only use polling if `$D serve` fails (no port available).
 In that case, show each variant inline using the view tool (so the user can see them),
 then use ask_user:
 "The comparison board server failed to start. I've shown the variants above.
@@ -1291,9 +1162,6 @@ echo '{"approved_variant":"<V>","feedback":"<FB>","date":"'$(date -u +%Y-%m-%dT%
 Note which direction was approved. This becomes the visual reference for all subsequent review passes.
 
 **Multiple variants/screens:** If the user asked for multiple variants (e.g., "5 versions of the homepage"), generate ALL as separate variant sets with their own comparison boards. Each screen/variant set gets its own subdirectory under `designs/`. Complete all mockup generation and user selection before starting review passes.
-
-**If `DESIGN_NOT_AVAILABLE`:** Tell the user: "The gstack designer isn't set up yet. Run `$D setup` to enable visual mockups. Proceeding with text-only review, but you're missing the best part." Then proceed to review passes with text-based review.
-
 ## Design Outside Voices (parallel)
 
 Use ask_user:
@@ -1306,7 +1174,6 @@ If user chooses B, skip this step and continue.
 
 **Check Codex availability:**
 ```bash
-which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
 **If Codex is available**, launch both voices simultaneously:
@@ -1315,7 +1182,6 @@ which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```bash
 TMPERR_DESIGN=$(mktemp /tmp/codex-design-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-codex exec "Read the plan file at [plan-file-path]. Evaluate this plan's UI/UX design against these criteria.
 
 HARD REJECTION — flag if ANY apply:
 1. Generic SaaS card grid as first impression
@@ -1340,7 +1206,7 @@ HARD RULES — first classify as MARKETING/LANDING PAGE vs APP UI vs HYBRID, the
 - APP UI: Calm surface hierarchy, dense but readable, utility language, minimal chrome
 - UNIVERSAL: CSS variables for colors, no default font stacks, one job per section, cards earn existence
 
-For each finding: what's wrong, what will happen if it ships unresolved, and the specific fix. Be opinionated. No hedging." -C "$_REPO_ROOT" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_DESIGN"
+For each finding: what's wrong, what will happen if it ships unresolved, and the specific fix. Be opinionated. No hedging." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_DESIGN"
 ```
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
 ```bash
@@ -1360,7 +1226,6 @@ Dispatch a subagent with this prompt:
 For each finding: what's wrong, severity (critical/high/medium), and the fix."
 
 **Error handling (all non-blocking):**
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run `codex login` to authenticate."
 - **Timeout:** "Codex timed out after 5 minutes."
 - **Empty response:** "Codex returned no response."
 - On any Codex error: proceed with Claude subagent output only, tagged `[single-model]`.
@@ -1422,7 +1287,6 @@ If `DESIGN_READY` was printed during setup AND a dimension rates below 7/10,
 offer to generate a visual mockup showing what the improved version would look like:
 
 ```bash
-$D generate --brief "<description of what 10/10 looks like for this dimension>" --output /tmp/gstack-ideal-<dimension>.png
 ```
 
 Show the mockup to the user via the view tool. This makes the gap between
@@ -1440,9 +1304,6 @@ descriptions of what 10/10 looks like.
 Search for relevant learnings from previous sessions:
 
 ```bash
-_CROSS_PROJ=$(.github/skills/bin/gstack-config get cross_project_learnings 2>/dev/null || echo "unset")
-echo "CROSS_PROJECT: $_CROSS_PROJ"
-if [ "$_CROSS_PROJ" = "true" ]; then
   .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
   .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
@@ -1459,10 +1320,6 @@ If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
 Options:
 - A) Enable cross-project learnings (recommended)
 - B) Keep learnings project-scoped only
-
-If A: run `.github/skills/bin/gstack-config set cross_project_learnings true`
-If B: run `.github/skills/bin/gstack-config set cross_project_learnings false`
-
 Then re-run the search with the appropriate flag.
 
 If learnings are found, incorporate them into your analysis. When a review finding
@@ -1583,7 +1440,6 @@ Source: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developer
 - "Hero section" → what makes this hero feel like THIS product?
 - "Clean, modern UI" → meaningless. Replace with actual design decisions.
 - "Dashboard with widgets" → what makes this NOT every other dashboard?
-If visual mockups were generated in Step 0.5, evaluate them against the AI slop blacklist above. Read each mockup image using the view tool. Does the mockup fall into generic patterns (3-column grid, centered hero, stock-photo feel)? If so, flag it and offer to regenerate with more specific direction via `$D iterate --feedback "..."`.
 **STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
 
 ### Pass 5: Design System Alignment
@@ -1614,9 +1470,6 @@ Each decision = one ask_user with recommendation + WHY + alternatives. Edit the 
 If mockups were generated in Step 0.5 and review passes changed significant design decisions (information architecture restructure, new states, layout changes), offer to regenerate (one-shot, not a loop):
 
 ask_user: "The review passes changed [list major design changes]. Want me to regenerate mockups to reflect the updated plan? This ensures the visual reference matches what we're actually building."
-
-If yes, use `$D iterate` with feedback summarizing the changes, or `$D variants` with an updated brief. Save to the same `$_DESIGN_DIR` directory.
-
 ## CRITICAL RULE — How to ask questions
 Follow the ask_user format from the Preamble above. Additional rules for plan design reviews:
 * **One issue = one ask_user call.** Never combine multiple issues into one question.
@@ -1625,7 +1478,6 @@ Follow the ask_user format from the Preamble above. Additional rules for plan de
 * **Map to Design Principles above.** One sentence connecting your recommendation to a specific principle.
 * Label with issue NUMBER + option LETTER (e.g., "3A", "3B").
 * **Escape hatch:** If a section has no issues, say so and move on. If a gap has an obvious fix, state what you'll add and move on — don't waste a question on it. Only use ask_user when there is a genuine design choice with meaningful tradeoffs.
-* **NEVER use ask_user to ask which variant the user prefers.** Always create a comparison board first (`$D compare --serve`) and open it in the browser. The board has rating controls, comments, remix/regenerate buttons, and structured feedback output. Use ask_user ONLY to notify the user the board is open and wait for them to finish — not to present variants inline and ask "which do you prefer?" That is a degraded experience.
 
 ## Required Outputs
 
@@ -1635,7 +1487,7 @@ Design decisions considered and explicitly deferred, with one-line rationale eac
 ### "What already exists" section
 Existing DESIGN.md, UI patterns, and components that the plan should reuse.
 
-### TODOS.md updates
+### plan.md updates
 After all review passes are complete, present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step.
 
 For design debt: missing a11y, unresolved responsive behavior, deferred empty states. Each TODO gets:
@@ -1646,7 +1498,7 @@ For design debt: missing a11y, unresolved responsive behavior, deferred empty st
 * **Context:** Enough detail that someone picking this up in 3 months understands the motivation.
 * **Depends on / blocked by:** Any prerequisites.
 
-Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
+Then present options: **A)** Add to plan.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
 
 ### Completion Summary
 ```
@@ -1665,7 +1517,7 @@ Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough
   +--------------------------------------------------------------------+
   | NOT in scope         | written (___ items)                         |
   | What already exists  | written                                     |
-  | TODOS.md updates     | ___ items proposed                          |
+  | plan.md updates     | ___ items proposed                          |
   | Approved Mockups     | ___ generated, ___ approved                  |
   | Decisions made       | ___ added to plan                           |
   | Decisions deferred   | ___ (listed below)                          |
@@ -1688,7 +1540,7 @@ If visual mockups were generated during this review, add to the plan file:
 
 | Screen/Section | Mockup Path | Direction | Notes |
 |----------------|-------------|-----------|-------|
-| [screen name]  | ~/.gstack/projects/$SLUG/designs/[folder]/[filename].png | [brief description] | [constraints from review] |
+| [screen name]  | ./designs/[folder]/[filename].png | [brief description] | [constraints from review] |
 ```
 
 Include the full path to each approved mockup (the variant the user chose), a one-line description of the direction, and any constraints. The implementer reads this to know exactly which visual to build from. These persist across conversations and workspaces. If no mockups were generated, omit this section.
@@ -1699,7 +1551,6 @@ After producing the Completion Summary above, persist the review result.
 
 **PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes review metadata to
 `~/.gstack/` (user config directory, not project files). The skill preamble
-already writes to `~/.gstack/sessions/` and `~/.gstack/analytics/` — this is
 the same pattern. The review dashboard depends on this data. Skipping this
 command breaks the review readiness dashboard in /ship.
 
@@ -1721,7 +1572,6 @@ Substitute values from the Completion Summary:
 After completing the review, read the review log and config to display the dashboard.
 
 ```bash
-.github/skills/bin/gstack-review-read
 ```
 
 Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between `review` (diff-scoped pre-landing review) and `plan-eng-review` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between `adversarial-review` (new auto-scaled) and `codex-review` (legacy). For Design Review, show whichever is more recent between `plan-design-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. For the Outside Voice row, show the most recent `codex-plan-review` entry — this captures outside voices from both /plan-ceo-review and /plan-eng-review.
@@ -1749,7 +1599,6 @@ Display:
 ```
 
 **Review tiers:**
-- **Eng Review (required by default):** The only review that gates shipping. Covers architecture, code quality, tests, performance. Can be disabled globally with \`gstack-config set skip_eng_review true\` (the "don't bother me" setting).
 - **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
 - **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
 - **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Codex adversarial challenge. Large diffs (200+ lines) additionally get Codex structured review with P1 gate. No configuration needed.
@@ -1809,7 +1658,6 @@ Produce this markdown table:
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | \`/plan-ceo-review\` | Scope & strategy | {runs} | {status} | {findings} |
-| Codex Review | \`/codex review\` | Independent 2nd opinion | {runs} | {status} | {findings} |
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | {runs} | {status} | {findings} |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | {runs} | {status} | {findings} |
 | DX Review | \`/plan-devex-review\` | Developer experience gaps | {runs} | {status} | {findings} |
@@ -1845,7 +1693,7 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"plan-design-review","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+'
 ```
 
 **Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`

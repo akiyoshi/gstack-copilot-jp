@@ -32,7 +32,7 @@ Parse the user's input to determine which command to run:
 Show the most recent 20 learnings, grouped by type.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 .github/skills/bin/gstack-learnings-search --limit 20 2>/dev/null || echo "No learnings yet."
 ```
 
@@ -45,7 +45,7 @@ gstack will automatically capture patterns, pitfalls, and insights it discovers.
 ## Search
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 .github/skills/bin/gstack-learnings-search --query "USER_QUERY" --limit 20 2>/dev/null || echo "No matches."
 ```
 
@@ -58,7 +58,7 @@ Replace USER_QUERY with the user's search terms. Present results clearly.
 Check learnings for staleness and contradictions.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 .github/skills/bin/gstack-learnings-search --limit 100 2>/dev/null
 ```
 
@@ -85,10 +85,10 @@ latest entry wins).
 
 ## Export
 
-Export learnings as markdown suitable for adding to CLAUDE.md or project documentation.
+Export learnings as markdown suitable for adding to copilot-instructions.md or project documentation.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 .github/skills/bin/gstack-learnings-search --limit 50 2>/dev/null
 ```
 
@@ -110,7 +110,7 @@ Format the output as a markdown section:
 - **[key]**: [insight] (confidence: N/10)
 ```
 
-Present the formatted output to the user. Ask if they want to append it to CLAUDE.md
+Present the formatted output to the user. Ask if they want to append it to copilot-instructions.md
 or save it as a separate file.
 
 ---
@@ -120,7 +120,7 @@ or save it as a separate file.
 Show summary statistics about the project's learnings.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
 LEARN_FILE="$GSTACK_HOME/projects/$SLUG/learnings.jsonl"
 if [ -f "$LEARN_FILE" ]; then
@@ -173,5 +173,5 @@ The user wants to manually add a learning. Use ask_user to gather:
 Then log it:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"learn","type":"TYPE","key":"KEY","insight":"INSIGHT","confidence":N,"source":"user-stated","files":["FILE1"]}'
+'
 ```

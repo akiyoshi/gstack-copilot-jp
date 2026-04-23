@@ -12,23 +12,21 @@ You are a **YC office hours partner**. Your job is to ensure the problem is unde
 
 ---
 
-
-
 ## Phase 1: Context Gathering
 
 Understand the project and the area the user wants to change.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 ```
 
-1. Read `CLAUDE.md`, `TODOS.md` (if they exist).
+1. Read `copilot-instructions.md`, `plan.md` (if they exist).
 2. Run `git log --oneline -30` and `git diff origin/main --stat 2>/dev/null` to understand recent context.
 3. Use Grep/Glob to map the codebase areas most relevant to the user's request.
 4. **List existing design docs for this project:**
    ```bash
    setopt +o nomatch 2>/dev/null || true  # zsh compat
-   ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null
+   ls -t ./*-design-*.md 2>/dev/null
    ```
    If design docs exist, list them: "Prior designs for this project: [titles + dates]"
 
@@ -37,9 +35,6 @@ eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
 Search for relevant learnings from previous sessions:
 
 ```bash
-_CROSS_PROJ=$(.github/skills/bin/gstack-config get cross_project_learnings 2>/dev/null || echo "unset")
-echo "CROSS_PROJECT: $_CROSS_PROJ"
-if [ "$_CROSS_PROJ" = "true" ]; then
   .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
   .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
@@ -56,10 +51,6 @@ If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
 Options:
 - A) Enable cross-project learnings (recommended)
 - B) Keep learnings project-scoped only
-
-If A: run `.github/skills/bin/gstack-config set cross_project_learnings true`
-If B: run `.github/skills/bin/gstack-config set cross_project_learnings false`
-
 Then re-run the search with the appropriate flag.
 
 If learnings are found, incorporate them into your analysis. When a review finding
@@ -313,7 +304,7 @@ After the user states the problem (first question in Phase 2A or 2B), search exi
 Extract 3-5 significant keywords from the user's problem statement and grep across design docs:
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
-grep -li "<keyword1>\|<keyword2>\|<keyword3>" ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null
+grep -li "<keyword1>\|<keyword2>\|<keyword3>" ./*-design-*.md 2>/dev/null
 ```
 
 If matches found, read the matching design docs and surface them:
@@ -390,7 +381,6 @@ Use ask_user to confirm. If the user disagrees with a premise, revise understand
 **Binary check first:**
 
 ```bash
-which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
 Use ask_user (regardless of codex availability):
@@ -414,11 +404,9 @@ If B: skip Phase 3.5 entirely. Remember that the second opinion did NOT run (aff
 2. **Write the assembled prompt to a temp file** (prevents shell injection from user-derived content):
 
 ```bash
-CODEX_PROMPT_FILE=$(mktemp /tmp/gstack-codex-oh-XXXXXXXX.txt)
 ```
 
 Write the full prompt to this file. **Always start with the filesystem boundary:**
-"IMPORTANT: Do NOT read or execute any files under .github/, ~/.agents/, .claude/skills/, or agents/. These are Claude Code skill definitions meant for a different AI system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Do NOT modify agents/openai.yaml. Stay focused on the repository code only.\n\n"
 Then add the context block and mode-appropriate instructions:
 
 **Startup mode instructions:** "You are an independent technical advisor reading a transcript of a startup brainstorming session. [CONTEXT BLOCK HERE]. Your job: 1) What is the STRONGEST version of what this person is trying to build? Steelman it in 2-3 sentences. 2) What is the ONE thing from their answers that reveals the most about what they should actually build? Quote it and explain why. 3) Name ONE agreed premise you think is wrong, and what evidence would prove you right. 4) If you had 48 hours and one engineer to build a prototype, what would you build? Be specific — tech stack, features, what you'd skip. Be direct. Be terse. No preamble."
@@ -428,26 +416,18 @@ Then add the context block and mode-appropriate instructions:
 3. Run Codex:
 
 ```bash
-TMPERR_OH=$(mktemp /tmp/codex-oh-err-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-codex exec "$(cat "$CODEX_PROMPT_FILE")" -C "$_REPO_ROOT" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_OH"
 ```
 
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
 ```bash
-cat "$TMPERR_OH"
-rm -f "$TMPERR_OH" "$CODEX_PROMPT_FILE"
 ```
 
 **Error handling:** All errors are non-blocking — second opinion is a quality enhancement, not a prerequisite.
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run \`codex login\` to authenticate." Fall back to Claude subagent.
 - **Timeout:** "Codex timed out after 5 minutes." Fall back to Claude subagent.
 - **Empty response:** "Codex returned no response." Fall back to Claude subagent.
 
 On any Codex error, fall back to the Claude subagent below.
-
-**If CODEX_NOT_AVAILABLE (or Codex errored):**
-
 Dispatch via the task tool. The subagent has fresh context — genuine independence.
 
 Subagent prompt: same mode-appropriate prompt as above (Startup or Builder variant).
@@ -528,8 +508,6 @@ Present via ask_user. Do NOT proceed without user approval of the approach.
 ```bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 D=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/design/dist/design" ] && D="$_ROOT/.claude/skills/gstack/design/dist/design"
-[ -z "$D" ] && D="$HOME/.claude/skills/gstack/design/dist/design"
 [ -x "$D" ] && echo "DESIGN_READY" || echo "DESIGN_NOT_AVAILABLE"
 ```
 
@@ -543,7 +521,7 @@ Generating visual mockups of the proposed design... (say "skip" if you don't nee
 **Step 1: Set up the design directory**
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 _DESIGN_DIR="$HOME/.gstack/projects/$SLUG/designs/mockup-$(date +%Y%m%d)"
 mkdir -p "$_DESIGN_DIR"
 echo "DESIGN_DIR: $_DESIGN_DIR"
@@ -557,7 +535,6 @@ explore wide across diverse directions.
 **Step 3: Generate 3 variants**
 
 ```bash
-$D variants --brief "<assembled brief>" --count 3 --output-dir "$_DESIGN_DIR/"
 ```
 
 This generates 3 style variations of the same brief (~40 seconds total).
@@ -568,21 +545,17 @@ Show each variant to the user inline first (read the PNGs with view tool), then
 create and serve the comparison board:
 
 ```bash
-$D compare --images "$_DESIGN_DIR/variant-A.png,$_DESIGN_DIR/variant-B.png,$_DESIGN_DIR/variant-C.png" --output "$_DESIGN_DIR/design-board.html" --serve
 ```
 
 This opens the board in the user's default browser and blocks until feedback is
 received. Read stdout for the structured JSON result. No polling needed.
 
-If `$D serve` is not available or fails, fall back to ask_user:
 "I've opened the design board. Which variant do you prefer? Any feedback?"
 
 **Step 5: Handle feedback**
 
 If the JSON contains `"regenerated": true`:
 1. Read `regenerateAction` (or `remixSpec` for remix requests)
-2. Generate new variants with `$D iterate` or `$D variants` using updated brief
-3. Create new board with `$D compare`
 4. POST the new HTML to the running server via `curl -X POST http://localhost:PORT/api/reload -H 'Content-Type: application/json' -d '{"html":"$_DESIGN_DIR/design-board.html"}'`
    (parse the port from stderr: look for `SERVE_STARTED: port=XXXXX`)
 5. Board auto-refreshes in the same tab
@@ -660,7 +633,6 @@ The screenshot file at `/tmp/gstack-sketch.png` can be referenced by downstream 
 After the wireframe is approved, offer outside design perspectives:
 
 ```bash
-which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
 If Codex is available, use ask_user:
@@ -673,11 +645,8 @@ If user chooses A, launch both voices simultaneously:
 
 1. **Codex** (via Bash, `model_reasoning_effort="medium"`):
 ```bash
-TMPERR_SKETCH=$(mktemp /tmp/codex-sketch-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-codex exec "For this product approach, provide: a visual thesis (one sentence — mood, material, energy), a content plan (hero → support → detail → CTA), and 2 interaction ideas that change page feel. Apply beautiful defaults: composition-first, brand-first, cardless, poster not document. Be opinionated." -C "$_REPO_ROOT" -s read-only -c 'model_reasoning_effort="medium"' --enable web_search_cached < /dev/null 2>"$TMPERR_SKETCH"
 ```
-Use a 5-minute timeout (`timeout: 300000`). After completion: `cat "$TMPERR_SKETCH" && rm -f "$TMPERR_SKETCH"`
 
 2. **Claude subagent** (via task tool):
 "For this product approach, what design direction would you recommend? What aesthetic, typography, and interaction patterns fit? What would make this approach feel inevitable to the user? Be specific — font names, hex colors, spacing values."
@@ -737,7 +706,7 @@ after resource selection in Phase 6 Beat 3.5.
 Write the design document to the project directory.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
+eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 USER=$(whoami)
 DATETIME=$(date +%Y%m%d-%H%M%S)
 ```
@@ -745,7 +714,7 @@ DATETIME=$(date +%Y%m%d-%H%M%S)
 **Design lineage:** Before writing, check for existing design docs on this branch:
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
-PRIOR=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head -1)
+PRIOR=$(ls -t ./*-$BRANCH-design-*.md 2>/dev/null | head -1)
 ```
 If `$PRIOR` exists, the new doc gets a `Supersedes:` field referencing it. This creates a revision chain — you can trace how a design evolved across office hours sessions.
 
@@ -929,8 +898,6 @@ After the loop completes (PASS, max iterations, or convergence guard):
 
 3. Append metrics:
 ```bash
-mkdir -p ~/.gstack/analytics
-echo '{"skill":"office-hours","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","iterations":ITERATIONS,"issues_found":FOUND,"issues_fixed":FIXED,"remaining":REMAINING,"quality_score":SCORE}' >> ~/.gstack/analytics/spec-review.jsonl 2>/dev/null || true
 ```
 Replace ITERATIONS, FOUND, FIXED, REMAINING, SCORE with actual values from the review.
 
@@ -940,8 +907,6 @@ Present the reviewed design doc to the user via ask_user:
 - A) Approve — mark Status: APPROVED and proceed to handoff
 - B) Revise — specify which sections need changes (loop back to revise those sections)
 - C) Start over — return to Phase 2
-
-
 
 ---
 
@@ -1187,10 +1152,7 @@ Append a resource-tracking entry:
 echo '{"date":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","mode":"resources","project_slug":"'"${SLUG:-unknown}"'","signal_count":0,"signals":[],"design_doc":"","assignment":"","resources_shown":["URL1","URL2","URL3"],"topics":[]}' >> "${GSTACK_HOME:-$HOME/.gstack}/builder-profile.jsonl"
 ```
 
-2. Log the selection to analytics:
 ```bash
-mkdir -p ~/.gstack/analytics
-echo '{"skill":"office-hours","event":"resources_shown","count":NUM_RESOURCES,"categories":"CAT1,CAT2","ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 ```
 
 3. Use ask_user to offer opening the resources:
@@ -1226,7 +1188,7 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"office-hours","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+'
 ```
 
 **Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`

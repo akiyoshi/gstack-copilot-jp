@@ -53,8 +53,8 @@ When evaluating architecture, think "boring by default." When reviewing tests, t
 setopt +o nomatch 2>/dev/null || true  # zsh compat
 SLUG=$(.github/skills/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
-DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head -1)
-[ -z "$DESIGN" ] && DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1)
+DESIGN=$(ls -t ./*-$BRANCH-design-*.md 2>/dev/null | head -1)
+[ -z "$DESIGN" ] && DESIGN=$(ls -t ./*-design-*.md 2>/dev/null | head -1)
 [ -n "$DESIGN" ] && echo "Design doc found: $DESIGN" || echo "No design doc found"
 ```
 If a design doc exists, read it. Use it as the source of truth for the problem statement, constraints, and chosen approach. If it has a `Supersedes:` field, note that this is a revised design — check the prior version for context on what changed and why.
@@ -108,8 +108,8 @@ After /office-hours completes, re-run the design doc check:
 setopt +o nomatch 2>/dev/null || true  # zsh compat
 SLUG=$(.github/skills/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
-DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head -1)
-[ -z "$DESIGN" ] && DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1)
+DESIGN=$(ls -t ./*-$BRANCH-design-*.md 2>/dev/null | head -1)
+[ -z "$DESIGN" ] && DESIGN=$(ls -t ./*-design-*.md 2>/dev/null | head -1)
 [ -n "$DESIGN" ] && echo "Design doc found: $DESIGN" || echo "No design doc found"
 ```
 
@@ -129,7 +129,7 @@ Before reviewing anything, answer these questions:
    If web_search is unavailable, skip this check and note: "Search unavailable — proceeding with in-distribution knowledge only."
 
    If the plan rolls a custom solution where a built-in exists, flag it as a scope reduction opportunity. Annotate recommendations with **[Layer 1]**, **[Layer 2]**, **[Layer 3]**, or **[EUREKA]** (see preamble's Search Before Building section). If you find a eureka moment — a reason the standard approach is wrong for this case — present it as an architectural insight.
-5. **TODOS cross-reference:** Read `TODOS.md` if it exists. Are any deferred items blocking this plan? Can any deferred items be bundled into this PR without expanding scope? Does this plan create new work that should be captured as a TODO?
+5. **TODOS cross-reference:** Read `plan.md` if it exists. Are any deferred items blocking this plan? Can any deferred items be bundled into this PR without expanding scope? Does this plan create new work that should be captured as a TODO?
 
 5. **Completeness check:** Is the plan doing the complete version or a shortcut? With AI-assisted coding, the cost of completeness (100% test coverage, full edge case handling, complete error paths) is 10-100x cheaper than with a human team. If the plan proposes a shortcut that saves human-hours but only saves minutes with CC+gstack, recommend the complete version. Boil the lake.
 
@@ -154,9 +154,6 @@ Always work through the full interactive review: one section at a time (Architec
 Search for relevant learnings from previous sessions:
 
 ```bash
-_CROSS_PROJ=$(.github/skills/bin/gstack-config get cross_project_learnings 2>/dev/null || echo "unset")
-echo "CROSS_PROJECT: $_CROSS_PROJ"
-if [ "$_CROSS_PROJ" = "true" ]; then
   .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
   .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
@@ -173,10 +170,6 @@ If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
 Options:
 - A) Enable cross-project learnings (recommended)
 - B) Keep learnings project-scoped only
-
-If A: run `.github/skills/bin/gstack-config set cross_project_learnings true`
-If B: run `.github/skills/bin/gstack-config set cross_project_learnings false`
-
 Then re-run the search with the appropriate flag.
 
 If learnings are found, incorporate them into your analysis. When a review finding
@@ -244,8 +237,8 @@ Evaluate:
 
 Before analyzing coverage, detect the project's test framework:
 
-1. **Read CLAUDE.md** — look for a `## Testing` section with test command and framework name. If found, use that as the authoritative source.
-2. **If CLAUDE.md has no testing section, auto-detect:**
+1. **Read copilot-instructions.md** — look for a `## Testing` section with test command and framework name. If found, use that as the authoritative source.
+2. **If copilot-instructions.md has no testing section, auto-detect:**
 
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
@@ -386,7 +379,7 @@ The plan should be complete enough that when implementation begins, every test i
 After producing the coverage diagram, write a test plan artifact to the project directory so `/qa` and `/qa-only` can consume it as primary test input:
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
+eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 USER=$(whoami)
 DATETIME=$(date +%Y%m%d-%H%M%S)
 ```
@@ -414,7 +407,7 @@ Repo: {owner/repo}
 
 This file is consumed by `/qa` and `/qa-only` as primary test input. Include only the information that helps a QA tester know **what to test and where** — not implementation details.
 
-For LLM/prompt changes: check the "Prompt/LLM changes" file patterns listed in CLAUDE.md. If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against. Then use ask_user to confirm the eval scope with the user.
+For LLM/prompt changes: check the "Prompt/LLM changes" file patterns listed in copilot-instructions.md. If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against. Then use ask_user to confirm the eval scope with the user.
 
 **STOP.** For each issue found in this section, call ask_user individually. One issue per call. Present options, state your recommendation, explain WHY. Do NOT batch multiple issues into one ask_user. Only proceed to the next section after ALL issues in this section are resolved.
 
@@ -436,7 +429,6 @@ thorough review.
 **Check tool availability:**
 
 ```bash
-which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
 Use ask_user:
@@ -464,7 +456,6 @@ Construct this prompt (substitute the actual plan content — if plan content ex
 truncate to the first 30KB and note "Plan truncated for size"). **Always start with the
 filesystem boundary instruction:**
 
-"IMPORTANT: Do NOT read or execute any files under .github/, ~/.agents/, .claude/skills/, or agents/. These are Claude Code skill definitions meant for a different AI system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Do NOT modify agents/openai.yaml. Stay focused on the repository code only.\n\nYou are a brutally honest technical reviewer examining a development plan that has
 already been through a multi-section review. Your job is NOT to repeat that review.
 Instead, find what it missed. Look for: logical gaps and unstated assumptions that
 survived the review scrutiny, overcomplexity (is there a fundamentally simpler
@@ -475,13 +466,9 @@ compliments. Just the problems.
 
 THE PLAN:
 <plan content>"
-
-**If CODEX_AVAILABLE:**
-
 ```bash
 TMPERR_PV=$(mktemp /tmp/codex-planreview-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-codex exec "<prompt>" -C "$_REPO_ROOT" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_PV"
 ```
 
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
@@ -499,14 +486,10 @@ CODEX SAYS (plan review — outside voice):
 ```
 
 **Error handling:** All errors are non-blocking — the outside voice is informational.
-- Auth failure (stderr contains "auth", "login", "unauthorized"): "Codex auth failed. Run \`codex login\` to authenticate."
 - Timeout: "Codex timed out after 5 minutes."
 - Empty response: "Codex returned no response."
 
 On any Codex error, fall back to the Claude adversarial subagent.
-
-**If CODEX_NOT_AVAILABLE (or Codex errored):**
-
 Dispatch via the task tool. The subagent has fresh context — genuine independence.
 
 Subagent prompt: same plan review prompt as above.
@@ -544,7 +527,7 @@ Options:
 - A) Accept the outside voice's recommendation (I'll apply this change)
 - B) Keep the current approach (reject the outside voice)
 - C) Investigate further before deciding
-- D) Add to TODOS.md for later
+- D) Add to plan.md for later
 
 Wait for the user's response. Do NOT default to accepting because you agree with the
 outside voice. If the user chooses B, the current approach stands — do not re-argue.
@@ -589,8 +572,8 @@ Every plan review MUST produce a "NOT in scope" section listing work that was co
 ### "What already exists" section
 List existing code/flows that already partially solve sub-problems in this plan, and whether the plan reuses them or unnecessarily rebuilds them.
 
-### TODOS.md updates
-After all review sections are complete, present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `.claude/skills/review/TODOS-format.md`.
+### plan.md updates
+After all review sections are complete, present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `the TODO format`.
 
 For each TODO, describe:
 * **What:** One-line description of the work.
@@ -600,7 +583,7 @@ For each TODO, describe:
 * **Context:** Enough detail that someone picking this up in 3 months understands the motivation, the current state, and where to start.
 * **Depends on / blocked by:** Any prerequisites or ordering constraints.
 
-Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
+Then present options: **A)** Add to plan.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
 
 Do NOT just append vague bullet points. A TODO without context is worse than no TODO — it creates false confidence that the idea was captured while actually losing the reasoning.
 
@@ -651,7 +634,7 @@ At the end of the review, fill in and display this summary so the user can see a
 - Performance Review: ___ issues found
 - NOT in scope: written
 - What already exists: written
-- TODOS.md updates: ___ items proposed to user
+- plan.md updates: ___ items proposed to user
 - Failure modes: ___ critical gaps flagged
 - Outside voice: ran (codex/claude) / skipped
 - Parallelization: ___ lanes, ___ parallel / ___ sequential
@@ -672,7 +655,6 @@ After producing the Completion Summary above, persist the review result.
 
 **PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes review metadata to
 `~/.gstack/` (user config directory, not project files). The skill preamble
-already writes to `~/.gstack/sessions/` and `~/.gstack/analytics/` — this is
 the same pattern. The review dashboard depends on this data. Skipping this
 command breaks the review readiness dashboard in /ship.
 
@@ -694,7 +676,6 @@ Substitute values from the Completion Summary:
 After completing the review, read the review log and config to display the dashboard.
 
 ```bash
-.github/skills/bin/gstack-review-read
 ```
 
 Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between `review` (diff-scoped pre-landing review) and `plan-eng-review` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between `adversarial-review` (new auto-scaled) and `codex-review` (legacy). For Design Review, show whichever is more recent between `plan-design-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. For the Outside Voice row, show the most recent `codex-plan-review` entry — this captures outside voices from both /plan-ceo-review and /plan-eng-review.
@@ -722,7 +703,6 @@ Display:
 ```
 
 **Review tiers:**
-- **Eng Review (required by default):** The only review that gates shipping. Covers architecture, code quality, tests, performance. Can be disabled globally with \`gstack-config set skip_eng_review true\` (the "don't bother me" setting).
 - **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
 - **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
 - **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Codex adversarial challenge. Large diffs (200+ lines) additionally get Codex structured review with P1 gate. No configuration needed.
@@ -782,7 +762,6 @@ Produce this markdown table:
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | \`/plan-ceo-review\` | Scope & strategy | {runs} | {status} | {findings} |
-| Codex Review | \`/codex review\` | Independent 2nd opinion | {runs} | {status} | {findings} |
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | {runs} | {status} | {findings} |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | {runs} | {status} | {findings} |
 | DX Review | \`/plan-devex-review\` | Developer experience gaps | {runs} | {status} | {findings} |
@@ -818,7 +797,7 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"plan-eng-review","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+'
 ```
 
 **Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
@@ -836,8 +815,6 @@ staleness detection: if those files are later deleted, the learning can be flagg
 
 **Only log genuine discoveries.** Don't log obvious things. Don't log things the user
 already knows. A good test: would this insight save time in a future session? If yes, log it.
-
-
 
 ## Next Steps — Review Chaining
 

@@ -18,8 +18,8 @@ You are running the `/ship` workflow. This is a **non-interactive, fully automat
 - AI-assessed coverage below minimum threshold (hard gate with user override — see Step 7)
 - Plan items NOT DONE with no user override (see Step 8)
 - Plan verification failures (see Step 8.1)
-- TODOS.md missing and user wants to create one (ask — see Step 14)
-- TODOS.md disorganized and user wants to reorganize (ask — see Step 14)
+- plan.md missing and user wants to create one (ask — see Step 14)
+- plan.md disorganized and user wants to reorganize (ask — see Step 14)
 
 **Never stop for:**
 - Uncommitted changes (always include them)
@@ -27,7 +27,7 @@ You are running the `/ship` workflow. This is a **non-interactive, fully automat
 - CHANGELOG content (auto-generate from diff)
 - Commit message approval (auto-commit)
 - Multi-file changesets (auto-split into bisectable commits)
-- TODOS.md completed-item detection (auto-mark)
+- plan.md completed-item detection (auto-mark)
 - Auto-fixable review findings (dead code, N+1, stale comments — fixed automatically)
 - Test coverage gaps within target threshold (auto-generate and commit, or flag in PR body)
 
@@ -58,7 +58,6 @@ Never skip a verification step because a prior `/ship` run already performed it.
 After completing the review, read the review log and config to display the dashboard.
 
 ```bash
-.github/skills/bin/gstack-review-read
 ```
 
 Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between `review` (diff-scoped pre-landing review) and `plan-eng-review` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between `adversarial-review` (new auto-scaled) and `codex-review` (legacy). For Design Review, show whichever is more recent between `plan-design-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. For the Outside Voice row, show the most recent `codex-plan-review` entry — this captures outside voices from both /plan-ceo-review and /plan-eng-review.
@@ -86,7 +85,6 @@ Display:
 ```
 
 **Review tiers:**
-- **Eng Review (required by default):** The only review that gates shipping. Covers architecture, code quality, tests, performance. Can be disabled globally with \`gstack-config set skip_eng_review true\` (the "don't bother me" setting).
 - **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
 - **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
 - **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Codex adversarial challenge. Large diffs (200+ lines) additionally get Codex structured review with P1 gate. No configuration needed.
@@ -138,7 +136,7 @@ service with existing deployment — verify that a distribution pipeline exists.
    - "This PR adds a new binary/tool but there's no CI/CD pipeline to build and publish it.
      Users won't be able to download the artifact after merge."
    - A) Add a release workflow now (CI/CD release pipeline — GitHub Actions or GitLab CI depending on platform)
-   - B) Defer — add to TODOS.md
+   - B) Defer — add to plan.md
    - C) Not needed — this is internal/web-only, existing deployment covers it
 
 4. **If release pipeline exists:** Continue silently.
@@ -290,9 +288,9 @@ Write TESTING.md with:
 - Test layers: Unit tests (what, where, when), Integration tests, Smoke tests, E2E tests
 - Conventions: file naming, assertion style, setup/teardown patterns
 
-### B7. Update CLAUDE.md
+### B7. Update copilot-instructions.md
 
-First check: If CLAUDE.md already has a `## Testing` section → skip. Don't duplicate.
+First check: If copilot-instructions.md already has a `## Testing` section → skip. Don't duplicate.
 
 Append a `## Testing` section:
 - Run command and test directory
@@ -311,7 +309,7 @@ Append a `## Testing` section:
 git status --porcelain
 ```
 
-Only commit if there are changes. Stage all bootstrap files (config, test directory, TESTING.md, CLAUDE.md, .github/workflows/test.yml if created):
+Only commit if there are changes. Stage all bootstrap files (config, test directory, TESTING.md, copilot-instructions.md, .github/workflows/test.yml if created):
 `git commit -m "chore: bootstrap test framework ({framework name})"`
 
 ---
@@ -362,10 +360,6 @@ For each failing test:
 
 ### Step T3: Handle pre-existing failures
 
-Check `REPO_MODE` from the preamble output.
-
-**If REPO_MODE is `solo`:**
-
 Use ask_user:
 
 > These test failures appear pre-existing (not caused by your branch changes):
@@ -378,9 +372,6 @@ Use ask_user:
 > A) Investigate and fix now (human: ~2-4h / CC: ~15min) — Completeness: 10/10
 > B) Add as P0 TODO — fix after this branch lands — Completeness: 7/10
 > C) Skip — I know about this, ship anyway — Completeness: 3/10
-
-**If REPO_MODE is `collaborative` or `unknown`:**
-
 Use ask_user:
 
 > These test failures appear pre-existing (not caused by your branch changes):
@@ -404,8 +395,8 @@ Use ask_user:
 - Continue with the workflow.
 
 **If "Add as P0 TODO":**
-- If `TODOS.md` exists, add the entry following the format in `review/TODOS-format.md` (or `.claude/skills/review/TODOS-format.md`).
-- If `TODOS.md` does not exist, create it with the standard header and add the entry.
+- If `plan.md` exists, add the entry following the format in `review/TODOS-format.md` (or `the TODO format`).
+- If `plan.md` does not exist, create it with the standard header and add the entry.
 - Entry should include: title, the error output, which branch it was noticed on, and priority P0.
 - Continue with the workflow — treat the pre-existing failure as non-blocking.
 
@@ -456,7 +447,7 @@ Evals are mandatory when prompt-related files change. Skip this step entirely if
 git diff origin/<base> --name-only
 ```
 
-Match against these patterns (from CLAUDE.md):
+Match against these patterns (from copilot-instructions.md):
 - `app/services/*_prompt_builder.rb`
 - `app/services/*_generation_service.rb`, `*_writer_service.rb`, `*_designer_service.rb`
 - `app/services/*_evaluator.rb`, `*_scorer.rb`, `*_classifier_service.rb`, `*_analyzer.rb`
@@ -522,8 +513,8 @@ If multiple suites need to run, run them sequentially (each needs a test lane). 
 
 Before analyzing coverage, detect the project's test framework:
 
-1. **Read CLAUDE.md** — look for a `## Testing` section with test command and framework name. If found, use that as the authoritative source.
-2. **If CLAUDE.md has no testing section, auto-detect:**
+1. **Read copilot-instructions.md** — look for a `## Testing` section with test command and framework name. If found, use that as the authoritative source.
+2. **If copilot-instructions.md has no testing section, auto-detect:**
 
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
@@ -690,7 +681,7 @@ Coverage line: `Test Coverage Audit: N new code paths. M covered (X%). K tests g
 
 **7. Coverage gate:**
 
-Before proceeding, check CLAUDE.md for a `## Test Coverage` section with `Minimum:` and `Target:` fields. If found, use those percentages. Otherwise use defaults: Minimum = 60%, Target = 80%.
+Before proceeding, check copilot-instructions.md for a `## Test Coverage` section with `Minimum:` and `Target:` fields. If found, use those percentages. Otherwise use defaults: Minimum = 60%, Target = 80%.
 
 Using the coverage percentage from the diagram in substep 4 (the `COVERAGE: X/Y (Z%)` line):
 
@@ -726,7 +717,7 @@ Using the coverage percentage from the diagram in substep 4 (the `COVERAGE: X/Y 
 After producing the coverage diagram, write a test plan artifact so `/qa` and `/qa-only` can consume it:
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
+eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 USER=$(whoami)
 DATETIME=$(date +%Y%m%d-%H%M%S)
 ```
@@ -788,7 +779,7 @@ REPO=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
 _PLAN_SLUG=$(git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*/[^/]*\)\.git$|\1|;s|.*[:/]\([^/]*/[^/]*\)$|\1|' | tr '/' '-' | tr -cd 'a-zA-Z0-9._-') || true
 _PLAN_SLUG="${_PLAN_SLUG:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9._-')}"
 # Search common plan file locations (project designs first, then personal/local)
-for PLAN_DIR in "$HOME/.gstack/projects/$_PLAN_SLUG" "$HOME/.claude/plans" "$HOME/.codex/plans" ".gstack/plans"; do
+for PLAN_DIR in "$HOME/.gstack/projects/$_PLAN_SLUG" "$HOME/.gstack/plans" "$HOME/.codex/plans" ".gstack/plans"; do
   [ -d "$PLAN_DIR" ] || continue
   PLAN=$(ls -t "$PLAN_DIR"/*.md 2>/dev/null | xargs grep -l "$BRANCH" 2>/dev/null | head -1)
   [ -z "$PLAN" ] && PLAN=$(ls -t "$PLAN_DIR"/*.md 2>/dev/null | xargs grep -l "$REPO" 2>/dev/null | head -1)
@@ -968,9 +959,6 @@ Add a `## Verification Results` section to the PR body (Step 19):
 Search for relevant learnings from previous sessions:
 
 ```bash
-_CROSS_PROJ=$(.github/skills/bin/gstack-config get cross_project_learnings 2>/dev/null || echo "unset")
-echo "CROSS_PROJECT: $_CROSS_PROJ"
-if [ "$_CROSS_PROJ" = "true" ]; then
   .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
   .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
@@ -987,10 +975,6 @@ If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
 Options:
 - A) Enable cross-project learnings (recommended)
 - B) Keep learnings project-scoped only
-
-If A: run `.github/skills/bin/gstack-config set cross_project_learnings true`
-If B: run `.github/skills/bin/gstack-config set cross_project_learnings false`
-
 Then re-run the search with the appropriate flag.
 
 If learnings are found, incorporate them into your analysis. When a review finding
@@ -1005,9 +989,9 @@ smarter on their codebase over time.
 
 Before reviewing code quality, check: **did they build what was requested — nothing more, nothing less?**
 
-1. Read `TODOS.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
+1. Read `plan.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
    Read commit messages (`git log origin/<base>..HEAD --oneline`).
-   **If no PR exists:** rely on commit messages and TODOS.md for stated intent — this is the common case since /review runs before /ship creates the PR.
+   **If no PR exists:** rely on commit messages and plan.md for stated intent — this is the common case since /review runs before /ship creates the PR.
 2. Identify the **stated intent** — what was this branch supposed to accomplish?
 3. Run `git diff origin/<base>...HEAD --stat` and compare the files changed against the stated intent.
 
@@ -1019,7 +1003,7 @@ Before reviewing code quality, check: **did they build what was requested — no
    - "While I was in there..." changes that expand blast radius
 
    **MISSING REQUIREMENTS detection:**
-   - Requirements from TODOS.md/PR description not addressed in the diff
+   - Requirements from plan.md/PR description not addressed in the diff
    - Test coverage gaps for stated requirements
    - Partial implementations (started but not finished)
 
@@ -1042,7 +1026,7 @@ Before reviewing code quality, check: **did they build what was requested — no
 
 Review the diff for structural issues that tests don't catch.
 
-1. Read `.claude/skills/review/checklist.md`. If the file cannot be read, **STOP** and report the error.
+1. Read `the review checklist`. If the file cannot be read, **STOP** and report the error.
 
 2. Run `git diff origin/<base>` to get the full diff (scoped to feature changes against the freshly-fetched base branch).
 
@@ -1089,7 +1073,7 @@ source <(.github/skills/bin/gstack-diff-scope <base> 2>/dev/null)
 
 1. **Check for DESIGN.md.** If `DESIGN.md` or `design-system.md` exists in the repo root, read it. All design findings are calibrated against it — patterns blessed in DESIGN.md are not flagged. If not found, use universal design principles.
 
-2. **Read `.claude/skills/review/design-checklist.md`.** If the file cannot be read, skip design review with a note: "Design checklist not found — skipping design review."
+2. **Read `.github/skills/review/design-checklist.md`.** If the file cannot be read, skip design review with a note: "Design checklist not found — skipping design review."
 
 3. **Read each changed frontend file** (full file, not just diff hunks). Frontend files are identified by the patterns listed in the checklist.
 
@@ -1111,7 +1095,6 @@ Substitute: TIMESTAMP = ISO 8601 datetime, STATUS = "clean" if 0 findings or "is
 7. **Codex design voice** (optional, automatic if available):
 
 ```bash
-which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
 If Codex is available, run a lightweight design check on the diff:
@@ -1119,7 +1102,6 @@ If Codex is available, run a lightweight design check on the diff:
 ```bash
 TMPERR_DRL=$(mktemp /tmp/codex-drl-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-codex exec "Review the git diff on this branch. Run 7 litmus checks (YES/NO each): 1. Brand/product unmistakable in first screen? 2. One strong visual anchor present? 3. Page understandable by scanning headlines only? 4. Each section has one job? 5. Are cards actually necessary? 6. Does motion improve hierarchy or atmosphere? 7. Would design feel premium with all decorative shadows removed? Flag any hard rejections: 1. Generic SaaS card grid as first impression 2. Beautiful image with weak brand 3. Strong headline with no clear action 4. Busy imagery behind text 5. Sections repeating same mood statement 6. Carousel with no narrative purpose 7. App UI made of stacked cards instead of layout 5 most important design findings only. Reference file:line." -C "$_REPO_ROOT" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_DRL"
 ```
 
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
@@ -1341,7 +1323,6 @@ If the Red Team subagent fails or times out, skip silently and continue.
 Before classifying findings, check if any were previously skipped by the user in a prior review on this branch.
 
 ```bash
-.github/skills/bin/gstack-review-read
 ```
 
 Parse the output: only lines BEFORE `---CONFIG---` are JSONL entries (the output also contains `---CONFIG---` and `---HEAD---` footer sections that are not JSONL — ignore those).
@@ -1410,7 +1391,7 @@ Save the review output — it goes into the PR body in Step 19.
 
 **Subagent prompt:**
 
-> You are classifying Greptile review comments for a /ship workflow. Read `.claude/skills/review/greptile-triage.md` and follow the fetch, filter, classify, and **escalation detection** steps. Do NOT fix code, do NOT reply to comments, do NOT commit — report only.
+> You are classifying Greptile review comments for a /ship workflow. Read `.github/skills/review/greptile-triage.md` and follow the fetch, filter, classify, and **escalation detection** steps. Do NOT fix code, do NOT reply to comments, do NOT commit — report only.
 >
 > For each comment, assign: `classification` (`valid_actionable`, `already_fixed`, `false_positive`, `suppressed`), `escalation_tier` (1 or 2), the file:line or [top-level] tag, body summary, and permalink URL.
 >
@@ -1464,9 +1445,8 @@ Every diff gets adversarial review from both Claude and Codex. LOC is not a prox
 DIFF_INS=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
 DIFF_DEL=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
 DIFF_TOTAL=$((DIFF_INS + DIFF_DEL))
-which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 # Legacy opt-out — only gates Codex passes, Claude always runs
-OLD_CFG=$(.github/skills/bin/gstack-config get codex_reviews 2>/dev/null || true)
+OLD_CFG=$(
 echo "DIFF_SIZE: $DIFF_TOTAL"
 echo "OLD_CFG: ${OLD_CFG:-not_set}"
 ```
@@ -1495,25 +1475,18 @@ If the subagent fails or times out: "Claude adversarial subagent unavailable. Co
 If Codex is available AND `OLD_CFG` is NOT `disabled`:
 
 ```bash
-TMPERR_ADV=$(mktemp /tmp/codex-adv-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-codex exec "IMPORTANT: Do NOT read or execute any files under .github/, ~/.agents/, .claude/skills/, or agents/. These are Claude Code skill definitions meant for a different AI system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Do NOT modify agents/openai.yaml. Stay focused on the repository code only.\n\nReview the changes on this branch against the base branch. Run git diff origin/<base> to see the diff. Your job is to find ways this code will fail in production. Think like an attacker and a chaos engineer. Find edge cases, race conditions, security holes, resource leaks, failure modes, and silent data corruption paths. Be adversarial. Be thorough. No compliments — just the problems." -C "$_REPO_ROOT" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_ADV"
 ```
 
 Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. After the command completes, read stderr:
 ```bash
-cat "$TMPERR_ADV"
 ```
 
 Present the full output verbatim. This is informational — it never blocks shipping.
 
 **Error handling:** All errors are non-blocking — adversarial review is a quality enhancement, not a prerequisite.
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run \`codex login\` to authenticate."
 - **Timeout:** "Codex timed out after 5 minutes."
 - **Empty response:** "Codex returned no response. Stderr: <paste relevant error>."
-
-**Cleanup:** Run `rm -f "$TMPERR_ADV"` after processing.
-
 If Codex is NOT available: "Codex CLI not found — running Claude adversarial only. Install Codex for cross-model coverage: `npm install -g @openai/codex`"
 
 ---
@@ -1525,8 +1498,7 @@ If `DIFF_TOTAL >= 200` AND Codex is available AND `OLD_CFG` is NOT `disabled`:
 ```bash
 TMPERR=$(mktemp /tmp/codex-review-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-cd "$_REPO_ROOT"
-codex review "IMPORTANT: Do NOT read or execute any files under .github/, ~/.agents/, .claude/skills/, or agents/. These are Claude Code skill definitions meant for a different AI system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Do NOT modify agents/openai.yaml. Stay focused on the repository code only.\n\nReview the diff against the base branch." --base <base> -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR"
+cd "$(git rev-parse --show-toplevel)"
 ```
 
 Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. Present output under `CODEX SAYS (code review):` header.
@@ -1539,9 +1511,6 @@ Codex found N critical issues in the diff.
 A) Investigate and fix now (recommended)
 B) Continue — review will still complete
 ```
-
-If A: address the findings. After fixing, re-run tests (Step 5) since code has changed. Re-run `codex review` to verify.
-
 Read stderr for errors (same error handling as Codex adversarial above).
 
 After stderr: `rm -f "$TMPERR"`
@@ -1585,7 +1554,7 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"ship","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+'
 ```
 
 **Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
@@ -1603,8 +1572,6 @@ staleness detection: if those files are later deleted, the learning can be flagg
 
 **Only log genuine discoveries.** Don't log obvious things. Don't log things the user
 already knows. A good test: would this insight save time in a future session? If yes, log it.
-
-
 
 ## Step 12: Version bump (auto-decide)
 
@@ -1757,7 +1724,7 @@ echo "Drift repaired: package.json synced to $REPAIR_VERSION. No version bump pe
    - Write concise, descriptive bullet points
    - Insert after the file header (line 5), dated today
    - Format: `## [X.Y.Z.W] - YYYY-MM-DD`
-   - **Voice:** Lead with what the user can now **do** that they couldn't before. Use plain language, not implementation details. Never mention TODOS.md, internal tracking, or contributor-facing details.
+   - **Voice:** Lead with what the user can now **do** that they couldn't before. Use plain language, not implementation details. Never mention plan.md, internal tracking, or contributor-facing details.
 
 6. **Cross-check:** Compare your CHANGELOG entry against the commit list from step 2.
    Every commit must map to at least one bullet point. If any commit is unrepresented,
@@ -1768,29 +1735,29 @@ echo "Drift repaired: package.json synced to $REPAIR_VERSION. No version bump pe
 
 ---
 
-## Step 14: TODOS.md (auto-update)
+## Step 14: plan.md (auto-update)
 
-Cross-reference the project's TODOS.md against the changes being shipped. Mark completed items automatically; prompt only if the file is missing or disorganized.
+Cross-reference the project's plan.md against the changes being shipped. Mark completed items automatically; prompt only if the file is missing or disorganized.
 
-Read `.claude/skills/review/TODOS-format.md` for the canonical format reference.
+Read `the TODO format` for the canonical format reference.
 
-**1. Check if TODOS.md exists** in the repository root.
+**1. Check if plan.md exists** in the repository root.
 
-**If TODOS.md does not exist:** Use ask_user:
-- Message: "GStack recommends maintaining a TODOS.md organized by skill/component, then priority (P0 at top through P4, then Completed at bottom). See TODOS-format.md for the full format. Would you like to create one?"
+**If plan.md does not exist:** Use ask_user:
+- Message: "GStack recommends maintaining a plan.md organized by skill/component, then priority (P0 at top through P4, then Completed at bottom). See TODOS-format.md for the full format. Would you like to create one?"
 - Options: A) Create it now, B) Skip for now
-- If A: Create `TODOS.md` with a skeleton (# TODOS heading + ## Completed section). Continue to step 3.
+- If A: Create `plan.md` with a skeleton (# TODOS heading + ## Completed section). Continue to step 3.
 - If B: Skip the rest of Step 14. Continue to Step 15.
 
 **2. Check structure and organization:**
 
-Read TODOS.md and verify it follows the recommended structure:
+Read plan.md and verify it follows the recommended structure:
 - Items grouped under `## <Skill/Component>` headings
 - Each item has `**Priority:**` field with P0-P4 value
 - A `## Completed` section at the bottom
 
 **If disorganized** (missing priority fields, no component groupings, no Completed section): Use ask_user:
-- Message: "TODOS.md doesn't follow the recommended structure (skill/component groupings, P0-P4 priority, Completed section). Would you like to reorganize it?"
+- Message: "plan.md doesn't follow the recommended structure (skill/component groupings, P0-P4 priority, Completed section). Would you like to reorganize it?"
 - Options: A) Reorganize now (recommended), B) Leave as-is
 - If A: Reorganize in-place following TODOS-format.md. Preserve all content — only restructure, never delete items.
 - If B: Continue to step 3 without restructuring.
@@ -1813,11 +1780,11 @@ For each TODO item, check if the changes in this PR complete it by:
 **4. Move completed items** to the `## Completed` section at the bottom. Append: `**Completed:** vX.Y.Z (YYYY-MM-DD)`
 
 **5. Output summary:**
-- `TODOS.md: N items marked complete (item1, item2, ...). M items remaining.`
-- Or: `TODOS.md: No completed items detected. M items remaining.`
-- Or: `TODOS.md: Created.` / `TODOS.md: Reorganized.`
+- `plan.md: N items marked complete (item1, item2, ...). M items remaining.`
+- Or: `plan.md: No completed items detected. M items remaining.`
+- Or: `plan.md: Created.` / `plan.md: Reorganized.`
 
-**6. Defensive:** If TODOS.md cannot be written (permission error, disk full), warn the user and continue. Never stop the ship workflow for a TODOS failure.
+**6. Defensive:** If plan.md cannot be written (permission error, disk full), warn the user and continue. Never stop the ship workflow for a TODOS failure.
 
 Save this summary — it goes into the PR body in Step 19.
 
@@ -1827,7 +1794,6 @@ Save this summary — it goes into the PR body in Step 19.
 
 ### Step 15.0: WIP Commit Squash (continuous checkpoint mode only)
 
-If `CHECKPOINT_MODE` is `"continuous"`, the branch likely contains `WIP:` commits
 from auto-checkpointing. These must be squashed INTO the corresponding logical
 commits before the bisectable-grouping logic in Step 15.1 runs. Non-WIP commits
 on the branch (earlier landed work) must be preserved.
@@ -1900,7 +1866,7 @@ user via ask_user rather than destroying non-WIP commits.
    - **Infrastructure:** migrations, config changes, route additions
    - **Models & services:** new models, services, concerns (with their tests)
    - **Controllers & views:** controllers, views, JS/React components (with their tests)
-   - **VERSION + CHANGELOG + TODOS.md:** always in the final commit
+   - **VERSION + CHANGELOG + plan.md:** always in the final commit
 
 3. **Rules for splitting:**
    - A model and its test file go in the same commit
@@ -1980,10 +1946,9 @@ git push -u origin <branch-name>
 
 **Subagent prompt:**
 
-> You are executing the /document-release workflow after a code push. Read the full skill file `${HOME}/.claude/skills/gstack/document-release/SKILL.md` and execute its complete workflow end-to-end, including CHANGELOG clobber protection, doc exclusions, risky-change gates, and named staging. Do NOT attempt to edit the PR body — no PR exists yet. Branch: `<branch>`, base: `<base>`.
 >
 > After completing the workflow, output a single JSON object on the LAST LINE of your response (no other text after it):
-> `{"files_updated":["README.md","CLAUDE.md",...],"commit_sha":"abc1234","pushed":true,"documentation_section":"<markdown block for PR body's ## Documentation section>"}`
+> `{"files_updated":["README.md","copilot-instructions.md",...],"commit_sha":"abc1234","pushed":true,"documentation_section":"<markdown block for PR body's ## Documentation section>"}`
 >
 > If no documentation files needed updating, output:
 > `{"files_updated":[],"commit_sha":null,"pushed":false,"documentation_section":null}`
@@ -2064,8 +2029,8 @@ you missed it.>
 ## TODOS
 <If items marked complete: bullet list of completed items with version>
 <If no items completed: "No TODO items completed in this PR.">
-<If TODOS.md created or reorganized: note that>
-<If TODOS.md doesn't exist and user skipped: omit this section>
+<If plan.md created or reorganized: note that>
+<If plan.md doesn't exist and user skipped: omit this section>
 
 ## Documentation
 <Embed the `documentation_section` string returned by Step 18's subagent here, verbatim.>
@@ -2108,13 +2073,13 @@ Print the branch name, remote URL, and instruct the user to create the PR/MR man
 Log coverage and plan completion data so `/retro` can track trends:
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
+eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 ```
 
-Append to `~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl`:
+Append to `./$BRANCH-reviews.jsonl`:
 
 ```bash
-echo '{"skill":"ship","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","coverage_pct":COVERAGE_PCT,"plan_items_total":PLAN_TOTAL,"plan_items_done":PLAN_DONE,"verification_result":"VERIFY_RESULT","version":"VERSION","branch":"BRANCH"}' >> ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl
+echo '{"skill":"ship","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","coverage_pct":COVERAGE_PCT,"plan_items_total":PLAN_TOTAL,"plan_items_done":PLAN_DONE,"verification_result":"VERIFY_RESULT","version":"VERSION","branch":"BRANCH"}' >> ./$BRANCH-reviews.jsonl
 ```
 
 Substitute from earlier steps:
@@ -2138,7 +2103,7 @@ This step is automatic — never skip it, never ask for confirmation.
 - **Always use the 4-digit version format** from the VERSION file.
 - **Date format in CHANGELOG:** `YYYY-MM-DD`
 - **Split commits for bisectability** — each commit = one logical change.
-- **TODOS.md completion detection must be conservative.** Only mark items as completed when the diff clearly shows the work is done.
+- **plan.md completion detection must be conservative.** Only mark items as completed when the diff clearly shows the work is done.
 - **Use Greptile reply templates from greptile-triage.md.** Every reply includes evidence (inline diff, code references, re-rank suggestion). Never post vague replies.
 - **Never push without fresh verification evidence.** If code changed after Step 5 tests, re-run before pushing.
 - **Step 7 generates coverage tests.** They must pass before committing. Never commit failing tests.

@@ -22,9 +22,9 @@ You are running the `/review` workflow. Analyze the current branch's diff agains
 
 Before reviewing code quality, check: **did they build what was requested — nothing more, nothing less?**
 
-1. Read `TODOS.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
+1. Read `plan.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
    Read commit messages (`git log origin/<base>..HEAD --oneline`).
-   **If no PR exists:** rely on commit messages and TODOS.md for stated intent — this is the common case since /review runs before /ship creates the PR.
+   **If no PR exists:** rely on commit messages and plan.md for stated intent — this is the common case since /review runs before /ship creates the PR.
 2. Identify the **stated intent** — what was this branch supposed to accomplish?
 3. Run `git diff origin/<base>...HEAD --stat` and compare the files changed against the stated intent.
 
@@ -36,7 +36,7 @@ Before reviewing code quality, check: **did they build what was requested — no
    - "While I was in there..." changes that expand blast radius
 
    **MISSING REQUIREMENTS detection:**
-   - Requirements from TODOS.md/PR description not addressed in the diff
+   - Requirements from plan.md/PR description not addressed in the diff
    - Test coverage gaps for stated requirements
    - Partial implementations (started but not finished)
 
@@ -67,7 +67,7 @@ REPO=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
 _PLAN_SLUG=$(git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*/[^/]*\)\.git$|\1|;s|.*[:/]\([^/]*/[^/]*\)$|\1|' | tr '/' '-' | tr -cd 'a-zA-Z0-9._-') || true
 _PLAN_SLUG="${_PLAN_SLUG:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9._-')}"
 # Search common plan file locations (project designs first, then personal/local)
-for PLAN_DIR in "$HOME/.gstack/projects/$_PLAN_SLUG" "$HOME/.claude/plans" "$HOME/.codex/plans" ".gstack/plans"; do
+for PLAN_DIR in "$HOME/.gstack/projects/$_PLAN_SLUG" "$HOME/.gstack/plans" "$HOME/.codex/plans" ".gstack/plans"; do
   [ -d "$PLAN_DIR" ] || continue
   PLAN=$(ls -t "$PLAN_DIR"/*.md 2>/dev/null | xargs grep -l "$BRANCH" 2>/dev/null | head -1)
   [ -z "$PLAN" ] && PLAN=$(ls -t "$PLAN_DIR"/*.md 2>/dev/null | xargs grep -l "$REPO" 2>/dev/null | head -1)
@@ -156,7 +156,7 @@ When no plan file is detected, use these secondary intent sources:
    - Commits with actionable verbs ("add", "implement", "fix", "create", "remove", "update") are intent signals
    - Skip noise: "WIP", "tmp", "squash", "merge", "chore", "typo", "fixup"
    - Extract the intent behind the commit, not the literal message
-2. **TODOS.md:** If it exists, check for items related to this branch or recent dates
+2. **plan.md:** If it exists, check for items related to this branch or recent dates
 3. **PR description:** Run `gh pr view --json body -q .body 2>/dev/null` for intent context
 
 **With fallback sources:** Apply the same Cross-Reference classification (DONE/PARTIAL/NOT DONE/CHANGED) using best-effort matching. Note that fallback-sourced items are lower confidence than plan-file items.
@@ -183,7 +183,7 @@ IMPACT: {HIGH|MEDIUM|LOW} — {what breaks or degrades if this stays undelivered
 
 ### Learnings Logging (plan-file discrepancies only)
 
-**Only for discrepancies sourced from plan files** (not commit messages or TODOS.md), log a learning so future sessions know this pattern occurred:
+**Only for discrepancies sourced from plan files** (not commit messages or plan.md), log a learning so future sessions know this pattern occurred:
 
 ```bash
 .github/skills/bin/gstack-learnings-log '{
@@ -198,7 +198,7 @@ IMPACT: {HIGH|MEDIUM|LOW} — {what breaks or degrades if this stays undelivered
 
 Replace KEBAB_SUMMARY with a kebab-case summary of the gap, and fill in the actual values.
 
-**Do NOT log learnings from commit-message-derived or TODOS.md-derived discrepancies.** These are informational in the review output but too noisy for durable memory.
+**Do NOT log learnings from commit-message-derived or plan.md-derived discrepancies.** These are informational in the review output but too noisy for durable memory.
 
 ### Integration with Scope Drift Detection
 
@@ -224,11 +224,11 @@ Plan items: N DONE, M PARTIAL, K NOT DONE
 [If scope creep: list each out-of-scope change not in the plan]
 ```
 
-**No plan file found:** Use commit messages and TODOS.md as fallback sources (see above). If no intent sources at all, skip with: "No intent sources detected — skipping completion audit."
+**No plan file found:** Use commit messages and plan.md as fallback sources (see above). If no intent sources at all, skip with: "No intent sources detected — skipping completion audit."
 
 ## Step 2: Read the checklist
 
-Read `.claude/skills/review/checklist.md`.
+Read `the review checklist`.
 
 **If the file cannot be read, STOP and report the error.** Do not proceed without the checklist.
 
@@ -236,7 +236,7 @@ Read `.claude/skills/review/checklist.md`.
 
 ## Step 2.5: Check for Greptile review comments
 
-Read `.claude/skills/review/greptile-triage.md` and follow the fetch, filter, classify, and **escalation detection** steps.
+Read `.github/skills/review/greptile-triage.md` and follow the fetch, filter, classify, and **escalation detection** steps.
 
 **If no PR exists, `gh` fails, API returns an error, or there are zero Greptile comments:** Skip this step silently. Greptile integration is additive — the review works without it.
 
@@ -274,9 +274,6 @@ available (e.g., slop-scan not installed), skip this step silently.
 Search for relevant learnings from previous sessions:
 
 ```bash
-_CROSS_PROJ=$(.github/skills/bin/gstack-config get cross_project_learnings 2>/dev/null || echo "unset")
-echo "CROSS_PROJECT: $_CROSS_PROJ"
-if [ "$_CROSS_PROJ" = "true" ]; then
   .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
   .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
@@ -293,10 +290,6 @@ If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
 Options:
 - A) Enable cross-project learnings (recommended)
 - B) Keep learnings project-scoped only
-
-If A: run `.github/skills/bin/gstack-config set cross_project_learnings true`
-If B: run `.github/skills/bin/gstack-config set cross_project_learnings false`
-
 Then re-run the search with the appropriate flag.
 
 If learnings are found, incorporate them into your analysis. When a review finding
@@ -566,7 +559,6 @@ If the Red Team subagent fails or times out, skip silently and continue.
 Before classifying findings, check if any were previously skipped by the user in a prior review on this branch.
 
 ```bash
-.github/skills/bin/gstack-review-read
 ```
 
 Parse the output: only lines BEFORE `---CONFIG---` are JSONL entries (the output also contains `---CONFIG---` and `---HEAD---` footer sections that are not JSONL — ignore those).
@@ -685,19 +677,19 @@ Before replying to any comment, run the **Escalation Detection** algorithm from 
 
 ## Step 5.5: TODOS cross-reference
 
-Read `TODOS.md` in the repository root (if it exists). Cross-reference the PR against open TODOs:
+Read `plan.md` in the repository root (if it exists). Cross-reference the PR against open TODOs:
 
 - **Does this PR close any open TODOs?** If yes, note which items in your output: "This PR addresses TODO: <title>"
 - **Does this PR create work that should become a TODO?** If yes, flag it as an informational finding.
 - **Are there related TODOs that provide context for this review?** If yes, reference them when discussing related findings.
 
-If TODOS.md doesn't exist, skip this step silently.
+If plan.md doesn't exist, skip this step silently.
 
 ---
 
 ## Step 5.6: Documentation staleness check
 
-Cross-reference the diff against documentation files. For each `.md` file in the repo root (README.md, ARCHITECTURE.md, CONTRIBUTING.md, CLAUDE.md, etc.):
+Cross-reference the diff against documentation files. For each `.md` file in the repo root (README.md, ARCHITECTURE.md, CONTRIBUTING.md, copilot-instructions.md, etc.):
 
 1. Check if code changes in the diff affect features, components, or workflows described in that doc file.
 2. If the doc file was NOT updated in this branch but the code it describes WAS changed, flag it as an INFORMATIONAL finding:
@@ -719,9 +711,8 @@ Every diff gets adversarial review from both Claude and Codex. LOC is not a prox
 DIFF_INS=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
 DIFF_DEL=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
 DIFF_TOTAL=$((DIFF_INS + DIFF_DEL))
-which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 # Legacy opt-out — only gates Codex passes, Claude always runs
-OLD_CFG=$(.github/skills/bin/gstack-config get codex_reviews 2>/dev/null || true)
+OLD_CFG=$(
 echo "DIFF_SIZE: $DIFF_TOTAL"
 echo "OLD_CFG: ${OLD_CFG:-not_set}"
 ```
@@ -750,25 +741,18 @@ If the subagent fails or times out: "Claude adversarial subagent unavailable. Co
 If Codex is available AND `OLD_CFG` is NOT `disabled`:
 
 ```bash
-TMPERR_ADV=$(mktemp /tmp/codex-adv-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-codex exec "IMPORTANT: Do NOT read or execute any files under .github/, ~/.agents/, .claude/skills/, or agents/. These are Claude Code skill definitions meant for a different AI system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Do NOT modify agents/openai.yaml. Stay focused on the repository code only.\n\nReview the changes on this branch against the base branch. Run git diff origin/<base> to see the diff. Your job is to find ways this code will fail in production. Think like an attacker and a chaos engineer. Find edge cases, race conditions, security holes, resource leaks, failure modes, and silent data corruption paths. Be adversarial. Be thorough. No compliments — just the problems." -C "$_REPO_ROOT" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_ADV"
 ```
 
 Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. After the command completes, read stderr:
 ```bash
-cat "$TMPERR_ADV"
 ```
 
 Present the full output verbatim. This is informational — it never blocks shipping.
 
 **Error handling:** All errors are non-blocking — adversarial review is a quality enhancement, not a prerequisite.
-- **Auth failure:** If stderr contains "auth", "login", "unauthorized", or "API key": "Codex authentication failed. Run \`codex login\` to authenticate."
 - **Timeout:** "Codex timed out after 5 minutes."
 - **Empty response:** "Codex returned no response. Stderr: <paste relevant error>."
-
-**Cleanup:** Run `rm -f "$TMPERR_ADV"` after processing.
-
 If Codex is NOT available: "Codex CLI not found — running Claude adversarial only. Install Codex for cross-model coverage: `npm install -g @openai/codex`"
 
 ---
@@ -780,8 +764,7 @@ If `DIFF_TOTAL >= 200` AND Codex is available AND `OLD_CFG` is NOT `disabled`:
 ```bash
 TMPERR=$(mktemp /tmp/codex-review-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-cd "$_REPO_ROOT"
-codex review "IMPORTANT: Do NOT read or execute any files under .github/, ~/.agents/, .claude/skills/, or agents/. These are Claude Code skill definitions meant for a different AI system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Do NOT modify agents/openai.yaml. Stay focused on the repository code only.\n\nReview the diff against the base branch." --base <base> -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR"
+cd "$(git rev-parse --show-toplevel)"
 ```
 
 Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. Present output under `CODEX SAYS (code review):` header.
@@ -794,9 +777,6 @@ Codex found N critical issues in the diff.
 A) Investigate and fix now (recommended)
 B) Continue — review will still complete
 ```
-
-If A: address the findings. Re-run `codex review` to verify.
-
 Read stderr for errors (same error handling as Codex adversarial above).
 
 After stderr: `rm -f "$TMPERR"`
@@ -862,7 +842,7 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"review","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+'
 ```
 
 **Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`

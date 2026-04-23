@@ -37,55 +37,28 @@ allowed-tools:
 ## Preamble (run first)
 
 ```bash
-_UPD=$(.github/skills/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 mkdir -p ~/.gstack/sessions
 touch ~/.gstack/sessions/"$PPID"
-_SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
 find ~/.gstack/sessions -mmin +120 -type f -exec rm {} + 2>/dev/null || true
-_PROACTIVE=$(.github/skills/bin/gstack-config get proactive 2>/dev/null || echo "true")
-_PROACTIVE_PROMPTED=$([ -f ~/.gstack/.proactive-prompted ] && echo "yes" || echo "no")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
-_SKILL_PREFIX=$(.github/skills/bin/gstack-config get skill_prefix 2>/dev/null || echo "false")
-echo "PROACTIVE: $_PROACTIVE"
-echo "PROACTIVE_PROMPTED: $_PROACTIVE_PROMPTED"
-echo "SKILL_PREFIX: $_SKILL_PREFIX"
-source <(.github/skills/bin/gstack-repo-mode 2>/dev/null) || true
-REPO_MODE=${REPO_MODE:-unknown}
-echo "REPO_MODE: $REPO_MODE"
-_LAKE_SEEN=$([ -f ~/.gstack/.completeness-intro-seen ] && echo "yes" || echo "no")
-echo "LAKE_INTRO: $_LAKE_SEEN"
-_TEL=$(.github/skills/bin/gstack-config get telemetry 2>/dev/null || true)
-_TEL_PROMPTED=$([ -f ~/.gstack/.telemetry-prompted ] && echo "yes" || echo "no")
-_TEL_START=$(date +%s)
-_SESSION_ID="$$-$(date +%s)"
+_TEL=$(
 echo "TELEMETRY: ${_TEL:-off}"
-echo "TEL_PROMPTED: $_TEL_PROMPTED"
 # Writing style verbosity (V1: default = ELI10, terse = tighter V0 prose.
 # Read on every skill run so terse mode takes effect without a restart.)
-_EXPLAIN_LEVEL=$(.github/skills/bin/gstack-config get explain_level 2>/dev/null || echo "default")
-if [ "$_EXPLAIN_LEVEL" != "default" ] && [ "$_EXPLAIN_LEVEL" != "terse" ]; then _EXPLAIN_LEVEL="default"; fi
-echo "EXPLAIN_LEVEL: $_EXPLAIN_LEVEL"
 # Question tuning (see /plan-tune). Observational only in V1.
-_QUESTION_TUNING=$(.github/skills/bin/gstack-config get question_tuning 2>/dev/null || echo "false")
-echo "QUESTION_TUNING: $_QUESTION_TUNING"
-mkdir -p ~/.gstack/analytics
 if [ "$_TEL" != "off" ]; then
-echo '{"skill":"autoplan","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 fi
 # zsh-compatible: use find instead of glob to avoid NOMATCH error
-for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do
   if [ -f "$_PF" ]; then
-    if [ "$_TEL" != "off" ] && [ -x ".github/skills/bin/gstack-telemetry-log" ]; then
-      .github/skills/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true
     fi
     rm -f "$_PF" 2>/dev/null || true
   fi
   break
 done
 # Learnings count
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" 2>/dev/null || true
+eval "$(true" 2>/dev/null || true
 _LEARN_FILE="${GSTACK_HOME:-$HOME/.gstack}/projects/${SLUG:-unknown}/learnings.jsonl"
 if [ -f "$_LEARN_FILE" ]; then
   _LEARN_COUNT=$(wc -l < "$_LEARN_FILE" 2>/dev/null | tr -d ' ')
@@ -97,31 +70,25 @@ else
   echo "LEARNINGS: 0"
 fi
 # Session timeline: record skill start (local-only, never sent anywhere)
-.github/skills/bin/gstack-timeline-log '{"skill":"autoplan","event":"started","branch":"'"$_BRANCH"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null &
-# Check if CLAUDE.md has routing rules
+# Check if copilot-instructions.md has routing rules
 _HAS_ROUTING="no"
-if [ -f CLAUDE.md ] && grep -q "## Skill routing" CLAUDE.md 2>/dev/null; then
+if [ -f copilot-instructions.md ] && grep -q "## Skill routing" copilot-instructions.md 2>/dev/null; then
   _HAS_ROUTING="yes"
 fi
-_ROUTING_DECLINED=$(.github/skills/bin/gstack-config get routing_declined 2>/dev/null || echo "false")
+_ROUTING_DECLINED=$(
 echo "HAS_ROUTING: $_HAS_ROUTING"
 echo "ROUTING_DECLINED: $_ROUTING_DECLINED"
 # Vendoring deprecation: detect if CWD has a vendored gstack copy
 _VENDORED="no"
-if [ -d ".claude/skills/gstack" ] && [ ! -L ".claude/skills/gstack" ]; then
-  if [ -f ".claude/skills/gstack/VERSION" ] || [ -d ".claude/skills/gstack/.git" ]; then
     _VENDORED="yes"
   fi
 fi
 echo "VENDORED_GSTACK: $_VENDORED"
 echo "MODEL_OVERLAY: claude"
 # Checkpoint mode (explicit = no auto-commit, continuous = WIP commits as you go)
-_CHECKPOINT_MODE=$(.github/skills/bin/gstack-config get checkpoint_mode 2>/dev/null || echo "explicit")
-_CHECKPOINT_PUSH=$(.github/skills/bin/gstack-config get checkpoint_push 2>/dev/null || echo "false")
-echo "CHECKPOINT_MODE: $_CHECKPOINT_MODE"
+_CHECKPOINT_PUSH=$(
 echo "CHECKPOINT_PUSH: $_CHECKPOINT_PUSH"
 # Detect spawned session (OpenClaw or other orchestrator)
-[ -n "$OPENCLAW_SESSION" ] && echo "SPAWNED_SESSION: true" || true
 ```
 
 If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills AND do not
@@ -137,13 +104,11 @@ of `/qa`, `/gstack-ship` instead of `/ship`). Disk paths are unaffected — alwa
 
 If output shows `UPGRADE_AVAILABLE <old> <new>`: read `.github/skills/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise ask_user with 4 options, write snooze state if declined).
 
-If output shows `JUST_UPGRADED <from> <to>` AND `SPAWNED_SESSION` is NOT set: tell
 the user "Running gstack v{to} (just updated!)" and then check for new features to
 surface. For each per-feature marker below, if the marker file is missing AND the
 feature is plausibly useful for this user, use ask_user to let them try it.
 Fire once per feature per user, NOT once per upgrade.
 
-**In spawned sessions (`SPAWNED_SESSION` = "true"): SKIP feature discovery entirely.**
 Just print "Running gstack v{to}" and continue. Orchestrators do not want interactive
 prompts from sub-sessions.
 
@@ -155,7 +120,6 @@ prompts from sub-sessions.
    anywhere unless you turn that on. Want to try it?"
    Options: A) Enable continuous mode, B) Show me first (print the section from
    the preamble Continuous Checkpoint Mode), C) Skip.
-   If A: run `.github/skills/bin/gstack-config set checkpoint_mode continuous`.
    Always: `touch .github/skills/.feature-prompted-continuous-checkpoint`
 
 2. `.github/skills/.feature-prompted-model-overlay` →
@@ -181,7 +145,6 @@ Options:
 - B) Restore V0 prose — set `explain_level: terse`
 
 If A: leave `explain_level` unset (defaults to `default`).
-If B: run `.github/skills/bin/gstack-config set explain_level terse`.
 
 Always run (regardless of choice):
 ```bash
@@ -203,20 +166,15 @@ touch ~/.gstack/.completeness-intro-seen
 
 Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
 
-If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,
 ask the user about telemetry. Use ask_user:
 
 > Help gstack get better! Community mode shares usage data (which skills you use, how long
 > they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
 > No code, file paths, or repo names are ever sent.
-> Change anytime with `gstack-config set telemetry off`.
 
 Options:
 - A) Help gstack get better! (recommended)
 - B) No thanks
-
-If A: run `.github/skills/bin/gstack-config set telemetry community`
-
 If B: ask a follow-up ask_user:
 
 > How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
@@ -225,18 +183,10 @@ If B: ask a follow-up ask_user:
 Options:
 - A) Sure, anonymous is fine
 - B) No thanks, fully off
-
-If B→A: run `.github/skills/bin/gstack-config set telemetry anonymous`
-If B→B: run `.github/skills/bin/gstack-config set telemetry off`
-
 Always run:
 ```bash
 touch ~/.gstack/.telemetry-prompted
 ```
-
-This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
-
-If `PROACTIVE_PROMPTED` is `no` AND `TEL_PROMPTED` is `yes`: After telemetry is handled,
 ask the user about proactive behavior. Use ask_user:
 
 > gstack can proactively figure out when you might need a skill while you work —
@@ -246,10 +196,6 @@ ask the user about proactive behavior. Use ask_user:
 Options:
 - A) Keep it on (recommended)
 - B) Turn it off — I'll type /commands myself
-
-If A: run `.github/skills/bin/gstack-config set proactive true`
-If B: run `.github/skills/bin/gstack-config set proactive false`
-
 Always run:
 ```bash
 touch ~/.gstack/.proactive-prompted
@@ -258,19 +204,19 @@ touch ~/.gstack/.proactive-prompted
 This only happens once. If `PROACTIVE_PROMPTED` is `yes`, skip this entirely.
 
 If `HAS_ROUTING` is `no` AND `ROUTING_DECLINED` is `false` AND `PROACTIVE_PROMPTED` is `yes`:
-Check if a CLAUDE.md file exists in the project root. If it does not exist, create it.
+Check if a copilot-instructions.md file exists in the project root. If it does not exist, create it.
 
 Use ask_user:
 
-> gstack works best when your project's CLAUDE.md includes skill routing rules.
+> gstack works best when your project's copilot-instructions.md includes skill routing rules.
 > This tells Claude to use specialized workflows (like /ship, /investigate, /qa)
 > instead of answering directly. It's a one-time addition, about 15 lines.
 
 Options:
-- A) Add routing rules to CLAUDE.md (recommended)
+- A) Add routing rules to copilot-instructions.md (recommended)
 - B) No thanks, I'll invoke skills manually
 
-If A: Append this section to the end of CLAUDE.md:
+If A: Append this section to the end of copilot-instructions.md:
 
 ```markdown
 
@@ -300,7 +246,6 @@ Key routing rules:
 - Post-deploy monitoring → invoke /canary
 - Update docs after shipping → invoke /document-release
 - Weekly retro, "how'd we do" → invoke /retro
-- Second opinion, codex review → invoke /codex
 - Safety mode, careful mode, lock it down → invoke /careful or /guard
 - Restrict edits to a directory → invoke /freeze or /unfreeze
 - Upgrade gstack → invoke /gstack-upgrade
@@ -316,20 +261,14 @@ Key routing rules:
 - Code quality dashboard → invoke /health
 ```
 
-Then commit the change: `git add CLAUDE.md && git commit -m "chore: add gstack skill routing rules to CLAUDE.md"`
-
-If B: run `.github/skills/bin/gstack-config set routing_declined true`
-Say "No problem. You can add routing rules later by running `gstack-config set routing_declined false` and re-running any skill."
-
+Then commit the change: `git add copilot-instructions.md && git commit -m "chore: add gstack skill routing rules to copilot-instructions.md"`
 This only happens once per project. If `HAS_ROUTING` is `yes` or `ROUTING_DECLINED` is `true`, skip this entirely.
 
 If `VENDORED_GSTACK` is `yes`: This project has a vendored copy of gstack at
-`.claude/skills/gstack/`. Vendoring is deprecated. We will not keep vendored copies
 up to date, so this project's gstack will fall behind.
 
 Use ask_user (one-time per project, check for `~/.gstack/.vendoring-warned-$SLUG` marker):
 
-> This project has gstack vendored in `.claude/skills/gstack/`. Vendoring is deprecated.
 > We won't keep this copy up to date, so you'll fall behind on new features and fixes.
 >
 > Want to migrate to team mode? It takes about 30 seconds.
@@ -339,23 +278,19 @@ Options:
 - B) No, I'll handle it myself
 
 If A:
-1. Run `git rm -r .claude/skills/gstack/`
-2. Run `echo '.claude/skills/gstack/' >> .gitignore`
 3. Run `.github/skills/bin/gstack-team-init required` (or `optional`)
-4. Run `git add .claude/ .gitignore CLAUDE.md && git commit -m "chore: migrate gstack from vendored to team mode"`
 5. Tell the user: "Done. Each developer now runs: `cd .github/skills/gstack && ./setup --team`"
 
 If B: say "OK, you're on your own to keep the vendored copy up to date."
 
 Always run (regardless of choice):
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" 2>/dev/null || true
+eval "$(true" 2>/dev/null || true
 touch ~/.gstack/.vendoring-warned-${SLUG:-unknown}
 ```
 
 This only happens once per project. If the marker file exists, skip entirely.
 
-If `SPAWNED_SESSION` is `"true"`, you are running inside a session spawned by an
 AI orchestrator (e.g., OpenClaw). In spawned sessions:
 - Do NOT use ask_user for interactive prompts. Auto-choose the recommended option.
 - Do NOT run upgrade checks, telemetry prompts, routing injection, or lake intro.
@@ -436,7 +371,7 @@ After compaction or at session start, check for recent project artifacts.
 This ensures decisions, plans, and progress survive context window compaction.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
+eval "$(true"
 _PROJ="${GSTACK_HOME:-$HOME/.gstack}/projects/${SLUG:-unknown}"
 if [ -d "$_PROJ" ]; then
   echo "--- RECENT ARTIFACTS ---"
@@ -486,9 +421,6 @@ available]. [Health score if available]." Keep it to 2-3 sentences.
 Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
 
 Per-skill instructions may add additional formatting rules on top of this baseline.
-
-## Writing Style (skip entirely if `EXPLAIN_LEVEL: terse` appears in the preamble echo OR the user's current message explicitly requests terse / no-explanations output)
-
 These rules apply to every ask_user, every response you write to the user, and every review finding. They compose with the ask_user Format section above: Format = *how* a question is structured; Writing Style = *the prose quality of the content inside it*.
 
 1. **Jargon gets a one-sentence gloss on first use per skill invocation.** Even if the user's own prompt already contained the term — users often paste jargon from someone else's plan. Gloss unconditionally on first use. No cross-invocation memory: a new skill fire is a new first-use opportunity. Example: "race condition (two things happen at the same time and step on each other)".
@@ -585,9 +517,6 @@ These rules apply to every ask_user, every response you write to the user, and e
 - buffer overflow
 
 Terms not on this list are assumed plain-English enough.
-
-Terse mode (EXPLAIN_LEVEL: terse): skip this entire section. Emit output in V0 prose style — no glosses, no outcome-framing layer, shorter responses. Power users who know the terms get tighter output this way.
-
 ## Completeness Principle — Boil the Lake
 
 AI makes completeness near-free. Always recommend the complete option over shortcuts — the delta is minutes with CC+gstack. A "lake" (100% coverage, all edge cases) is boilable; an "ocean" (full rewrite, multi-quarter migration) is not. Boil lakes, flag oceans.
@@ -618,7 +547,6 @@ This does NOT apply to routine coding, small features, or obvious changes.
 
 ## Continuous Checkpoint Mode
 
-If `CHECKPOINT_MODE` is `"continuous"` (from preamble output): auto-commit work as
 you go with `WIP:` prefix so session state survives crashes and context switches.
 
 **When to commit (continuous mode only):**
@@ -656,7 +584,6 @@ commits on the current branch to reconstruct session state. When `/ship` runs, i
 filter-squashes WIP commits only (preserving non-WIP commits) via
 `git rebase --autosquash` so the PR contains clean bisectable commits.
 
-If `CHECKPOINT_MODE` is `"explicit"` (the default): no auto-commit behavior. Commit
 only when the user explicitly asks, or when a skill workflow (like /ship) runs a
 commit step. Ignore this section entirely.
 
@@ -674,9 +601,6 @@ or calling /context-save to save progress and start fresh.
 This is a soft nudge, not a measurable feature. No thresholds, no enforcement. The
 goal is self-awareness during long sessions. If the session stays short, skip it.
 Progress summaries must NEVER mutate git state — they are reporting, not committing.
-
-## Question Tuning (skip entirely if `QUESTION_TUNING: false`)
-
 **Before each ask_user.** Pick a registered `question_id` (see
 `scripts/question-registry.ts`) or an ad-hoc `{skill}-{slug}`. Check preference:
 `.github/skills/bin/gstack-question-preference --check "<id>"`.
@@ -687,7 +611,6 @@ Progress summaries must NEVER mutate git state — they are reporting, not commi
 
 **After the user answers.** Log it (non-fatal — best-effort):
 ```bash
-.github/skills/bin/gstack-question-log '{"skill":"autoplan","question_id":"<id>","question_summary":"<short>","category":"<approval|clarification|routing|cherry-pick|feedback-loop>","door_type":"<one-way|two-way>","options_count":N,"user_choice":"<key>","recommended":"<key>","session_id":"'"$_SESSION_ID"'"}' 2>/dev/null || true
 ```
 
 **Offer inline tune (two-way only, skip on one-way).** Add one line:
@@ -712,7 +635,6 @@ retry. On success, confirm inline: "Set `<id>` → `<preference>`. Active immedi
 
 ## Repo Ownership — See Something, Say Something
 
-`REPO_MODE` controls how to handle issues outside your branch:
 - **`solo`** — You own everything. Investigate and offer to fix proactively.
 - **`collaborative`** / **`unknown`** — Flag via ask_user, don't fix (may be someone else's).
 
@@ -725,7 +647,6 @@ Before building anything unfamiliar, **search first.** See `.github/skills/ETHOS
 
 **Eureka:** When first-principles reasoning contradicts conventional wisdom, name it and log:
 ```bash
-jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" '{ts:$ts,skill:$skill,branch:$branch,insight:$insight}' >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
 ```
 
 ## Completion Status Protocol
@@ -764,7 +685,7 @@ Before completing, reflect on this session:
 If yes, log an operational learning for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"SKILL_NAME","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"observed"}'
+'
 ```
 
 Replace SKILL_NAME with the current skill name. Only log genuine operational discoveries.
@@ -779,7 +700,6 @@ Determine the outcome from the workflow result (success if completed normally, e
 if it failed, abort if the user interrupted).
 
 **PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
-`~/.gstack/analytics/` (user config directory, not project files). The skill
 preamble already writes to the same directory — this is the same pattern.
 Skipping this command loses session duration and outcome data.
 
@@ -787,19 +707,10 @@ Run this bash:
 
 ```bash
 _TEL_END=$(date +%s)
-_TEL_DUR=$(( _TEL_END - _TEL_START ))
-rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 # Session timeline: record skill completion (local-only, never sent anywhere)
-.github/skills/bin/gstack-timeline-log '{"skill":"SKILL_NAME","event":"completed","branch":"'$(git branch --show-current 2>/dev/null || echo unknown)'","outcome":"OUTCOME","duration_s":"'"$_TEL_DUR"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null || true
-# Local analytics (gated on telemetry setting)
 if [ "$_TEL" != "off" ]; then
-echo '{"skill":"SKILL_NAME","duration_s":"'"$_TEL_DUR"'","outcome":"OUTCOME","browse":"USED_BROWSE","session":"'"$_SESSION_ID"'","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
 fi
 # Remote telemetry (opt-in, requires binary)
-if [ "$_TEL" != "off" ] && [ -x .github/skills/bin/gstack-telemetry-log ]; then
-  .github/skills/bin/gstack-telemetry-log \
-    --skill "SKILL_NAME" --duration "$_TEL_DUR" --outcome "OUTCOME" \
-    --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 fi
 ```
 
@@ -809,31 +720,8 @@ If you cannot determine the outcome, use "unknown". The local JSONL always logs.
 remote binary only runs if telemetry is not off and the binary exists.
 
 ## Plan Mode Safe Operations
-
-In plan mode, these are always allowed (they inform the plan, don't modify source):
-`$B` (browse), `$D` (design), `codex exec`/`codex review`, writes to `~/.gstack/`,
-writes to the plan file, `open` for generated artifacts.
-
 ## Skill Invocation During Plan Mode
-
-If the user invokes a skill in plan mode, that skill takes precedence over generic plan mode behavior. Treat it as executable instructions, not reference. Follow step
-by step. ask_user calls satisfy plan mode's end-of-turn requirement. At a STOP
-point, stop immediately. Do not continue the workflow past a STOP point and do not call ExitPlanMode there. Commands marked "PLAN
-MODE EXCEPTION — ALWAYS RUN" execute. Other writes need to be already permitted
-above or explicitly exception-marked. Call ExitPlanMode only after the skill
-workflow completes — only then call ExitPlanMode (or if the user tells you to cancel the skill or leave plan mode).
-
 ## Plan Status Footer
-
-In plan mode, before ExitPlanMode: if the plan file lacks a `## GSTACK REVIEW REPORT`
-section, run `.github/skills/bin/gstack-review-read` and append a report.
-With JSONL entries (before `---CONFIG---`), format the standard runs/status/findings
-table. With `NO_REVIEWS` or empty, append a 5-row placeholder table (CEO/Codex/Eng/
-Design/DX Review) with all zeros and verdict "NO REVIEWS YET — run `/autoplan`".
-If a richer review report already exists, skip — review skills wrote it.
-
-PLAN MODE EXCEPTION — always allowed (it's the plan file).
-
 ## Step 0: Detect platform and base branch
 
 First, detect the git hosting platform from the remote URL:
@@ -922,8 +810,8 @@ After /office-hours completes, re-run the design doc check:
 setopt +o nomatch 2>/dev/null || true  # zsh compat
 SLUG=$(.github/skills/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
-DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head -1)
-[ -z "$DESIGN" ] && DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1)
+DESIGN=$(ls -t ./*-$BRANCH-design-*.md 2>/dev/null | head -1)
+[ -z "$DESIGN" ] && DESIGN=$(ls -t ./*-design-*.md 2>/dev/null | head -1)
 [ -n "$DESIGN" ] && echo "Design doc found: $DESIGN" || echo "No design doc found"
 ```
 
@@ -1043,7 +931,6 @@ State what you examined and why nothing was flagged (1-2 sentences minimum).
 
 ## Filesystem Boundary — Codex Prompts
 
-All prompts sent to Codex (via `codex exec` or `codex review`) MUST be prefixed with
 this boundary instruction:
 
 > IMPORTANT: Do NOT read or execute any SKILL.md files or files in skill definition directories (paths containing skills/gstack). These are AI assistant skill definitions meant for a different system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Stay focused on the repository code only.
@@ -1060,7 +947,7 @@ instructions instead of reviewing the plan.
 Before doing anything, save the plan file's current state to an external file:
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
+eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-')
 DATETIME=$(date +%Y%m%d-%H%M%S)
 echo "RESTORE_PATH=$HOME/.gstack/projects/$SLUG/${BRANCH}-autoplan-restore-${DATETIME}.md"
@@ -1084,8 +971,8 @@ Then prepend a one-line HTML comment to the plan file:
 
 ### Step 2: Read context
 
-- Read CLAUDE.md, TODOS.md, git log -30, git diff against the base branch --stat
-- Discover design docs: `ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1`
+- Read copilot-instructions.md, plan.md, git log -30, git diff against the base branch --stat
+- Discover design docs: `ls -t ./*-design-*.md 2>/dev/null | head -1`
 - Detect UI scope: grep the plan for view/rendering terms (component, screen, form,
   button, modal, layout, dashboard, sidebar, nav, dialog). Require 2+ matches. Exclude
   false positives ("page" alone, "UI" in acronyms).
@@ -1136,7 +1023,7 @@ source it once here and the helper functions stay in scope for the rest of the
 workflow.
 
 ```bash
-_TEL=$(.github/skills/bin/gstack-config get telemetry 2>/dev/null || echo off)
+_TEL=$(
 source .github/skills/bin/gstack-codex-probe
 
 # Check Codex binary. If missing, tag the degradation matrix and continue
@@ -1144,18 +1031,13 @@ source .github/skills/bin/gstack-codex-probe
 if ! command -v codex >/dev/null 2>&1; then
   _gstack_codex_log_event "codex_cli_missing"
   echo "[codex-unavailable: binary not found] — proceeding with Claude subagent only"
-  _CODEX_AVAILABLE=false
 elif ! _gstack_codex_auth_probe >/dev/null; then
   _gstack_codex_log_event "codex_auth_failed"
-  echo "[codex-unavailable: auth missing] — proceeding with Claude subagent only. Run \`codex login\` or set \$CODEX_API_KEY to enable dual-voice review."
-  _CODEX_AVAILABLE=false
 else
   _gstack_codex_version_check   # non-blocking warn if known-bad
-  _CODEX_AVAILABLE=true
 fi
 ```
 
-If `_CODEX_AVAILABLE=false`, all Phase 1-3.5 Codex voices below degrade to
 `[codex-unavailable]` in the degradation matrix. /autoplan completes with
 Claude subagent only — saves token spend on Codex prompts we can't use.
 
@@ -1173,7 +1055,7 @@ Override: every ask_user → auto-decide using the 6 principles.
   that is NOT auto-decided. Premises require human judgment.
 - Alternatives: pick highest completeness (P1). If tied, pick simplest (P5).
   If top 2 are close → mark TASTE DECISION.
-- Scope expansion: in blast radius + <1d CC → approve (P2). Outside → defer to TODOS.md (P3).
+- Scope expansion: in blast radius + <1d CC → approve (P2). Outside → defer to plan.md (P3).
   Duplicates → reject (P4). Borderline (3-5 files) → mark TASTE DECISION.
 - All 10 review sections: run fully, auto-decide each issue, log every decision.
 - Dual voices: always run BOTH Claude subagent AND Codex if available (P6).
@@ -1184,7 +1066,6 @@ Override: every ask_user → auto-decide using the 6 principles.
   **Codex CEO voice** (via Bash):
   ```bash
   _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-  _gstack_codex_timeout_wrapper 600 codex exec "IMPORTANT: Do NOT read or execute any SKILL.md files or files in skill definition directories (paths containing skills/gstack). These are AI assistant skill definitions meant for a different system. Stay focused on repository code only.
 
   You are a CEO/founder advisor reviewing a development plan.
   Challenge the strategic foundations: Are the premises valid or assumed? Is this the
@@ -1192,7 +1073,7 @@ Override: every ask_user → auto-decide using the 6 principles.
   What alternatives were dismissed too quickly? What competitive or market risks are
   unaddressed? What scope decisions will look foolish in 6 months? Be adversarial.
   No compliments. Just the strategic blind spots.
-  File: <plan_path>" -C "$_REPO_ROOT" -s read-only --enable web_search_cached < /dev/null
+  File: <plan_path>" -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached < /dev/null
   _CODEX_EXIT=$?
   if [ "$_CODEX_EXIT" = "124" ]; then
     _gstack_codex_log_event "codex_timeout" "600"
@@ -1301,7 +1182,6 @@ Override: every ask_user → auto-decide using the 6 principles.
   **Codex design voice** (via Bash):
   ```bash
   _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-  _gstack_codex_timeout_wrapper 600 codex exec "IMPORTANT: Do NOT read or execute any SKILL.md files or files in skill definition directories (paths containing skills/gstack). These are AI assistant skill definitions meant for a different system. Stay focused on repository code only.
 
   Read the plan file at <plan_path>. Evaluate this plan's
   UI/UX design decisions.
@@ -1315,7 +1195,7 @@ Override: every ask_user → auto-decide using the 6 principles.
   accessibility requirements (keyboard nav, contrast, touch targets) specified or
   aspirational? Does the plan describe specific UI decisions or generic patterns?
   What design decisions will haunt the implementer if left ambiguous?
-  Be opinionated. No hedging." -C "$_REPO_ROOT" -s read-only --enable web_search_cached < /dev/null
+  Be opinionated. No hedging." -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached < /dev/null
   _CODEX_EXIT=$?
   if [ "$_CODEX_EXIT" = "124" ]; then
     _gstack_codex_log_event "codex_timeout" "600"
@@ -1382,7 +1262,6 @@ Override: every ask_user → auto-decide using the 6 principles.
   **Codex eng voice** (via Bash):
   ```bash
   _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-  _gstack_codex_timeout_wrapper 600 codex exec "IMPORTANT: Do NOT read or execute any SKILL.md files or files in skill definition directories (paths containing skills/gstack). These are AI assistant skill definitions meant for a different system. Stay focused on repository code only.
 
   Review this plan for architectural issues, missing edge cases,
   and hidden complexity. Be adversarial.
@@ -1391,7 +1270,7 @@ Override: every ask_user → auto-decide using the 6 principles.
   CEO: <insert CEO consensus table summary — key concerns, DISAGREEs>
   Design: <insert Design consensus table summary, or 'skipped, no UI scope'>
 
-  File: <plan_path>" -C "$_REPO_ROOT" -s read-only --enable web_search_cached < /dev/null
+  File: <plan_path>" -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached < /dev/null
   _CODEX_EXIT=$?
   if [ "$_CODEX_EXIT" = "124" ]; then
     _gstack_codex_log_event "codex_timeout" "600"
@@ -1416,8 +1295,8 @@ Override: every ask_user → auto-decide using the 6 principles.
 
 - Architecture choices: explicit over clever (P5). If codex disagrees with valid reason → TASTE DECISION. Scope changes both models agree on → USER CHALLENGE.
 - Evals: always include all relevant suites (P1)
-- Test plan: generate artifact at `~/.gstack/projects/$SLUG/{user}-{branch}-test-plan-{datetime}.md`
-- TODOS.md: collect all deferred scope expansions from Phase 1, auto-write
+- Test plan: generate artifact at `./{user}-{branch}-test-plan-{datetime}.md`
+- plan.md: collect all deferred scope expansions from Phase 1, auto-write
 
 **Required execution checklist (Eng):**
 
@@ -1472,7 +1351,7 @@ Missing voice = N/A (not CONFIRMED). Single critical finding from one voice = fl
 - Test plan artifact written to disk (Section 3)
 - Failure modes registry with critical gap flags
 - Completion Summary (the full summary from the Eng skill)
-- TODOS.md updates (collected from all phases)
+- plan.md updates (collected from all phases)
 
 **PHASE 3 COMPLETE.** Emit phase-transition summary:
 > **Phase 3 complete.** Codex: [N concerns]. Claude subagent: [N issues].
@@ -1503,7 +1382,6 @@ Log: "Phase 3.5 skipped — no developer-facing scope detected."
   **Codex DX voice** (via Bash):
   ```bash
   _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-  _gstack_codex_timeout_wrapper 600 codex exec "IMPORTANT: Do NOT read or execute any SKILL.md files or files in skill definition directories (paths containing skills/gstack). These are AI assistant skill definitions meant for a different system. Stay focused on repository code only.
 
   Read the plan file at <plan_path>. Evaluate this plan's developer experience.
 
@@ -1517,7 +1395,7 @@ Log: "Phase 3.5 skipped — no developer-facing scope detected."
   3. API/CLI design: are names guessable? Are defaults sensible? Is it consistent?
   4. Docs: can a dev find what they need in under 2 minutes? Are examples copy-paste-complete?
   5. Upgrade path: can devs upgrade without fear? Migration guides? Deprecation warnings?
-  Be adversarial. Think like a developer who is evaluating this against 3 competitors." -C "$_REPO_ROOT" -s read-only --enable web_search_cached < /dev/null
+  Be adversarial. Think like a developer who is evaluating this against 3 competitors." -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached < /dev/null
   _CODEX_EXIT=$?
   if [ "$_CODEX_EXIT" = "124" ]; then
     _gstack_codex_log_event "codex_timeout" "600"
@@ -1632,7 +1510,7 @@ produced. Check the plan file and conversation for each item.
 - [ ] Scope challenge with actual code analysis (not just "scope is fine")
 - [ ] Architecture ASCII diagram produced
 - [ ] Test diagram mapping codepaths to test coverage
-- [ ] Test plan artifact written to disk at ~/.gstack/projects/$SLUG/
+- [ ] Test plan artifact written to disk at ./
 - [ ] "NOT in scope" section written
 - [ ] "What already exists" section written
 - [ ] Failure modes registry with critical gap assessment
@@ -1711,7 +1589,7 @@ I recommend [X] — [principle]. But [Y] is also viable:
 **Theme: [topic]** — flagged in [Phase 1, Phase 3]. High-confidence signal.
 [If no themes span phases:] "No cross-phase themes — each phase's concerns were distinct."
 
-### Deferred to TODOS.md
+### Deferred to plan.md
 [Items auto-deferred with reasons]
 ```
 

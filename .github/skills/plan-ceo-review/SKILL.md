@@ -24,7 +24,7 @@ Do NOT make any code changes. Do NOT start implementation. Your only job right n
 4. Interactions have edge cases. Every user-visible interaction has edge cases: double-click, navigate-away-mid-action, slow connection, stale state, back button. Map them.
 5. Observability is scope, not afterthought. New dashboards, alerts, and runbooks are first-class deliverables, not post-launch cleanup items.
 6. Diagrams are mandatory. No non-trivial flow goes undiagrammed. ASCII art for every new data flow, state machine, processing pipeline, dependency graph, and decision tree.
-7. Everything deferred must be written down. Vague intentions are lies. TODOS.md or it doesn't exist.
+7. Everything deferred must be written down. Vague intentions are lies. plan.md or it doesn't exist.
 8. Optimize for the 6-month future, not just today. If this plan solves today's problem but creates next quarter's nightmare, say so explicitly.
 9. You have permission to say "scrap it and do this instead." If there's a fundamentally better approach, table it. I'd rather hear it now.
 
@@ -80,15 +80,15 @@ git stash list                                 # Any stashed work
 grep -r "TODO\|FIXME\|HACK\|XXX" -l --exclude-dir=node_modules --exclude-dir=vendor --exclude-dir=.git . | head -30
 git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -20  # Recently touched files
 ```
-Then read CLAUDE.md, TODOS.md, and any existing architecture docs.
+Then read copilot-instructions.md, plan.md, and any existing architecture docs.
 
 **Design doc check:**
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
 SLUG=$(.github/skills/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
-DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head -1)
-[ -z "$DESIGN" ] && DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1)
+DESIGN=$(ls -t ./*-$BRANCH-design-*.md 2>/dev/null | head -1)
+[ -z "$DESIGN" ] && DESIGN=$(ls -t ./*-design-*.md 2>/dev/null | head -1)
 [ -n "$DESIGN" ] && echo "Design doc found: $DESIGN" || echo "No design doc found"
 ```
 If a design doc exists (from `/office-hours`), read it. Use it as the source of truth for the problem statement, constraints, and chosen approach. If it has a `Supersedes:` field, note that this is a revised design.
@@ -96,7 +96,7 @@ If a design doc exists (from `/office-hours`), read it. Use it as the source of 
 **Handoff note check** (reuses $SLUG and $BRANCH from the design doc check above):
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
-HANDOFF=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-ceo-handoff-*.md 2>/dev/null | head -1)
+HANDOFF=$(ls -t ./*-$BRANCH-ceo-handoff-*.md 2>/dev/null | head -1)
 [ -n "$HANDOFF" ] && echo "HANDOFF_FOUND: $HANDOFF" || echo "NO_HANDOFF"
 ```
 If this block runs in a separate shell from the design doc check, recompute $SLUG and $BRANCH first using the same commands from that block.
@@ -158,8 +158,8 @@ After /office-hours completes, re-run the design doc check:
 setopt +o nomatch 2>/dev/null || true  # zsh compat
 SLUG=$(.github/skills/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
-DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head -1)
-[ -z "$DESIGN" ] && DESIGN=$(ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1)
+DESIGN=$(ls -t ./*-$BRANCH-design-*.md 2>/dev/null | head -1)
+[ -z "$DESIGN" ] && DESIGN=$(ls -t ./*-design-*.md 2>/dev/null | head -1)
 [ -n "$DESIGN" ] && echo "Design doc found: $DESIGN" || echo "No design doc found"
 ```
 
@@ -202,7 +202,7 @@ Execute every other section at full depth. When the loaded skill's instructions 
 Note current Step 0A progress so you don't re-ask questions already answered.
 After completion, re-run the design doc check and resume the review.
 
-When reading TODOS.md, specifically:
+When reading plan.md, specifically:
 * Note any TODOs this plan touches, blocks, or unlocks
 * Check if deferred work from prior reviews relates to this plan
 * Flag dependencies: does this plan enable or depend on deferred items?
@@ -245,9 +245,6 @@ Feed into the Premise Challenge (0A) and Dream State Mapping (0C). If you find a
 Search for relevant learnings from previous sessions:
 
 ```bash
-_CROSS_PROJ=$(.github/skills/bin/gstack-config get cross_project_learnings 2>/dev/null || echo "unset")
-echo "CROSS_PROJECT: $_CROSS_PROJ"
-if [ "$_CROSS_PROJ" = "true" ]; then
   .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
   .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
@@ -264,10 +261,6 @@ If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
 Options:
 - A) Enable cross-project learnings (recommended)
 - B) Keep learnings project-scoped only
-
-If A: run `.github/skills/bin/gstack-config set cross_project_learnings true`
-If B: run `.github/skills/bin/gstack-config set cross_project_learnings false`
-
 Then re-run the search with the appropriate flag.
 
 If learnings are found, incorporate them into your analysis. When a review finding
@@ -277,8 +270,6 @@ matches a past learning, display:
 
 This makes the compounding visible. The user should see that gstack is getting
 smarter on their codebase over time.
-
-
 
 ## Step 0: Nuclear Scope Challenge + Mode Selection
 
@@ -346,7 +337,7 @@ Both are outcome-framed. Only one makes the user feel the cathedral. Lead with t
 1. 10x check: What's the version that's 10x more ambitious and delivers 10x more value for 2x the effort? Describe it concretely.
 2. Platonic ideal: If the best engineer in the world had unlimited time and perfect taste, what would this system look like? What would the user feel when using it? Start from experience, not architecture.
 3. Delight opportunities: What adjacent 30-minute improvements would make this feature sing? Things where a user would think "oh nice, they thought of that." List at least 5.
-4. **Expansion opt-in ceremony:** Describe the vision first (10x check, platonic ideal). Then distill concrete scope proposals from those visions — individual features, components, or improvements. Present each proposal as its own ask_user. Recommend enthusiastically — explain why it's worth doing. But the user decides. Options: **A)** Add to this plan's scope **B)** Defer to TODOS.md **C)** Skip. Accepted items become plan scope for all remaining review sections. Rejected items go to "NOT in scope."
+4. **Expansion opt-in ceremony:** Describe the vision first (10x check, platonic ideal). Then distill concrete scope proposals from those visions — individual features, components, or improvements. Present each proposal as its own ask_user. Recommend enthusiastically — explain why it's worth doing. But the user decides. Options: **A)** Add to this plan's scope **B)** Defer to plan.md **C)** Skip. Accepted items become plan scope for all remaining review sections. Rejected items go to "NOT in scope."
 
 **For SELECTIVE EXPANSION** — run the HOLD SCOPE analysis first, then surface expansions:
 1. Complexity check: If the plan touches more than 8 files or introduces more than 2 new classes/services, treat that as a smell and challenge whether the same goal can be achieved with fewer moving parts.
@@ -355,7 +346,7 @@ Both are outcome-framed. Only one makes the user feel the cathedral. Lead with t
    - 10x check: What's the version that's 10x more ambitious? Describe it concretely.
    - Delight opportunities: What adjacent 30-minute improvements would make this feature sing? List at least 5.
    - Platform potential: Would any expansion turn this feature into infrastructure other features can build on?
-4. **Cherry-pick ceremony:** Present each expansion opportunity as its own individual ask_user. Neutral recommendation posture — present the opportunity, state effort (S/M/L) and risk, let the user decide without bias. Options: **A)** Add to this plan's scope **B)** Defer to TODOS.md **C)** Skip. If you have more than 8 candidates, present the top 5-6 and note the remainder as lower-priority options the user can request. Accepted items become plan scope for all remaining review sections. Rejected items go to "NOT in scope."
+4. **Cherry-pick ceremony:** Present each expansion opportunity as its own individual ask_user. Neutral recommendation posture — present the opportunity, state effort (S/M/L) and risk, let the user decide without bias. Options: **A)** Add to this plan's scope **B)** Defer to plan.md **C)** Skip. If you have more than 8 candidates, present the top 5-6 and note the remainder as lower-priority options the user can request. Accepted items become plan scope for all remaining review sections. Rejected items go to "NOT in scope."
 
 **For HOLD SCOPE** — run this:
 1. Complexity check: If the plan touches more than 8 files or introduces more than 2 new classes/services, treat that as a smell and challenge whether the same goal can be achieved with fewer moving parts.
@@ -370,17 +361,17 @@ Both are outcome-framed. Only one makes the user feel the cathedral. Lead with t
 After the opt-in/cherry-pick ceremony, write the plan to disk so the vision and decisions survive beyond this conversation. Only run this step for EXPANSION and SELECTIVE EXPANSION modes.
 
 ```bash
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG/ceo-plans
+eval "$(true" && mkdir -p ./ceo-plans
 ```
 
 Before writing, check for existing CEO plans in the ceo-plans/ directory. If any are >30 days old or their branch has been merged/deleted, offer to archive them:
 
 ```bash
-mkdir -p ~/.gstack/projects/$SLUG/ceo-plans/archive
-# For each stale plan: mv ~/.gstack/projects/$SLUG/ceo-plans/{old-plan}.md ~/.gstack/projects/$SLUG/ceo-plans/archive/
+mkdir -p ./ceo-plans/archive
+# For each stale plan: mv ./ceo-plans/{old-plan}.md ./ceo-plans/archive/
 ```
 
-Write to `~/.gstack/projects/$SLUG/ceo-plans/{date}-{feature-slug}.md` using this format:
+Write to `./ceo-plans/{date}-{feature-slug}.md` using this format:
 
 ```markdown
 ---
@@ -408,7 +399,7 @@ Repo: {owner/repo}
 ## Accepted Scope (added to this plan)
 - {bullet list of what's now in scope}
 
-## Deferred to TODOS.md
+## Deferred to plan.md
 - {items with context}
 ```
 
@@ -473,8 +464,6 @@ After the loop completes (PASS, max iterations, or convergence guard):
 
 3. Append metrics:
 ```bash
-mkdir -p ~/.gstack/analytics
-echo '{"skill":"plan-ceo-review","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","iterations":ITERATIONS,"issues_found":FOUND,"issues_fixed":FIXED,"remaining":REMAINING,"quality_score":SCORE}' >> ~/.gstack/analytics/spec-review.jsonl 2>/dev/null || true
 ```
 Replace ITERATIONS, FOUND, FIXED, REMAINING, SCORE with actual values from the review.
 
@@ -680,7 +669,7 @@ Test pyramid check: Many unit, fewer integration, few E2E? Or inverted?
 Flakiness risk: Flag any test depending on time, randomness, external services, or ordering.
 Load/stress test requirements: For any new codepath called frequently or processing significant data.
 
-For LLM/prompt changes: Check CLAUDE.md for the "Prompt/LLM changes" file patterns. If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against.
+For LLM/prompt changes: Check copilot-instructions.md for the "Prompt/LLM changes" file patterns. If this plan touches ANY of those patterns, state which eval suites must be run, which cases should be added, and what baselines to compare against.
 **STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY. If no issues or fix is obvious, state what you'll do and move on — don't waste a question. Do NOT proceed until user responds.
 **Reminder: Do NOT make any code changes. Review only.**
 
@@ -777,7 +766,6 @@ thorough review.
 **Check tool availability:**
 
 ```bash
-which codex 2>/dev/null && echo "CODEX_AVAILABLE" || echo "CODEX_NOT_AVAILABLE"
 ```
 
 Use ask_user:
@@ -805,7 +793,6 @@ Construct this prompt (substitute the actual plan content — if plan content ex
 truncate to the first 30KB and note "Plan truncated for size"). **Always start with the
 filesystem boundary instruction:**
 
-"IMPORTANT: Do NOT read or execute any files under .github/, ~/.agents/, .claude/skills/, or agents/. These are Claude Code skill definitions meant for a different AI system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Do NOT modify agents/openai.yaml. Stay focused on the repository code only.\n\nYou are a brutally honest technical reviewer examining a development plan that has
 already been through a multi-section review. Your job is NOT to repeat that review.
 Instead, find what it missed. Look for: logical gaps and unstated assumptions that
 survived the review scrutiny, overcomplexity (is there a fundamentally simpler
@@ -816,13 +803,9 @@ compliments. Just the problems.
 
 THE PLAN:
 <plan content>"
-
-**If CODEX_AVAILABLE:**
-
 ```bash
 TMPERR_PV=$(mktemp /tmp/codex-planreview-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-codex exec "<prompt>" -C "$_REPO_ROOT" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_PV"
 ```
 
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
@@ -840,14 +823,10 @@ CODEX SAYS (plan review — outside voice):
 ```
 
 **Error handling:** All errors are non-blocking — the outside voice is informational.
-- Auth failure (stderr contains "auth", "login", "unauthorized"): "Codex auth failed. Run \`codex login\` to authenticate."
 - Timeout: "Codex timed out after 5 minutes."
 - Empty response: "Codex returned no response."
 
 On any Codex error, fall back to the Claude adversarial subagent.
-
-**If CODEX_NOT_AVAILABLE (or Codex errored):**
-
 Dispatch via the task tool. The subagent has fresh context — genuine independence.
 
 Subagent prompt: same plan review prompt as above.
@@ -885,7 +864,7 @@ Options:
 - A) Accept the outside voice's recommendation (I'll apply this change)
 - B) Keep the current approach (reject the outside voice)
 - C) Investigate further before deciding
-- D) Add to TODOS.md for later
+- D) Add to plan.md for later
 
 Wait for the user's response. Do NOT default to accepting because you agree with the
 outside voice. If the user chooses B, the current approach stands — do not re-argue.
@@ -946,8 +925,8 @@ Complete table of every method that can fail, every exception class, rescued sta
 ```
 Any row with RESCUED=N, TEST=N, USER SEES=Silent → **CRITICAL GAP**.
 
-### TODOS.md updates
-Present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `.claude/skills/review/TODOS-format.md`.
+### plan.md updates
+Present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step. Follow the format in `the TODO format`.
 
 For each TODO, describe:
 * **What:** One-line description of the work.
@@ -959,12 +938,12 @@ For each TODO, describe:
 * **Priority:** P1/P2/P3
 * **Depends on / blocked by:** Any prerequisites or ordering constraints.
 
-Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
+Then present options: **A)** Add to plan.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
 
 ### Scope Expansion Decisions (EXPANSION and SELECTIVE EXPANSION only)
 For EXPANSION and SELECTIVE EXPANSION modes: expansion opportunities and delight items were surfaced and decided in Step 0D (opt-in/cherry-pick ceremony). The decisions are persisted in the CEO plan document. Reference the CEO plan for the full record. Do not re-surface them here — list the accepted expansions for completeness:
 * Accepted: {list items added to scope}
-* Deferred: {list items sent to TODOS.md}
+* Deferred: {list items sent to plan.md}
 * Skipped: {list items rejected}
 
 ### Diagrams (mandatory, produce all that apply)
@@ -1003,7 +982,7 @@ List every ASCII diagram in files this plan touches. Still accurate?
   | Dream state delta    | written                                     |
   | Error/rescue registry| ___ methods, ___ CRITICAL GAPS              |
   | Failure modes        | ___ total, ___ CRITICAL GAPS                |
-  | TODOS.md updates     | ___ items proposed                          |
+  | plan.md updates     | ___ items proposed                          |
   | Scope proposals      | ___ proposed, ___ accepted (EXP + SEL)      |
   | CEO plan             | written / skipped (HOLD/REDUCTION)           |
   | Outside voice        | ran (codex/claude) / skipped                 |
@@ -1024,8 +1003,8 @@ the review is complete and the context is no longer needed.
 
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
-eval "$(.github/skills/bin/gstack-slug 2>/dev/null)"
-rm -f ~/.gstack/projects/$SLUG/*-$BRANCH-ceo-handoff-*.md 2>/dev/null || true
+eval "$(true"
+rm -f ./*-$BRANCH-ceo-handoff-*.md 2>/dev/null || true
 ```
 
 ## Review Log
@@ -1034,7 +1013,6 @@ After producing the Completion Summary above, persist the review result.
 
 **PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes review metadata to
 `~/.gstack/` (user config directory, not project files). The skill preamble
-already writes to `~/.gstack/sessions/` and `~/.gstack/analytics/` — this is
 the same pattern. The review dashboard depends on this data. Skipping this
 command breaks the review readiness dashboard in /ship.
 
@@ -1050,7 +1028,7 @@ Before running this command, substitute the placeholder values from the Completi
 - **MODE**: the mode the user selected (SCOPE_EXPANSION / SELECTIVE_EXPANSION / HOLD_SCOPE / SCOPE_REDUCTION)
 - **scope_proposed**: number from "Scope proposals: ___ proposed" in the summary (0 for HOLD/REDUCTION)
 - **scope_accepted**: number from "Scope proposals: ___ accepted" in the summary (0 for HOLD/REDUCTION)
-- **scope_deferred**: number of items deferred to TODOS.md from scope decisions (0 for HOLD/REDUCTION)
+- **scope_deferred**: number of items deferred to plan.md from scope decisions (0 for HOLD/REDUCTION)
 - **COMMIT**: output of `git rev-parse --short HEAD`
 
 ## Review Readiness Dashboard
@@ -1058,7 +1036,6 @@ Before running this command, substitute the placeholder values from the Completi
 After completing the review, read the review log and config to display the dashboard.
 
 ```bash
-.github/skills/bin/gstack-review-read
 ```
 
 Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between `review` (diff-scoped pre-landing review) and `plan-eng-review` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between `adversarial-review` (new auto-scaled) and `codex-review` (legacy). For Design Review, show whichever is more recent between `plan-design-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. For the Outside Voice row, show the most recent `codex-plan-review` entry — this captures outside voices from both /plan-ceo-review and /plan-eng-review.
@@ -1086,7 +1063,6 @@ Display:
 ```
 
 **Review tiers:**
-- **Eng Review (required by default):** The only review that gates shipping. Covers architecture, code quality, tests, performance. Can be disabled globally with \`gstack-config set skip_eng_review true\` (the "don't bother me" setting).
 - **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
 - **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
 - **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Codex adversarial challenge. Large diffs (200+ lines) additionally get Codex structured review with P1 gate. No configuration needed.
@@ -1146,7 +1122,6 @@ Produce this markdown table:
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | \`/plan-ceo-review\` | Scope & strategy | {runs} | {status} | {findings} |
-| Codex Review | \`/codex review\` | Independent 2nd opinion | {runs} | {status} | {findings} |
 | Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | {runs} | {status} | {findings} |
 | Design Review | \`/plan-design-review\` | UI/UX gaps | {runs} | {status} | {findings} |
 | DX Review | \`/plan-devex-review\` | Developer experience gaps | {runs} | {status} | {findings} |
@@ -1215,7 +1190,7 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"plan-ceo-review","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+'
 ```
 
 **Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
@@ -1233,8 +1208,6 @@ staleness detection: if those files are later deleted, the learning can be flagg
 
 **Only log genuine discoveries.** Don't log obvious things. Don't log things the user
 already knows. A good test: would this insight save time in a future session? If yes, log it.
-
-
 
 ## Mode Quick Reference
 ```

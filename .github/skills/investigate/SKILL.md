@@ -14,8 +14,6 @@ Fixing symptoms creates whack-a-mole debugging. Every fix that doesn't address r
 
 ---
 
-
-
 ## Phase 1: Root Cause Investigation
 
 Gather context before forming any hypothesis.
@@ -39,9 +37,6 @@ Gather context before forming any hypothesis.
 Search for relevant learnings from previous sessions:
 
 ```bash
-_CROSS_PROJ=$(.github/skills/bin/gstack-config get cross_project_learnings 2>/dev/null || echo "unset")
-echo "CROSS_PROJECT: $_CROSS_PROJ"
-if [ "$_CROSS_PROJ" = "true" ]; then
   .github/skills/bin/gstack-learnings-search --limit 10 --cross-project 2>/dev/null || true
 else
   .github/skills/bin/gstack-learnings-search --limit 10 2>/dev/null || true
@@ -58,10 +53,6 @@ If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
 Options:
 - A) Enable cross-project learnings (recommended)
 - B) Keep learnings project-scoped only
-
-If A: run `.github/skills/bin/gstack-config set cross_project_learnings true`
-If B: run `.github/skills/bin/gstack-config set cross_project_learnings false`
-
 Then re-run the search with the appropriate flag.
 
 If learnings are found, incorporate them into your analysis. When a review finding
@@ -115,7 +106,7 @@ Check if this bug matches a known pattern:
 | Stale cache | Shows old data, fixes on cache clear | Redis, CDN, browser cache, Turbo |
 
 Also check:
-- `TODOS.md` for related known issues
+- `plan.md` for related known issues
 - `git log` for prior fixes in the same area — **recurring bugs in the same files are an architectural smell**, not a coincidence
 
 **External pattern search:** If the bug doesn't match a known pattern above, web_search for:
@@ -190,7 +181,7 @@ Root cause:      [what was actually wrong]
 Fix:             [what was changed, with file:line references]
 Evidence:        [test output, reproduction attempt showing fix works]
 Regression test: [file:line of the new test]
-Related:         [TODOS.md items, prior bugs in same area, architectural notes]
+Related:         [plan.md items, prior bugs in same area, architectural notes]
 Status:          DONE | DONE_WITH_CONCERNS | BLOCKED
 ════════════════════════════════════════
 ```
@@ -198,7 +189,7 @@ Status:          DONE | DONE_WITH_CONCERNS | BLOCKED
 Log the investigation as a learning for future sessions. Use `type: "investigation"` and include the affected files so future investigations on the same area can find this:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"investigate","type":"investigation","key":"ROOT_CAUSE_KEY","insight":"ROOT_CAUSE_SUMMARY","confidence":9,"source":"observed","files":["affected/file1.ts","affected/file2.ts"]}'
+'
 ```
 
 ## Capture Learnings
@@ -207,7 +198,7 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-.github/skills/bin/gstack-learnings-log '{"skill":"investigate","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+'
 ```
 
 **Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
@@ -225,8 +216,6 @@ staleness detection: if those files are later deleted, the learning can be flagg
 
 **Only log genuine discoveries.** Don't log obvious things. Don't log things the user
 already knows. A good test: would this insight save time in a future session? If yes, log it.
-
-
 
 ---
 

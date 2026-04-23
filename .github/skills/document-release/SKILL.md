@@ -93,7 +93,7 @@ Read each documentation file and cross-reference it against the diff. Use these 
 - Are workflow descriptions (dev setup, operational learnings, etc.) current?
 - Flag anything that would fail or confuse a first-time contributor.
 
-**CLAUDE.md / project instructions:**
+**copilot-instructions.md / project instructions:**
 - Does the project structure section match the actual file tree?
 - Are listed commands and scripts accurate?
 - Do build/test instructions match what's in package.json (or equivalent)?
@@ -175,23 +175,23 @@ preserved them. This skill must NEVER do that.
 
 After auditing each file individually, do a cross-doc consistency pass:
 
-1. Does the README's feature/capability list match what CLAUDE.md (or project instructions) describes?
+1. Does the README's feature/capability list match what copilot-instructions.md (or project instructions) describes?
 2. Does ARCHITECTURE's component list match CONTRIBUTING's project structure description?
 3. Does CHANGELOG's latest version match the VERSION file?
-4. **Discoverability:** Is every documentation file reachable from README.md or CLAUDE.md? If
-   ARCHITECTURE.md exists but neither README nor CLAUDE.md links to it, flag it. Every doc
+4. **Discoverability:** Is every documentation file reachable from README.md or copilot-instructions.md? If
+   ARCHITECTURE.md exists but neither README nor copilot-instructions.md links to it, flag it. Every doc
    should be discoverable from one of the two entry-point files.
 5. Flag any contradictions between documents. Auto-fix clear factual inconsistencies (e.g., a
    version mismatch). Use ask_user for narrative contradictions.
 
 ---
 
-## Step 7: TODOS.md Cleanup
+## Step 7: plan.md Cleanup
 
 This is a second pass that complements `/ship`'s Step 5.5. Read `review/TODOS-format.md` (if
 available) for the canonical TODO item format.
 
-If TODOS.md does not exist, skip this step.
+If plan.md does not exist, skip this step.
 
 1. **Completed items not yet marked:** Cross-reference the diff against open TODO items. If a
    TODO is clearly completed by the changes in this branch, move it to the Completed section
@@ -204,7 +204,7 @@ If TODOS.md does not exist, skip this step.
 
 3. **New deferred work:** Check the diff for `TODO`, `FIXME`, `HACK`, and `XXX` comments. For
    each one that represents meaningful deferred work (not a trivial inline note), use
-   ask_user to ask whether it should be captured in TODOS.md.
+   ask_user to ask whether it should be captured in plan.md.
 
 ---
 
@@ -330,7 +330,7 @@ Documentation health:
   ARCHITECTURE.md [status] ([details])
   CONTRIBUTING.md [status] ([details])
   CHANGELOG.md    [status] ([details])
-  TODOS.md        [status] ([details])
+  plan.md        [status] ([details])
   VERSION         [status] ([details])
 ```
 
@@ -351,6 +351,6 @@ Where status is one of:
 - **Never bump VERSION silently.** Always ask. Even if already bumped, check whether it covers the full scope of changes.
 - **Be explicit about what changed.** Every edit gets a one-line summary.
 - **Generic heuristics, not project-specific.** The audit checks work on any repo.
-- **Discoverability matters.** Every doc file should be reachable from README or CLAUDE.md.
+- **Discoverability matters.** Every doc file should be reachable from README or copilot-instructions.md.
 - **Voice: friendly, user-forward, not obscure.** Write like you're explaining to a smart person
   who hasn't seen the code.
