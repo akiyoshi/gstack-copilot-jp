@@ -1,7 +1,18 @@
 ---
 name: benchmark-models
+version: 1.0.0
 description: "クロスモデルベンチマーク。同じプロンプトを複数のAIモデルで実行し、レイテンシ・トークン数・品質を比較する。/benchmarkがWebパフォーマンスを計測するのに対し、こちらはAIモデルの性能を計測する。Use when: モデル比較、どのモデルがいい、benchmark models、compare models、model shootout。"
 argument-hint: "ベンチマークするプロンプトまたはスキル名"
+triggers:
+  - cross model benchmark
+  - compare claude gpt gemini
+  - benchmark skill across models
+  - which model should I use
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - view
 ---
 
 ---

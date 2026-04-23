@@ -1,7 +1,16 @@
 ---
 name: unfreeze
+version: 0.1.0
 description: "編集ロック解除。/freeze と /guard による制限を解除。Use when: ロック解除、unfreeze、制限を外す。"
 argument-hint: "レビュー対象のプランまたは機能の説明"
+triggers:
+  - unfreeze edits
+  - unlock all directories
+  - remove edit restrictions
+allowed-tools:
+  - --
+  - bash
+  - view
 ---
 
 ---

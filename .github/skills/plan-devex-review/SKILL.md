@@ -1,7 +1,20 @@
 ---
 name: plan-devex-review
+version: 2.0.0
 description: "DXリードとして開発者体験をレビュー。Use when: API設計、SDK、CLI、ドキュメント、オンボーディングの品質を評価したい。developer experience, DX, TTHW, onboarding, API design。8次元で評価し、20-45の問いかけでDXを磨く。"
 argument-hint: "レビュー対象のAPI、SDK、CLI、またはドキュメントの説明"
+triggers:
+  - developer experience review
+  - dx plan review
+  - check developer onboarding
+allowed-tools:
+  - ask_user
+  - bash
+  - edit
+  - glob
+  - grep
+  - view
+  - web_search
 ---
 
 ---

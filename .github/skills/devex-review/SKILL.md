@@ -1,7 +1,21 @@
 ---
 name: devex-review
+version: 1.0.0
 description: "DXテスターとしてオンボーディング・APIを実際にテスト。Use when: DX実装の実地検証、ドキュメント精度テスト、TTHW計測。plan-devex-reviewの実行版。developer experience audit。"
 argument-hint: "テスト対象のプロジェクトまたはAPI"
+triggers:
+  - live dx audit
+  - test developer experience
+  - measure onboarding time
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - edit
+  - glob
+  - grep
+  - view
+  - web_search
 ---
 
 ---

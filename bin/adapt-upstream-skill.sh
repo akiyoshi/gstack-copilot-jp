@@ -321,10 +321,57 @@ if [ -z "$JP_DESC" ]; then
   JP_DESC=$(sed -n '/^description:/,/^[a-z]/{ /^description:/d; /^[a-z]/d; s/^ *//; p; }' "$UPSTREAM_FILE" | head -3 | tr '\n' ' ')
 fi
 
+# upstream から version を取得
+UP_VERSION=$(sed -n 's/^version: *\(.*\)/\1/p' "$UPSTREAM_FILE" | head -1 | tr -d ' ')
+
+# upstream から triggers を取得
+UP_TRIGGERS=$(sed -n '/^triggers:/,/^[a-z]/{
+  /^triggers:/d
+  /^[a-z]/d
+  /^---/d
+  s/^ *- *"\{0,1\}\([^"]*\)"\{0,1\}/  - \1/p
+}' "$UPSTREAM_FILE")
+
+# upstream から allowed-tools を取得し、Copilot CLI ツール名に変換
+UP_TOOLS=$(sed -n '/^allowed-tools:/,/^[a-z]/{
+  /^allowed-tools:/d
+  /^[a-z]/d
+  s/^ *- *//p
+}' "$UPSTREAM_FILE" \
+  | sed 's/^Bash$/bash/' \
+  | sed 's/^Read$/view/' \
+  | sed 's/^Write$/create/' \
+  | sed 's/^Edit$/edit/' \
+  | sed 's/^Grep$/grep/' \
+  | sed 's/^Glob$/glob/' \
+  | sed 's/^Agent$/task/' \
+  | sed 's/^AskUserQuestion$/ask_user/' \
+  | sed 's/^WebSearch$/web_search/' \
+  | sort -u \
+  | sed 's/^/  - /')
+
+# frontmatter 組み立て
 FRONTMATTER="---
 name: ${SKILL_NAME}
+version: ${UP_VERSION:-1.0.0}
 description: \"${JP_DESC}\"
-argument-hint: \"${JP_HINT:-レビュー対象のプランまたは機能の説明}\"
+argument-hint: \"${JP_HINT:-レビュー対象のプランまたは機能の説明}\""
+
+# triggers 追加
+if [ -n "$UP_TRIGGERS" ]; then
+  FRONTMATTER="${FRONTMATTER}
+triggers:
+${UP_TRIGGERS}"
+fi
+
+# allowed-tools 追加
+if [ -n "$UP_TOOLS" ]; then
+  FRONTMATTER="${FRONTMATTER}
+allowed-tools:
+${UP_TOOLS}"
+fi
+
+FRONTMATTER="${FRONTMATTER}
 ---"
 
 FINAL="${FRONTMATTER}

@@ -87,15 +87,25 @@ describe('upstream-tracking.json state integrity', () => {
   });
 
   it('no skill claims "same" without passing contract tests', () => {
-    // "same" は契約テスト通過後のみ許可。現時点では same は 0 のはず
     const sameSkills = Object.entries(tracking.skills)
       .filter(([, e]) => e.status === 'same')
       .map(([name]) => name);
-    // same を主張するスキルがあれば、契約テストも存在するはず
-    // 今回のスプリントではまだ same は 0
     if (sameSkills.length > 0) {
-      // 将来: ここで契約テストの存在を検証する
       expect(sameSkills).toEqual([]);
+    }
+  });
+
+  it('vendored skills have version, triggers, and allowed-tools in frontmatter', () => {
+    for (const [name, entry] of Object.entries(tracking.skills)) {
+      if (entry.status === 'vendored') {
+        const skillPath = join(SKILLS_DIR, name, 'SKILL.md');
+        if (!existsSync(skillPath)) continue;
+        const content = readFileSync(skillPath, 'utf-8');
+        const frontmatter = content.split('---')[1] || '';
+        expect(frontmatter, `${name}: missing version`).toMatch(/version:/);
+        expect(frontmatter, `${name}: missing triggers`).toMatch(/triggers:/);
+        expect(frontmatter, `${name}: missing allowed-tools`).toMatch(/allowed-tools:/);
+      }
     }
   });
 });

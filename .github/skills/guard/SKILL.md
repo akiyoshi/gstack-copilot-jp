@@ -1,7 +1,16 @@
 ---
 name: guard
+version: 0.1.0
 description: "フルセーフティモード。/careful + /freeze 統合。Use when: 最大限の安全、guard mode、full safety、本番作業。"
 argument-hint: "編集を許可するディレクトリ（省略可）"
+triggers:
+  - full safety mode
+  - guard against mistakes
+  - maximum safety
+allowed-tools:
+  - ask_user
+  - bash
+  - view
 ---
 
 ---

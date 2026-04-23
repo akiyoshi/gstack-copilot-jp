@@ -1,7 +1,15 @@
 ---
 name: careful
+version: 0.1.0
 description: "安全ガードレール。破壊的コマンドの実行前に警告。Use when: 慎重にやって、be careful、安全モード、destructive command protection。rm -rf, DROP TABLE, force-push等の前に確認を挟む。"
 argument-hint: "レビュー対象のプランまたは機能の説明"
+triggers:
+  - be careful
+  - warn before destructive
+  - safety mode
+allowed-tools:
+  - bash
+  - view
 ---
 
 ---

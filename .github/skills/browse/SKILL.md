@@ -1,7 +1,17 @@
 ---
 name: browse
+version: 1.1.0
 description: "ヘッドレスChromiumブラウザでQAテスト・サイト検証。URLナビゲート、要素操作、ページ状態検証、差分比較、スクリーンショット、レスポンシブ確認、フォーム入力、ダイアログ処理、要素状態チェック。~100ms/コマンド。Use when: ブラウザで開く、サイトテスト、スクリーンショット、ドッグフーディング、QAテスト。"
 argument-hint: "テスト対象のURL、またはブラウザコマンド"
+triggers:
+  - browse a page
+  - headless browser
+  - take page screenshot
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - view
 ---
 
 ---

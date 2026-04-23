@@ -55,6 +55,16 @@ describe('全スキル フロントマター検証', () => {
         const frontmatter = content.split('---')[1];
         expect(frontmatter).toContain('description:');
       });
+
+      it('フロントマターに version フィールドがある', () => {
+        const content = readFileSync(skillPath, 'utf-8');
+        const frontmatter = content.split('---')[1];
+        // diverged スキル（tdd, sprint, gstack-status）は手書きのため version なし
+        const diverged = ['tdd', 'sprint', 'gstack-status'];
+        if (!diverged.includes(skill)) {
+          expect(frontmatter).toMatch(/version:\s*\d+\.\d+\.\d+/);
+        }
+      });
     });
   }
 });

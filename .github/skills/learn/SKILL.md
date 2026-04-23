@@ -1,7 +1,21 @@
 ---
 name: learn
+version: 1.0.0
 description: "学習記録マネージャー。セッション間で蓄積する知見の管理と自動抽出。Use when: 学んだことを記録、学習記録の確認、パターンの検索、セッション振り返り、learn、learnings、memory management。"
 argument-hint: "記録したい知見、検索したい内容、または「振り返り」"
+triggers:
+  - show learnings
+  - what have we learned
+  - manage project learnings
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - create
+  - edit
+  - glob
+  - grep
+  - view
 ---
 
 # Project Learnings Manager

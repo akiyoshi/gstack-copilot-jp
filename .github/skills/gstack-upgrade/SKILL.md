@@ -1,7 +1,18 @@
 ---
 name: gstack-upgrade
+version: 1.1.0
 description: "gstack-copilot-jpの自己アップデート。Use when: アップグレード、更新、upgrade、update gstack。最新版への更新を実行。"
 argument-hint: "レビュー対象のプランまたは機能の説明"
+triggers:
+  - upgrade gstack
+  - update gstack version
+  - get latest gstack
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - create
+  - view
 ---
 
 ---

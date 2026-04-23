@@ -1,7 +1,18 @@
 ---
 name: retro
+version: 2.0.0
 description: "エンジニアリングマネージャーとして週次振り返り。Use when: 振り返り、レトロスペクティブ、weekly retro、今週の成果、反省。コミット統計、テストヘルス、成長機会。"
 argument-hint: "振り返り期間（例: 今週、先月）"
+triggers:
+  - weekly retro
+  - what did we ship
+  - engineering retrospective
+allowed-tools:
+  - ask_user
+  - bash
+  - create
+  - glob
+  - view
 ---
 
 ---

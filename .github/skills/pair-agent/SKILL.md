@@ -1,7 +1,17 @@
 ---
 name: pair-agent
+version: 0.1.0
 description: "他のAIエージェントとブラウザを共有。セットアップキー生成→他エージェントが接続→同一ブラウザで並行作業。OpenClaw、Cursor、Codex等と連携。Use when: エージェント連携、pair agent、ブラウザ共有、connect agent。"
 argument-hint: "接続先エージェント名（openclaw, cursor, codex等）"
+triggers:
+  - pair with agent
+  - connect remote agent
+  - share my browser
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - view
 ---
 
 ---

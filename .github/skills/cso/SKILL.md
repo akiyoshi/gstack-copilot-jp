@@ -1,7 +1,21 @@
 ---
 name: cso
+version: 2.0.0
 description: "Chief Security Officer。OWASP Top 10 + STRIDE脅威モデルでセキュリティ監査。Use when: セキュリティ監査、脆弱性スキャン、OWASP、security audit、CSO、threat model。14フェーズ。信頼度8/10以上のみ報告。"
 argument-hint: "監査対象のプロジェクトまたはコンポーネント"
+triggers:
+  - security audit
+  - check for vulnerabilities
+  - owasp review
+allowed-tools:
+  - ask_user
+  - bash
+  - create
+  - glob
+  - grep
+  - task
+  - view
+  - web_search
 ---
 
 ---

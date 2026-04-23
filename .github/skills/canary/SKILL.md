@@ -1,7 +1,18 @@
 ---
 name: canary
+version: 1.0.0
 description: "SREとしてデプロイ後の監視。Use when: デプロイ後監視、カナリア、本番監視、post-deploy monitoring、canary。コンソールエラー、パフォーマンス回帰の検出。"
 argument-hint: "監視対象のURLまたはサービス"
+triggers:
+  - monitor after deploy
+  - canary check
+  - watch for errors post-deploy
+allowed-tools:
+  - ask_user
+  - bash
+  - create
+  - glob
+  - view
 ---
 
 ---

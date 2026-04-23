@@ -1,7 +1,23 @@
 ---
 name: ship
+version: 1.0.0
 description: "リリースエンジニアとしてPRを作成・出荷。Use when: リリース、PR作成、push、ship it、deploy準備。テスト→レビュー→VERSION更新→CHANGELOG→コミット→プッシュ→PR作成のパイプライン。"
 argument-hint: "出荷対象のブランチまたは機能の説明"
+triggers:
+  - ship it
+  - create a pr
+  - push to main
+  - deploy this
+allowed-tools:
+  - ask_user
+  - bash
+  - create
+  - edit
+  - glob
+  - grep
+  - task
+  - view
+  - web_search
 ---
 
 # Ship: Fully Automated Ship Workflow

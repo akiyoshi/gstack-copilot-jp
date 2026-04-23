@@ -1,7 +1,18 @@
 ---
 name: land-and-deploy
+version: 1.0.0
 description: "PRをマージしてデプロイ・本番検証。Use when: マージ、デプロイ、本番反映、land、deploy、merge。マージ→CI通過待ち→デプロイ→ヘルスチェック。"
 argument-hint: "マージ対象のPR番号またはブランチ名"
+triggers:
+  - merge and deploy
+  - land the pr
+  - ship to production
+allowed-tools:
+  - ask_user
+  - bash
+  - create
+  - glob
+  - view
 ---
 
 ---

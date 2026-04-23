@@ -1,7 +1,20 @@
 ---
 name: design-shotgun
+version: 1.0.0
 description: "デザイン探索。複数のデザイン案をテキスト/HTML mockupで生成。Use when: デザインの選択肢を見たい、design exploration、mockups、show me options、デザイン比較。"
 argument-hint: "作りたいUIまたはデザインの説明"
+triggers:
+  - explore design variants
+  - show me design options
+  - visual design brainstorm
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - glob
+  - grep
+  - task
+  - view
 ---
 
 ---

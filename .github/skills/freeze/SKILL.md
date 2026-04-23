@@ -1,7 +1,16 @@
 ---
 name: freeze
+version: 0.1.0
 description: "編集ロック。指定ディレクトリ以外のファイル編集を禁止。Use when: スコープを限定したい、他のファイルを触るな、freeze、edit lock。デバッグ中の事故防止。"
 argument-hint: "編集を許可するディレクトリまたはファイルパス"
+triggers:
+  - freeze edits to directory
+  - lock editing scope
+  - restrict file changes
+allowed-tools:
+  - ask_user
+  - bash
+  - view
 ---
 
 ---

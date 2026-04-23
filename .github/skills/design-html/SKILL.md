@@ -1,7 +1,22 @@
 ---
 name: design-html
+version: 1.0.0
 description: "デザインを本番品質HTML/CSSに変換。Use when: モックアップをHTMLに、デザインを実装、design to code、HTML implementation。フレームワーク自動検出（React/Vue/Svelte）。出荷可能な品質。"
 argument-hint: "実装対象のデザインまたはモックアップの説明"
+triggers:
+  - build the design
+  - code the mockup
+  - make design real
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - create
+  - edit
+  - glob
+  - grep
+  - task
+  - view
 ---
 
 ---

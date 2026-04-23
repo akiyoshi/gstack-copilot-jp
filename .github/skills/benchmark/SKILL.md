@@ -1,7 +1,19 @@
 ---
 name: benchmark
+version: 1.0.0
 description: "パフォーマンスエンジニアとしてベンチマークを実行。Use when: パフォーマンス計測、before/after比較、Core Web Vitals、performance、benchmark、速度。"
 argument-hint: "計測対象のプロジェクトまたは機能"
+triggers:
+  - performance benchmark
+  - check page speed
+  - detect performance regression
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - create
+  - glob
+  - view
 ---
 
 ---

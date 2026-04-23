@@ -1,7 +1,20 @@
 ---
 name: document-release
+version: 1.0.0
 description: "テクニカルライターとしてドキュメントを更新。Use when: ドキュメント更新、README更新、docs update、document release。変更差分とドキュメントの乖離を検出して自動修正。"
 argument-hint: "更新対象のプロジェクトまたは最近の変更の説明"
+triggers:
+  - update docs after ship
+  - document what changed
+  - post-ship docs
+allowed-tools:
+  - ask_user
+  - bash
+  - create
+  - edit
+  - glob
+  - grep
+  - view
 ---
 
 # Document Release: Post-Ship Documentation Update

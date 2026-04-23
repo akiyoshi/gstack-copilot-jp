@@ -1,7 +1,21 @@
 ---
 name: health
+version: 1.0.0
 description: "コード品質ダッシュボード。typecheck/lint/test/deadcode の4軸で 0-10 スコアリング。Use when: コード品質、ヘルスチェック、health、品質ダッシュボード、プロジェクトの状態。"
 argument-hint: "空（自動検出）またはチェック対象のディレクトリ"
+triggers:
+  - code health check
+  - quality dashboard
+  - how healthy is codebase
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - create
+  - edit
+  - glob
+  - grep
+  - view
 ---
 
 ---

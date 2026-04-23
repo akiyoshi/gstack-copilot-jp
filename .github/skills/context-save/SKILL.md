@@ -1,7 +1,20 @@
 ---
 name: context-save
+version: 1.0.0
 description: "セッション保存。作業状態をチェックポイントとして保存。Use when: セッション終了前、作業の中断、context-save、save progress、セッション保存。"
 argument-hint: "チェックポイントのタイトル（省略可）"
+triggers:
+  - save progress
+  - save state
+  - save my work
+  - context save
+allowed-tools:
+  - ask_user
+  - bash
+  - create
+  - glob
+  - grep
+  - view
 ---
 
 ---

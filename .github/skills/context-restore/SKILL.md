@@ -1,7 +1,20 @@
 ---
 name: context-restore
+version: 1.0.0
 description: "セッション復帰。保存されたチェックポイントから作業状態を復元。Use when: 前回の作業を再開、resume、context-restore、どこまでやったっけ。"
 argument-hint: "復帰するチェックポイントのタイトル（省略可 = 最新）"
+triggers:
+  - resume where i left off
+  - restore context
+  - where was i
+  - pick up where i left off
+  - context restore
+allowed-tools:
+  - ask_user
+  - bash
+  - glob
+  - grep
+  - view
 ---
 
 ---

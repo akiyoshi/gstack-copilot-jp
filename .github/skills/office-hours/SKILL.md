@@ -1,7 +1,22 @@
 ---
 name: office-hours
+version: 2.0.0
 description: "YCオフィスアワー。プロダクトのアイディアを磨く6つの問いかけ。Use when: 新機能の相談、プロダクト構想、「これ作る価値ある？」、アイディアの壁打ち、what to build。デザインドキュメントを生成し、下流スキルに引き渡す。"
 argument-hint: "作りたいもの、解決したい問題を教えてください"
+triggers:
+  - brainstorm this
+  - is this worth building
+  - help me think through
+  - office hours
+allowed-tools:
+  - ask_user
+  - bash
+  - create
+  - edit
+  - glob
+  - grep
+  - view
+  - web_search
 ---
 
 # YC Office Hours

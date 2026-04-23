@@ -1,7 +1,22 @@
 ---
 name: autoplan
+version: 1.0.0
 description: "レビューパイプラインを自動実行。CEO→デザイン→エンジニアリング→DXレビューを順に走らせる。Use when: 全レビューを一括で、autoplan、full review pipeline、plan everything。中間の判断はエンコードされた原則で自動回答し、味覚判断のみユーザーに問う。"
 argument-hint: "レビュー対象のプランまたはプロジェクトの説明"
+triggers:
+  - run all reviews
+  - automatic review pipeline
+  - auto plan review
+allowed-tools:
+  - --
+  - ask_user
+  - bash
+  - create
+  - edit
+  - glob
+  - grep
+  - view
+  - web_search
 ---
 
 ---
