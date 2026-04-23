@@ -98,8 +98,12 @@ CONVERTED=$(echo "$BODY" \
   | sed 's/AskUserQuestion/ask_user/g' \
   | sed 's/\bAgent\b tool/task tool/g' \
   | sed 's/WebSearch/web_search/g' \
+  \
   | sed 's|~/.claude/skills/gstack/|.github/skills/|g' \
   | sed 's|~/.claude/|.github/|g' \
+  | sed 's/CLAUDE\.md/copilot-instructions.md/g' \
+  | sed 's/TODOS\.md/plan.md/g' \
+  \
   | sed '/{{PREAMBLE}}/d' \
   | sed '/{{BROWSE_SETUP}}/d' \
   | sed '/{{ETHOS}}/d' \
@@ -109,6 +113,91 @@ CONVERTED=$(echo "$BODY" \
   | sed 's/{{BASE_BRANCH_DETECT}}/BASE_BRANCH=$(git symbolic-ref refs\/remotes\/origin\/HEAD 2>\/dev\/null | sed "s|refs\/remotes\/origin\/||" || echo "main")/g' \
   | sed '/<!-- AUTO-GENERATED from SKILL.md.tmpl/d' \
   | sed '/<!-- Regenerate: bun run gen:skill-docs/d' \
+  \
+  | sed 's|\.github/skills/bin/gstack-config[^)]*)||g' \
+  | sed '/gstack-config set /d' \
+  | sed '/gstack-config get /d' \
+  | sed '/gstack-update-check/d' \
+  | sed '/gstack-telemetry-log/d' \
+  | sed '/gstack-timeline-log/d' \
+  | sed '/gstack-repo-mode/d' \
+  | sed '/gstack-review-read/d' \
+  | sed 's|\.github/skills/bin/gstack-slug[^)]*)|true|g' \
+  | sed 's|\.github/skills/bin/gstack-learnings-log[^}]*}||g' \
+  \
+  | sed '/\.claude\/skills\/gstack/d' \
+  | sed '/vendored.*deprecated/d' \
+  | sed '/vendored copies/d' \
+  | sed '/Vendoring is deprecated/d' \
+  | sed '/chore: migrate gstack/d' \
+  | sed 's|\.claude/skills/review/checklist\.md|the review checklist|g' \
+  | sed 's|\.claude/skills/review/TODOS-format\.md|the TODO format|g' \
+  | sed 's|\.claude/\.credentials\.json|credentials|g' \
+  | sed '/Do NOT read or execute any files under .github\//d' \
+  | sed '/Claude Code skill definitions meant for/d' \
+  | sed '/Do NOT modify agents\/openai\.yaml/d' \
+  | sed 's|ls -la \.claude/skills/ 2>/dev/null||g' \
+  | sed 's|\.claude/plans|.gstack/plans|g' \
+  | sed 's|\.claude/skills/review/|.github/skills/review/|g' \
+  \
+  | sed '/ExitPlanMode/d' \
+  | sed '/exit_plan_mode/d' \
+  | sed '/## Plan Mode Safe Operations/,/^## [A-Z]/{ /^## [A-Z]/!d; }' \
+  | sed '/## Skill Invocation During Plan Mode/,/^## [A-Z]/{ /^## [A-Z]/!d; }' \
+  | sed '/## Plan Status Footer/,/^## [A-Z]/{ /^## [A-Z]/!d; }' \
+  \
+  | sed '/EXPLAIN_LEVEL/d' \
+  | sed '/QUESTION_TUNING/d' \
+  | sed '/_PROACTIVE/d' \
+  | sed '/TEL_PROMPTED/d' \
+  | sed '/CHECKPOINT_MODE/d' \
+  | sed '/SPAWNED_SESSION/d' \
+  | sed '/_LAKE_SEEN/d' \
+  | sed '/_TEL_START/d' \
+  | sed '/_TEL_DUR/d' \
+  | sed '/_SESSION_ID/d' \
+  | sed '/_SESSIONS/d' \
+  | sed '/_SKILL_PREFIX/d' \
+  | sed '/REPO_MODE/d' \
+  | sed '/_CROSS_PROJ/d' \
+  \
+  | sed '/codex exec /d' \
+  | sed '/codex review/d' \
+  | sed '/codex login/d' \
+  | sed '/CODEX_PROMPT_FILE/d' \
+  | sed '/CODEX_AVAILABLE/d' \
+  | sed '/CODEX_NOT_AVAILABLE/d' \
+  | sed '/TMPERR_OH/d' \
+  | sed '/TMPERR_SKETCH/d' \
+  | sed '/TMPERR_ADV/d' \
+  \
+  | sed '/\$D variants/d' \
+  | sed '/\$D compare/d' \
+  | sed '/\$D iterate/d' \
+  | sed '/\$D serve/d' \
+  | sed '/\$D generate/d' \
+  | sed '/\$D check/d' \
+  | sed '/\$D extract/d' \
+  | sed '/\$D evolve/d' \
+  | sed '/\$D verify/d' \
+  | sed '/\$D prompt/d' \
+  | sed '/\$D setup/d' \
+  | sed '/design\/dist\/design/d' \
+  | sed 's/\$D [a-z]*/[design binary: not available in Copilot CLI]/g' \
+  | sed 's/`\$D`/`design binary (not available)`/g' \
+  | sed 's/{\$D}/design-binary/g' \
+  | sed 's/{\[design binary.*\]}/design-binary/g' \
+  \
+  | sed '/skill-usage\.jsonl/d' \
+  | sed '/\.pending-\*/d' \
+  | sed '/analytics/d' \
+  \
+  | sed 's|\$_REPO_ROOT|$(git rev-parse --show-toplevel)|g' \
+  | sed '/eval.*gstack-slug/d' \
+  | sed 's|~/.gstack/projects/\$SLUG/|./|g' \
+  | sed 's|~/.gstack/projects/\${SLUG}/|./|g' \
+  \
+  | sed '/^$/N;/^\n$/d' \
 )
 
 echo ""
@@ -117,6 +206,7 @@ echo "━━━ Layer 2: 互換ルール適用 ━━━"
 # --- Layer 2.5: バリデーション ---
 
 ERRORS=0
+WARNS=0
 
 # 未解決 placeholder チェック
 UNRESOLVED=$(echo "$CONVERTED" | grep -n '{{[A-Z_]*}}' || true)
@@ -134,16 +224,57 @@ if [ -n "$CLAUDE_PATHS" ]; then
   ERRORS=$((ERRORS + 1))
 fi
 
-# codex コマンドチェック（変換対象だが残っている場合）
+# CLAUDE.md 参照チェック
+CLAUDE_MD=$(echo "$CONVERTED" | grep -n 'CLAUDE\.md' || true)
+if [ -n "$CLAUDE_MD" ]; then
+  echo "⚠️  CLAUDE.md 参照（copilot-instructions.md に置換すべき）:"
+  echo "$CLAUDE_MD"
+  ERRORS=$((ERRORS + 1))
+fi
+
+# ExitPlanMode チェック
+PLAN_MODE=$(echo "$CONVERTED" | grep -n 'ExitPlanMode\|exit_plan_mode' || true)
+if [ -n "$PLAN_MODE" ]; then
+  echo "⚠️  Plan Mode 参照（Copilot CLI に Plan Mode なし）:"
+  echo "$PLAN_MODE"
+  ERRORS=$((ERRORS + 1))
+fi
+
+# gstack-config チェック
+GCONFIG=$(echo "$CONVERTED" | grep -n 'gstack-config\|gstack-update-check\|gstack-telemetry\|gstack-timeline-log\|gstack-repo-mode' || true)
+if [ -n "$GCONFIG" ]; then
+  echo "⚠️  本家固有 bin ユーティリティ:"
+  echo "$GCONFIG"
+  ERRORS=$((ERRORS + 1))
+fi
+
+# codex コマンドチェック
 CODEX_REFS=$(echo "$CONVERTED" | grep -n '\bcodex\b' || true)
 if [ -n "$CODEX_REFS" ]; then
-  echo "ℹ️  codex 参照（要確認）:"
+  echo "ℹ️  codex 参照（情報のみ — task tool で代替可能）:"
   echo "$CODEX_REFS"
+  WARNS=$((WARNS + 1))
+fi
+
+# $D チェック（コマンド文脈のみ — テキスト内の$D言及は許容）
+DESIGN_BIN=$(echo "$CONVERTED" | grep -n '^\$D \|`\$D \| \$D [a-z]' || true)
+if [ -n "$DESIGN_BIN" ]; then
+  echo "⚠️  \$D (design binary) コマンド参照:"
+  echo "$DESIGN_BIN"
+  ERRORS=$((ERRORS + 1))
+fi
+
+# Preamble config flags チェック
+CONFIG_FLAGS=$(echo "$CONVERTED" | grep -n 'EXPLAIN_LEVEL\|QUESTION_TUNING\|_PROACTIVE\|TEL_PROMPTED\|CHECKPOINT_MODE\|SPAWNED_SESSION\|_LAKE_SEEN' || true)
+if [ -n "$CONFIG_FLAGS" ]; then
+  echo "⚠️  Preamble config flags:"
+  echo "$CONFIG_FLAGS"
+  ERRORS=$((ERRORS + 1))
 fi
 
 if [ "$ERRORS" -gt 0 ]; then
   echo ""
-  echo "❌ バリデーション失敗: ${ERRORS} 件の問題"
+  echo "❌ バリデーション失敗: ${ERRORS} エラー, ${WARNS} 警告"
   if [ "$MODE" = "--validate" ]; then exit 1; fi
 else
   echo "✅ バリデーション通過"
