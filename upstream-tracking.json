@@ -1,6 +1,7 @@
 {
   "upstream_version": "v1.4.0.0",
   "upstream_repo": "garrytan/gstack",
+  "upstream_commit": "656df0e37e67f8e6256d9e14d664a10b6db9c413",
   "snapshot_path": "test/fixtures/upstream/v1.4.0.0",
   "audited_at": "2026-04-20",
   "local_version": "1.0.0-alpha.5",

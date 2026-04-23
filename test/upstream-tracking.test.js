@@ -8,7 +8,7 @@ const ROOT = join(import.meta.dirname, '..');
 const SKILLS_DIR = join(ROOT, '.github', 'skills');
 const TRACKING_PATH = join(ROOT, 'upstream-tracking.json');
 
-const VALID_STATUSES = ['unaudited', 'same', 'adapted', 'precision-gap', 'diverged', 'excluded'];
+const VALID_STATUSES = ['unaudited', 'vendored', 'compat-patched', 'behavior-verified', 'same', 'adapted', 'precision-gap', 'diverged', 'excluded'];
 
 describe('upstream-tracking.json structure', () => {
   it('exists and is valid JSON', () => {
@@ -20,8 +20,10 @@ describe('upstream-tracking.json structure', () => {
   it('has required top-level fields', () => {
     const tracking = JSON.parse(readFileSync(TRACKING_PATH, 'utf-8'));
     expect(tracking).toHaveProperty('upstream_version');
+    expect(tracking).toHaveProperty('upstream_commit');
     expect(tracking).toHaveProperty('skills');
     expect(typeof tracking.skills).toBe('object');
+    expect(tracking.upstream_commit).toMatch(/^[0-9a-f]{40}$/);
   });
 
   it('all skill entries have valid status', () => {
