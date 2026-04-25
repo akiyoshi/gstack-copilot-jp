@@ -671,7 +671,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 ## 実装状態
 
-**VERSION: 1.0.0-alpha.6**
+**VERSION: 1.0.0-alpha.7**
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
