@@ -15,8 +15,8 @@ DESIGN.md が設計方針、このファイルがタスク管理。完了した�
 | README + getting-started 完備 | ✅ | |
 | ARCHITECTURE.md 作成 | ✅ | |
 | `plugin.json` 作成 | ✅ | copilot-plugin.json → plugin.json にリネーム済み |
-| VERSION を `1.0.0` に更新 | 🔲 | リリース時 |
-| git tag `v1.0.0` | 🔲 | リリース時 |
+| VERSION を `1.0.0.0` に更新 | ✅ | upstream 4桁形式に統一 |
+| git tag `v1.0.0.0` | 🔲 | マージ後に実行 |
 
 ## 未実装・改善項目
 
@@ -59,6 +59,7 @@ DESIGN.md が設計方針、このファイルがタスク管理。完了した�
 
 ## 完了済み
 
+- **Completed:** v1.0.0.0 (2026-04-25) — 🎉 v1.0 安定版リリース。バージョン書式を upstream 4桁形式に統一
 - **Completed:** v1.0.0-alpha.8 (2026-04-25) — v1.0リリース準備（LICENSE追加、README最新化、plugin.jsonリネーム、ドキュメント整合性修正）
 - **Completed:** v1.0.0-alpha.7 (2026-04-25) — マルチホスト対応（Copilot CLI + VS Code Chat）
 - **Completed:** v1.0.0-alpha.6 (2026-04-25) — `/make-pdf`, Decision-Brief Format, upstream v1.12.1.0 catchup
