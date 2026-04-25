@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # bin/gstack-env — gstack-copilot-jp 環境変数の出力
 # 使い方: eval "$(bin/gstack-env)"
-# 効果: $B エイリアスと bin/ を PATH に追加（現在のシェルのみ）
+# 効果: $B エイリアス、bin/ を PATH に追加、ホスト検出（現在のシェルのみ）
 
 set -euo pipefail
 
@@ -9,11 +9,25 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BROWSE_DIR="$PROJECT_ROOT/browse"
 
-# コンパイル済みバイナリがあればそれを $B に設定
+# ホスト検出（GSTACK_HOST 未設定の場合のみ）
+if [ -z "${GSTACK_HOST:-}" ]; then
+  if [ -n "${VSCODE_PID:-}" ] || { [ "${TERM_PROGRAM:-}" = "vscode" ] && [ -n "${TERM_PROGRAM_VERSION:-}" ]; }; then
+    echo "export GSTACK_HOST=\"vscode\""
+  elif command -v copilot >/dev/null 2>&1; then
+    echo "export GSTACK_HOST=\"cli\""
+  else
+    echo "export GSTACK_HOST=\"unknown\""
+  fi
+fi
+
+# コンパイル済みバイナリがあればそれを $B に設定、なければ安全なフォールバック
 if [ -f "$BROWSE_DIR/dist/browse" ] && [ -x "$BROWSE_DIR/dist/browse" ]; then
   echo "export B=\"$BROWSE_DIR/dist/browse\""
-else
+elif [ -f "$SCRIPT_DIR/browse.sh" ]; then
   echo "export B=\"$SCRIPT_DIR/browse.sh\""
+else
+  # browse 未インストール時: エラーではなく案内メッセージを出す
+  echo "export B=\"echo 'browse: not available. Install with: cd browse && bun install && bun run build'\""
 fi
 
 # bin/ を PATH 先頭に追加（未追加の場合のみ）

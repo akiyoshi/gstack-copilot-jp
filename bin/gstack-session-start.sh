@@ -6,7 +6,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GSTACK_DIR="${HOME}/.gstack"
 SESSIONS_DIR="${GSTACK_DIR}/sessions"
-HOSTS_DIR="${GSTACK_DIR}/hosts/copilot-cli"
+
+# ホスト検出: GSTACK_HOST が未設定なら自動検出
+if [ -z "${GSTACK_HOST:-}" ]; then
+  if [ -n "${VSCODE_PID:-}" ] || { [ "${TERM_PROGRAM:-}" = "vscode" ] && [ -n "${TERM_PROGRAM_VERSION:-}" ]; }; then
+    GSTACK_HOST="vscode"
+  elif command -v copilot >/dev/null 2>&1; then
+    GSTACK_HOST="cli"
+  else
+    GSTACK_HOST="unknown"
+  fi
+fi
+
+HOSTS_DIR="${GSTACK_DIR}/hosts/${GSTACK_HOST}"
 ELI16_FLAG="${HOSTS_DIR}/eli16"
 
 # ~/.gstack/ が未作成なら初期化
@@ -14,9 +26,10 @@ if [ ! -d "$GSTACK_DIR" ]; then
   "$SCRIPT_DIR/gstack-init.sh" 2>/dev/null || true
 fi
 
-# セッション追跡
+# セッション追跡（ホスト別にユニークなセッションID）
 mkdir -p "$SESSIONS_DIR"
-SESS_FILE="${SESSIONS_DIR}/${PPID}"
+SESS_ID="${PPID:-$$}-${RANDOM}"
+SESS_FILE="${SESSIONS_DIR}/${SESS_ID}"
 touch "$SESS_FILE"
 
 # ELI16 判定: 2時間以内に更新された session ファイルを数える
