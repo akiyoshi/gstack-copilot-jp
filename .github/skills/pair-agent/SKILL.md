@@ -1,8 +1,10 @@
 ---
 name: pair-agent
 version: 0.1.0
-description: "他のAIエージェントとブラウザを共有。セットアップキー生成→他エージェントが接続→同一ブラウザで並行作業。OpenClaw、Cursor、Codex等と連携。Use when: エージェント連携、pair agent、ブラウザ共有、connect agent。"
-argument-hint: "接続先エージェント名（openclaw, cursor, codex等）"
+description: "他のAIエージェントとブラウザを共有。セットアップキー生成→他エージェントが接続→同一ブラウザで並行作業。OpenClaw、Cursor、Codex等と連携。Use when: エージェント連携、pair agent、ブラウザ共有、connect agent。
+"
+argument-hint: "接続先エージェント名（openclaw, cursor等）
+"
 triggers:
   - pair with agent
   - connect remote agent
@@ -20,7 +22,7 @@ version: 0.1.0
 description: |
   Pair a remote AI agent with your browser. One command generates a setup key and
   prints instructions the other agent can follow to connect. Works with OpenClaw,
-  Hermes, Codex, Cursor, or any agent that can make HTTP requests. The remote agent
+  Hermes, other AI agents (Cursor, or any agent that can make HTTP requests. The remote agent
   gets its own tab with scoped access (read+write by default, admin on request).
   Use when asked to "pair agent", "connect agent", "share browser", "remote browser",
   "let another agent use my browser", or "give browser access". (gstack)
@@ -797,14 +799,14 @@ Use ask_user:
 
 Options:
 - A) OpenClaw (local or remote)
-- B) Codex / OpenAI Agents (local)
+- B) Other AI Agents (local)
 - C) Cursor (local)
 - D) Another Claude Code session (local or remote)
 - E) Something else (generic HTTP instructions — use this for Hermes)
 
 Based on the answer, set `TARGET_HOST`:
 - A → `openclaw`
-- B → `codex`
+- B → `outside voice model`
 - C → `cursor`
 - D → `claude`
 - E → generic (no host-specific config)
@@ -837,7 +839,7 @@ Run pair-agent with --local flag:
 $B pair-agent --local TARGET_HOST
 ```
 
-Replace `TARGET_HOST` with the value from Step 2 (openclaw, codex, cursor, etc.).
+Replace `TARGET_HOST` with the value from Step 2 (openclaw, cursor, etc.).
 
 If it succeeds, tell the user:
 "Done. TARGET_HOST can now use your browser. It will read credentials from the
@@ -960,10 +962,10 @@ generate a new setup key.
 OpenClaw agents use the `exec` tool instead of `Bash`. The instruction block uses
 `exec curl` syntax which OpenClaw understands natively. When using `--local openclaw`,
 credentials are written to `~/.openclaw/skills/gstack/browse-remote.json`.
-### Codex
+### Outside Voice
 
-Codex agents can execute shell commands via `codex exec`. The instruction block's
-curl commands work directly. When using `--local codex`, credentials are written
+Outside Voice agents can be dispatched via the task tool. The instruction block's
+curl commands work directly. When using a local model, credentials are written
 to `~/.codex/skills/gstack/browse-remote.json`.
 
 ### Cursor

@@ -103,13 +103,13 @@ Display:
 **Review tiers:**
 - **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
 - **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
-- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Codex adversarial challenge. Large diffs (200+ lines) additionally get Codex structured review with P1 gate. No configuration needed.
-- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Codex is unavailable. Never gates shipping.
+- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Outside Voice adversarial challenge. Large diffs (200+ lines) additionally get Outside Voice structured review with P1 gate. No configuration needed.
+- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Outside Voice is unavailable. Never gates shipping.
 
 **Verdict logic:**
 - **CLEARED**: Eng Review has >= 1 entry within 7 days from either \`review\` or \`plan-eng-review\` with status "clean" (or \`skip_eng_review\` is \`true\`)
 - **NOT CLEARED**: Eng Review missing, stale (>7 days), or has open issues
-- CEO, Design, and Codex reviews are shown for context but never block shipping
+- CEO, Design, and Outside Voice reviews are shown for context but never block shipping
 - If \`skip_eng_review\` config is \`true\`, Eng Review shows "SKIPPED (global)" and verdict is CLEARED
 
 **Staleness detection:** After displaying the dashboard, check if any existing reviews may be stale:
@@ -794,7 +794,7 @@ REPO=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
 _PLAN_SLUG=$(git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*/[^/]*\)\.git$|\1|;s|.*[:/]\([^/]*/[^/]*\)$|\1|' | tr '/' '-' | tr -cd 'a-zA-Z0-9._-') || true
 _PLAN_SLUG="${_PLAN_SLUG:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9._-')}"
 # Search common plan file locations (project designs first, then personal/local)
-for PLAN_DIR in "$HOME/.gstack/projects/$_PLAN_SLUG" "$HOME/.gstack/plans" "$HOME/.codex/plans" ".gstack/plans"; do
+for PLAN_DIR in "$HOME/.gstack/projects/$_PLAN_SLUG" "$HOME/.gstack/plans" "$HOME/.copilot/plans" ".gstack/plans"; do
   [ -d "$PLAN_DIR" ] || continue
   PLAN=$(ls -t "$PLAN_DIR"/*.md 2>/dev/null | xargs grep -l "$BRANCH" 2>/dev/null | head -1)
   [ -z "$PLAN" ] && PLAN=$(ls -t "$PLAN_DIR"/*.md 2>/dev/null | xargs grep -l "$REPO" 2>/dev/null | head -1)
@@ -1099,26 +1099,23 @@ source <(.github/skills/bin/gstack-diff-scope <base> 2>/dev/null)
 
 Substitute: TIMESTAMP = ISO 8601 datetime, STATUS = "clean" if 0 findings or "issues_found", N = total findings, M = auto-fixed count, COMMIT = output of `git rev-parse --short HEAD`.
 
-7. **Codex design voice** (optional, automatic if available):
+7. **Outside Voice (design)** (optional, automatic if available):
 
 ```bash
 ```
 
-If Codex is available, run a lightweight design check on the diff:
+If Outside Voice is available, run a lightweight design check on the diff:
 
-```bash
-TMPERR_DRL=$(mktemp /tmp/codex-drl-XXXXXXXX)
-_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-```
+Dispatch via the task tool with `model` set to the Outside Voice model.
+Use the same review prompt but from an independent model.
 
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
 ```bash
-cat "$TMPERR_DRL" && rm -f "$TMPERR_DRL"
 ```
 
 **Error handling:** All errors are non-blocking. On auth failure, timeout, or empty response — skip with a brief note and continue.
 
-Present Codex output under a `CODEX (design):` header, merged with the checklist findings above.
+Present Outside Voice output under a `CODEX (design):` header, merged with the checklist findings above.
 
    Include any design findings alongside the code review findings. They follow the same Fix-First flow below.
 
@@ -1440,7 +1437,7 @@ For each comment in `comments`:
 
 ## Step 11: Adversarial review (always-on)
 
-Every diff gets adversarial review from both Claude and Codex. LOC is not a proxy for risk — a 5-line auth change can be critical.
+Every diff gets adversarial review from both Claude and the Outside Voice. LOC is not a proxy for risk — a 5-line auth change can be critical.
 
 **Detect diff size and tool availability:**
 
@@ -1448,15 +1445,15 @@ Every diff gets adversarial review from both Claude and Codex. LOC is not a prox
 DIFF_INS=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
 DIFF_DEL=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
 DIFF_TOTAL=$((DIFF_INS + DIFF_DEL))
-# Legacy opt-out — only gates Codex passes, Claude always runs
+# Legacy opt-out — only gates Outside Voice passes, Claude always runs
 OLD_CFG=$(
 echo "DIFF_SIZE: $DIFF_TOTAL"
 echo "OLD_CFG: ${OLD_CFG:-not_set}"
 ```
 
-If `OLD_CFG` is `disabled`: skip Codex passes only. Claude adversarial subagent still runs (it's free and fast). Jump to the "Claude adversarial subagent" section.
+If `OLD_CFG` is `disabled`: skip Outside Voice passes only. Claude adversarial subagent still runs (it's free and fast). Jump to the "Claude adversarial subagent" section.
 
-**User override:** If the user explicitly requested "full review", "structured review", or "P1 gate", also run the Codex structured review regardless of diff size.
+**User override:** If the user explicitly requested "full review", "structured review", or "P1 gate", also run the Outside Voice structured review regardless of diff size.
 
 ---
 
@@ -1473,9 +1470,9 @@ If the subagent fails or times out: "Claude adversarial subagent unavailable. Co
 
 ---
 
-### Codex adversarial challenge (always runs when available)
+### Outside Voice adversarial challenge (always runs when available)
 
-If Codex is available AND `OLD_CFG` is NOT `disabled`:
+If Outside Voice is available AND `OLD_CFG` is NOT `disabled`:
 
 ```bash
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
@@ -1488,37 +1485,33 @@ Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the 
 Present the full output verbatim. This is informational — it never blocks shipping.
 
 **Error handling:** All errors are non-blocking — adversarial review is a quality enhancement, not a prerequisite.
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response. Stderr: <paste relevant error>."
-If Codex is NOT available: "Codex CLI not found — running Claude adversarial only. Install Codex for cross-model coverage: `npm install -g @openai/codex`"
+- **Timeout:** "Outside Voice timed out after 5 minutes."
+- **Empty response:** "Outside Voice returned no response. Stderr: <paste relevant error>."
+If Outside Voice is NOT available: "Outside Voice model not configured — running Claude adversarial only. Configure outside_voice_model for cross-model coverage: `outside_voice_model` in `~/.gstack/config.yaml`"
 
 ---
 
-### Codex structured review (large diffs only, 200+ lines)
+### Outside Voice structured review (large diffs only, 200+ lines)
 
-If `DIFF_TOTAL >= 200` AND Codex is available AND `OLD_CFG` is NOT `disabled`:
+If `DIFF_TOTAL >= 200` AND Outside Voice is available AND `OLD_CFG` is NOT `disabled`:
 
-```bash
-TMPERR=$(mktemp /tmp/codex-review-XXXXXXXX)
-_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-cd "$(git rev-parse --show-toplevel)"
-```
+Dispatch via the task tool with `model` set to the Outside Voice model.
+Use the same review prompt but from an independent model.
 
-Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. Present output under `CODEX SAYS (code review):` header.
+Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. Present output under `OUTSIDE VOICE (code review):` header.
 Check for `[P1]` markers: found → `GATE: FAIL`, not found → `GATE: PASS`.
 
 If GATE is FAIL, use ask_user:
 ```
-Codex found N critical issues in the diff.
+Outside Voice found N critical issues in the diff.
 
 A) Investigate and fix now (recommended)
 B) Continue — review will still complete
 ```
-Read stderr for errors (same error handling as Codex adversarial above).
+Read stderr for errors (same error handling as Outside Voice adversarial above).
 
-After stderr: `rm -f "$TMPERR"`
 
-If `DIFF_TOTAL < 200`: skip this section silently. The Claude + Codex adversarial passes provide sufficient coverage for smaller diffs.
+If `DIFF_TOTAL < 200`: skip this section silently. The Claude + Outside Voice adversarial passes provide sufficient coverage for smaller diffs.
 
 ---
 
@@ -1528,7 +1521,7 @@ After all passes complete, persist:
 ```bash
 .github/skills/bin/gstack-review-log '{"skill":"adversarial-review","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","tier":"always","gate":"GATE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Substitute: STATUS = "clean" if no findings across ALL passes, "issues_found" if any pass found issues. SOURCE = "both" if Codex ran, "claude" if only Claude subagent ran. GATE = the Codex structured review gate result ("pass"/"fail"), "skipped" if diff < 200, or "informational" if Codex was unavailable. If all passes failed, do NOT persist.
+Substitute: STATUS = "clean" if no findings across ALL passes, "issues_found" if any pass found issues. SOURCE = "both" if Outside Voice ran, "claude" if only Claude subagent ran. GATE = the Outside Voice structured review gate result ("pass"/"fail"), "skipped" if diff < 200, or "informational" if Outside Voice was unavailable. If all passes failed, do NOT persist.
 
 ---
 
@@ -1542,8 +1535,8 @@ ADVERSARIAL REVIEW SYNTHESIS (always-on, N lines):
   High confidence (found by multiple sources): [findings agreed on by >1 pass]
   Unique to Claude structured review: [from earlier step]
   Unique to Claude adversarial: [from subagent]
-  Unique to Codex: [from codex adversarial or code review, if ran]
-  Models used: Claude structured ✓  Claude adversarial ✓/✗  Codex ✓/✗
+  Unique to Outside Voice: [from outside voice adversarial or code review, if ran]
+  Models used: Claude structured ✓  Claude adversarial ✓/✗  Outside ✓/✗
 ════════════════════════════════════════════════════════════
 ```
 
@@ -1565,7 +1558,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
@@ -1870,7 +1863,7 @@ Decide at runtime which option applies. If unsure, prefer stopping and asking th
 user via ask_user rather than destroying non-WIP commits.
 
 **Anti-footgun rules:**
-- NEVER blind `git reset --soft` if there are non-WIP commits. Codex flagged this
+- NEVER blind `git reset --soft` if there are non-WIP commits. The Outside Voice flagged this
   as destructive — it would uncommit real landed work and turn the push step into
   a non-fast-forward push for anyone who already pushed.
 - Only proceed to Step 15.1 after WIP commits are successfully squashed/absorbed
@@ -2119,7 +2112,7 @@ This step is automatic — never skip it, never ask for confirmation.
 - **Never skip tests.** If tests fail, stop.
 - **Never skip the pre-landing review.** If checklist.md is unreadable, stop.
 - **Never force push.** Use regular `git push` only.
-- **Never ask for trivial confirmations** (e.g., "ready to push?", "create PR?"). DO stop for: version bumps (MINOR/MAJOR), pre-landing review findings (ASK items), and Codex structured review [P1] findings (large diffs only).
+- **Never ask for trivial confirmations** (e.g., "ready to push?", "create PR?"). DO stop for: version bumps (MINOR/MAJOR), pre-landing review findings (ASK items), and Outside Voice structured review [P1] findings (large diffs only).
 - **Always use the 4-digit version format** from the VERSION file.
 - **Date format in CHANGELOG:** `YYYY-MM-DD`
 - **Split commits for bisectability** — each commit = one logical change.

@@ -1,8 +1,10 @@
 ---
 name: plan-design-review
 version: 2.0.0
-description: "シニアデザイナーとしてデザインプランをレビュー。Use when: UI/UXレビュー、デザイン品質評価、AIスロップ検知、design review、UX audit。7つのデザイン次元で0-10評価し、10/10がどのようなものかを具体的に示す。"
-argument-hint: "レビュー対象のデザインプランまたはUI/UXの説明"
+description: "シニアデザイナーとしてデザインプランをレビュー。Use when: UI/UXレビュー、デザイン品質評価、AIスロップ検知、design review、UX audit。7つのデザイン次元で0-10評価し、10/10がどのようなものかを具体的に示す。
+"
+argument-hint: "レビュー対象のデザインプランまたはUI/UXの説明
+"
 triggers:
   - design plan review
   - review ux plan
@@ -1176,7 +1178,7 @@ Note which direction was approved. This becomes the visual reference for all sub
 ## Design Outside Voices (parallel)
 
 Use ask_user:
-> "Want outside design voices before the detailed review? Codex evaluates against OpenAI's design hard rules + litmus checks; Claude subagent does an independent completeness review."
+> "Want outside design voices before the detailed review? Outside Voice evaluates against design hard rules + litmus checks; Claude subagent does an independent completeness review."
 >
 > A) Yes — run outside design voices
 > B) No — proceed without
@@ -1187,41 +1189,13 @@ If user chooses B, skip this step and continue.
 ```bash
 ```
 
-**If Codex is available**, launch both voices simultaneously:
+**If Outside Voice is available**, launch both voices simultaneously:
 
-1. **Codex design voice** (via Bash):
-```bash
-TMPERR_DESIGN=$(mktemp /tmp/codex-design-XXXXXXXX)
-_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-
-HARD REJECTION — flag if ANY apply:
-1. Generic SaaS card grid as first impression
-2. Beautiful image with weak brand
-3. Strong headline with no clear action
-4. Busy imagery behind text
-5. Sections repeating same mood statement
-6. Carousel with no narrative purpose
-7. App UI made of stacked cards instead of layout
-
-LITMUS CHECKS — answer YES or NO for each:
-1. Brand/product unmistakable in first screen?
-2. One strong visual anchor present?
-3. Page understandable by scanning headlines only?
-4. Each section has one job?
-5. Are cards actually necessary?
-6. Does motion improve hierarchy or atmosphere?
-7. Would design feel premium with all decorative shadows removed?
-
-HARD RULES — first classify as MARKETING/LANDING PAGE vs APP UI vs HYBRID, then flag violations of the matching rule set:
-- MARKETING: First viewport as one composition, brand-first hierarchy, full-bleed hero, 2-3 intentional motions, composition-first layout
-- APP UI: Calm surface hierarchy, dense but readable, utility language, minimal chrome
-- UNIVERSAL: CSS variables for colors, no default font stacks, one job per section, cards earn existence
-
-For each finding: what's wrong, what will happen if it ships unresolved, and the specific fix. Be opinionated. No hedging." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_DESIGN"
-```
+1. **Outside Voice (design)** (via task tool, different model):
+Dispatch via the task tool with `model` set to the Outside Voice model.
+Use the same review prompt but from an independent model.
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
 ```bash
-cat "$TMPERR_DESIGN" && rm -f "$TMPERR_DESIGN"
 ```
 
 2. **Claude design subagent** (via task tool):
@@ -1237,12 +1211,12 @@ Dispatch a subagent with this prompt:
 For each finding: what's wrong, severity (critical/high/medium), and the fix."
 
 **Error handling (all non-blocking):**
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response."
+- **Timeout:** "Outside Voice timed out after 5 minutes."
+- **Empty response:** "Outside Voice returned no response."
 - On any Codex error: proceed with Claude subagent output only, tagged `[single-model]`.
 - If Claude subagent also fails: "Outside voices unavailable — continuing with primary review."
 
-Present Codex output under a `CODEX SAYS (design critique):` header.
+Present Outside Voice output under a `OUTSIDE VOICE (design critique):` header.
 Present subagent output under a `CLAUDE SUBAGENT (design completeness):` header.
 
 **Synthesis — Litmus scorecard:**
@@ -1250,7 +1224,7 @@ Present subagent output under a `CLAUDE SUBAGENT (design completeness):` header.
 ```
 DESIGN OUTSIDE VOICES — LITMUS SCORECARD:
 ═══════════════════════════════════════════════════════════════
-  Check                                    Claude  Codex  Consensus
+  Check                                    Claude  Outside  Consensus
   ─────────────────────────────────────── ─────── ─────── ─────────
   1. Brand unmistakable in first screen?   —       —      —
   2. One strong visual anchor?             —       —      —
@@ -1610,13 +1584,13 @@ Display:
 **Review tiers:**
 - **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
 - **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
-- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Codex adversarial challenge. Large diffs (200+ lines) additionally get Codex structured review with P1 gate. No configuration needed.
-- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Codex is unavailable. Never gates shipping.
+- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Outside Voice adversarial challenge. Large diffs (200+ lines) additionally get Outside Voice structured review with P1 gate. No configuration needed.
+- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Outside Voice is unavailable. Never gates shipping.
 
 **Verdict logic:**
 - **CLEARED**: Eng Review has >= 1 entry within 7 days from either \`review\` or \`plan-eng-review\` with status "clean" (or \`skip_eng_review\` is \`true\`)
 - **NOT CLEARED**: Eng Review missing, stale (>7 days), or has open issues
-- CEO, Design, and Codex reviews are shown for context but never block shipping
+- CEO, Design, and Outside Voice reviews are shown for context but never block shipping
 - If \`skip_eng_review\` config is \`true\`, Eng Review shows "SKIPPED (global)" and verdict is CLEARED
 
 **Staleness detection:** After displaying the dashboard, check if any existing reviews may be stale:
@@ -1674,8 +1648,8 @@ Produce this markdown table:
 
 Below the table, add these lines (omit any that are empty/not applicable):
 
-- **CODEX:** (only if codex-review ran) — one-line summary of codex fixes
-- **CROSS-MODEL:** (only if both Claude and Codex reviews exist) — overlap analysis
+- **OUTSIDE VOICE:** (only if outside voice review ran) — one-line summary of outside voice fixes
+- **CROSS-MODEL:** (only if both Claude and the Outside Voice reviews exist) — overlap analysis
 - **UNRESOLVED:** total unresolved decisions across all reviews
 - **VERDICT:** list reviews that are CLEAR (e.g., "CEO + ENG CLEARED — ready to implement").
   If Eng Review is not CLEAR and not skipped globally, append "eng review required".
@@ -1710,7 +1684,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.

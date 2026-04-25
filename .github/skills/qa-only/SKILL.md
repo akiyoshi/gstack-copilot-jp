@@ -1,8 +1,10 @@
 ---
 name: qa-only
 version: 1.0.0
-description: "QAレポーターとしてバグレポートのみ作成（コード修正なし）。Use when: バグレポートだけ欲しい、修正は自分でやる、report only、qa report。"
-argument-hint: "テスト対象のプロジェクトまたは機能"
+description: "QAレポーターとしてバグレポートのみ作成（コード修正なし）。Use when: バグレポートだけ欲しい、修正は自分でやる、report only、qa report。
+"
+argument-hint: "テスト対象のプロジェクトまたは機能
+"
 triggers:
   - qa report only
   - just report bugs
@@ -1151,7 +1153,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.

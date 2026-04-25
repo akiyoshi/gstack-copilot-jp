@@ -1,8 +1,10 @@
 ---
 name: qa
 version: 2.0.0
-description: "QAリードとしてプロジェクトのテスト・品質チェック。Use when: テスト、QA、品質確認、バグ探し、test the app、quality assurance。ヘルススコア8カテゴリで評価。バグ→修正→回帰テスト→再検証のループ。"
-argument-hint: "テスト対象のプロジェクトまたは機能"
+description: "QAリードとしてプロジェクトのテスト・品質チェック。Use when: テスト、QA、品質確認、バグ探し、test the app、quality assurance。ヘルススコア8カテゴリで評価。バグ→修正→回帰テスト→再検証のループ。
+"
+argument-hint: "テスト対象のプロジェクトまたは機能
+"
 triggers:
   - qa test this
   - find bugs on site
@@ -1565,7 +1567,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
