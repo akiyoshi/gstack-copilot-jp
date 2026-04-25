@@ -23,13 +23,11 @@ gstack-copilot-jp には38のスキルがある。全部を覚える必要はな
 ### 手順
 
 ```bash
-# 推奨: プラグインインストール
-copilot plugin install github:akiyoshi/gstack-copilot-jp
-
-# または手動
 git clone https://github.com/akiyoshi/gstack-copilot-jp.git
 cd gstack-copilot-jp && ./setup
 ```
+
+> **実験的:** `copilot plugin install akiyoshi/gstack-copilot-jp` でもインストール可能（プラグインシステム安定化後に正式対応予定）。
 
 終わり。プロジェクトディレクトリで `copilot` を起動し、スキルを呼び出す。
 
@@ -70,14 +68,15 @@ copilot --version
 copilot plugin list
 ```
 
-プラグインが表示されない場合、再インストール: `copilot plugin install github:akiyoshi/gstack-copilot-jp`
+プラグインが表示されない場合、再インストール: `copilot plugin install akiyoshi/gstack-copilot-jp`
+手動インストールの場合は `./setup` を再実行。
 
 ### `/browse` でChromiumが起動しない
 
 Playwrightのブラウザをインストール:
 
 ```bash
-cd gstack-copilot-jp/browse && npm install && npx playwright install chromium
+cd gstack-copilot-jp/browse && bun install && bunx playwright install chromium
 ```
 
 ### スキルが多すぎてどれを使えばいいか分からない

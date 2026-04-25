@@ -97,7 +97,7 @@ gstack-copilot-jp/
 │   ├── copilot-instructions.md  # Project instructions (this file)
 │   ├── hooks/
 │   │   └── lifecycle.json       # Hook definitions (PascalCase events)
-│   └── skills/          # 39 skills + bin/
+│   └── skills/          # 38 skills + bin/
 │       ├── autoplan/    # /autoplan (auto-review pipeline: CEO → design → eng → DX)
 │       ├── ship/        # /ship (release + PR creation)
 │       ├── browse/      # /browse (headless browser QA)
@@ -105,7 +105,7 @@ gstack-copilot-jp/
 │       │   ├── gstack-codex-probe    # Outside Voice model detection
 │       │   ├── gstack-review-log     # Review log writer
 │       │   └── gstack-question-preference  # Question tuning
-│       └── ...          # 35 more skills
+│       └── ...          # 34 more skills
 ├── bin/                 # CLI utilities (19 scripts)
 │   ├── gstack-env       # Environment setup ($B definition)
 │   ├── gstack-slug      # Repository slug extraction
