@@ -72,11 +72,11 @@ gstack-copilot-jp/
 │   │   ├── architect.agent.md
 │   │   ├── security.agent.md
 │   │   └── ...
-│   └── hooks/                     # ライフサイクルフック（本家と同一イベント）
-│       ├── session-start.json
-│       └── pre-tool-use.json
-├── .gstack/
+│   └── hooks/                     # ライフサイクルフック（本家と互換イベント）
+│       └── lifecycle.json         # SessionStart, Stop, PreToolUse, PostToolUse
+├── .gstack/                       # ランタイム状態（gitignore）
 │   ├── model-routing.yaml
+│   ├── browse.json
 │   └── plans/
 ├── browse/                        # ヘッドレスブラウザ（Bun — 本家と同一アーキテクチャ）
 │   ├── src/
@@ -90,7 +90,6 @@ gstack-copilot-jp/
 ├── setup                          # セットアップスクリプト（bash）
 ├── docs/
 │   └── getting-started.md
-├── templates/
 ├── upstream-tracking.md
 ├── ARCHITECTURE.md               # 設計判断の記録（本家と同一ファイル名）
 ├── BROWSER.md
@@ -112,8 +111,8 @@ gstack は Claude Code 向けに書かれている。Copilot CLI への変換は
 | `Agent` tool (subagent) | `task` tool / `/fleet` (並列) |
 | `Bash` tool | `bash` tool |
 | `Read` / `Write` tool | `view` / `edit` / `create` tool |
-| `PreToolUse` / `PostToolUse` hook | `.github/hooks/*.json` — **完全互換** |
-| `SessionStart` hook | `.github/hooks/session-start.json` |
+| `PreToolUse` / `PostToolUse` hook | `.github/hooks/lifecycle.json` — **互換（PascalCase）** |
+| `SessionStart` hook | `.github/hooks/lifecycle.json` |
 | `CLAUDE.md` | `.github/copilot-instructions.md` |
 | `~/.claude/` | `~/.copilot/` |
 | `~/.gstack/` 状態 | `store_memory` + `~/.copilot/` + `.gstack/` |
@@ -123,30 +122,36 @@ gstack は Claude Code 向けに書かれている。Copilot CLI への変換は
 
 ### hookシステム
 
-Copilot CLI は gstack と互換の hookイベントをサポートする。`.github/hooks/*.json` に配置:
+Copilot CLI は gstack と互換の hookイベントをサポートする。`.github/hooks/lifecycle.json` に単一ファイルで配置:
 
 ```json
 {
-  "version": 1,
   "hooks": {
-    "sessionStart": [{
-      "type": "prompt",
-      "prompt": "/status"
-    }],
-    "preToolUse": [{
+    "SessionStart": [{
       "type": "command",
-      "bash": "bin/pre-tool-guard.sh"
+      "command": "bash bin/gstack-session-start.sh"
+    }],
+    "Stop": [{
+      "type": "command",
+      "command": "bash bin/gstack-session-end.sh"
+    }],
+    "PreToolUse": [{
+      "type": "command",
+      "command": "bash bin/gstack-pre-tool-guard.sh"
+    }],
+    "PostToolUse": [{
+      "type": "command",
+      "command": "bash bin/gstack-post-tool-log.sh"
     }]
   }
 }
 ```
 
 利用可能なイベント:
-- `sessionStart` — セッション開始時。自動更新チェック、状態回復
-- `sessionEnd` — セッション終了時。学習記録の保存
-- `preToolUse` — ツール実行前。`/careful`, `/freeze` のガード実装
-- `postToolUse` — ツール実行後。成果物記録
-- `agentStop` — エージェント完了時。後処理フック
+- `SessionStart` — セッション開始時。自動更新チェック、状態回復
+- `Stop` — セッション終了時。学習記録の保存
+- `PreToolUse` — ツール実行前。`/careful`, `/freeze` のガード実装
+- `PostToolUse` — ツール実行後。成果物記録
 
 ### インストール
 
@@ -240,7 +245,7 @@ Windows ユーザーは WSL (Ubuntu) を使用する。PowerShell ネイティ�
 | スプリントプロセス | Think → Plan → Build → Review → Test → Ship → Reflect | 同一 |
 | スキル方法論 | 各スキルの判定基準、チェックリスト、ワークフロー | 同一 |
 | ETHOS | Boil the Lake, Search Before Building, User Sovereignty | 同一 |
-| hookシステム | `preToolUse` / `postToolUse` / `sessionStart` | Copilot CLI で実現 |
+| hookシステム | `PreToolUse` / `PostToolUse` / `SessionStart` / `Stop` | Copilot CLI `.github/hooks/lifecycle.json` で実現 |
 | セッション永続化 | `store_memory` tool + `/resume` | Copilot CLI で実現 |
 | プログラマティックE2E | `copilot -p` でスキルテスト | Copilot CLI で実現 |
 | 並列サブエージェント | `/fleet` コマンド | Copilot CLI で実現 |
@@ -548,10 +553,10 @@ Tier 1 は `bun test` で即座に実装可能。Tier 2 は `copilot -p --output
 
 | 本家 PREAMBLE 機能 | gstack-copilot-jp での実現 |
 |---|---|
-| 自動更新チェック (`gstack-update-check`) | `sessionStart` hook で `/plugin update --check` or `gstack-update-check` 実行 |
-| セッション追跡 (`~/.gstack/sessions/$PPID`) | `sessionStart` hook で `bin/gstack-session-track` 実行 |
-| ELI16 モード（3+ 並列セッション時に質問を簡素化） | hook がセッション数を数え、3 以上なら環境変数 `GSTACK_ELI16=1` を設定。スキルが参照 |
-| 運用自己改善（セッション終了時に振り返り） | `sessionEnd` hook で学習抽出を提案（`/learn 振り返り` に繋ぐ） |
+| 自動更新チェック (`gstack-update-check`) | `SessionStart` hook で `/plugin update --check` or `gstack-update-check` 実行 |
+| セッション追跡 (`~/.gstack/sessions/$PPID`) | `SessionStart` hook で `bin/gstack-session-track` 実行 |
+| ELI16 モード（3+ 並列セッション時に質問を簡素化） | hook がセッション数を数え、3 以上ならファイルフラグ `~/.gstack/hosts/copilot-cli/eli16` を設定。スキルが参照 |
+| 運用自己改善（セッション終了時に振り返り） | `Stop` hook で学習抽出を提案（`/learn 振り返り` に繋ぐ） |
 | AskUserQuestion フォーマット | `copilot-instructions.md` に常時指示として記載（ask-format と同一） |
 | Search Before Building | `copilot-instructions.md` に常時指示として記載（ethos と同一） |
 
@@ -669,48 +674,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 | `/context-restore` | 同一 | |
 | `/gstack-upgrade` | 適応 | plugin update で実現 |
 
-## 実装状態
-
-**VERSION: 1.0.0-alpha.7**
-
-| カテゴリ | 数量 | 内容 |
-|---------|------|------|
-| スキル | 38 | スプリントプロセス全フェーズ + パワーツール + make-pdf |
-| エージェント | 5 | architect, design-critic, dx-tester, security, testing |
-| bin/ | 18 | gstack-slug, gstack-config, gstack-env, gstack-diff-scope 等の本家互換ユーティリティ |
-| ブラウザ | 1 | Bun コンパイル + Playwright（本家互換） |
-| hookシステム | 4 | sessionStart, sessionEnd, preToolUse, postToolUse |
-| テスト | 8 | Vitest（Tier 1 静的検証）。test/ 3ファイル + browse/test/ 5ファイル（407テスト） |
-| 本家追跡 | v1.12.1.0 | `upstream-tracking.md` で互換性台帳を管理 |
-
-## v1.0 仕様: マルチホスト + 追随モデル
-
-### v1.0 の定義
-
-v1.0 = **Copilot CLI + VS Code Chat をホストターゲットとし、本家gstack追随モデルを確立する**。
-
-1. **マルチホスト** — Copilot CLI と VS Code Copilot Chat の両方で動作。Tier A/B/C 分類
-2. **Linux統一** — macOS / Linux ネイティブ、Windows は WSL (Ubuntu)
-3. **Bun browse** — 本家と同一のブラウザサブシステム
-4. **プラグイン配布** — `copilot plugin install` で一発導入。複数端末で共有可能
-5. **本家 v1.12.1.0 の方法論を反映** — 各スキルの判定基準・ワークフローが本家と同等。AskUserQuestion Decision-Brief Format 採用
-
-### v1.0 リリース基準
-
-| 基準 | 状態 | 備考 |
-|------|------|------|
-| 40スキル全て SKILL.md 存在 | ✅ | `.github/skills/` に配置 |
-| 5エージェント動作 | ✅ | architect, design-critic, dx-tester, security, testing |
-| 4 hooks 動作 | ✅ | sessionStart, sessionEnd, preToolUse, postToolUse |
-| browse ビルド成功 | ✅ | `bun build --compile` → `browse/dist/browse` |
-| Tier 1 テスト全 pass | ✅ | `npm test` (Vitest) |
-| 本家 v1.12.1.0 まで追跡完了 | ✅ | `upstream-tracking.md` |
-| README + getting-started 完備 | ✅ | |
-| ARCHITECTURE.md 作成 | ✅ | |
-| `copilot-plugin.json` 作成 | ✅ | |
-| VERSION を `1.0.0` に更新 | 🔲 | リリース時 |
-| git tag `v1.0.0` | 🔲 | リリース時 |
-
+> 実装状態とリリース基準は [TODO.md](TODO.md) を参照。
 
 ## 本家gstackとの構造的差異
 
@@ -723,7 +687,7 @@ v1.0 = **Copilot CLI + VS Code Chat をホストターゲットとし、本家gs
 | インストール | `./setup` + シンボリックリンク | `./setup` は同一。既定は project-local、user-link は opt-in |
 | スキル形式 | `SKILL.md` (テンプレート生成) | `SKILL.md` (手書き。同一フロントマター形式) |
 | ブラウザ | Bun コンパイル + Node.js フォールバック | Bun コンパイル（**同一**。バージョン自動再起動も同一） |
-| hookシステム | `PreToolUse/PostToolUse` | `.github/hooks/*.json`（**互換**） |
+| hookシステム | `PreToolUse/PostToolUse` | `.github/hooks/lifecycle.json`（**互換、PascalCase**） |
 | 外部の目 | Codex CLI + Claude adversarial | `code-review` + `rubber-duck` + `/model` 切替 + fallback |
 | 状態ディレクトリ | `~/.gstack/` | `~/.gstack/` root 共有 + `hosts/copilot-cli/` 分離 |
 | テスト | 3層E2E（`claude -p` + LLM Judge + Static） | `copilot -p` + Vitest + coexistence test + JSONL schema 互換テスト |
@@ -747,14 +711,13 @@ v1.0 = **Copilot CLI + VS Code Chat をホストターゲットとし、本家gs
 
 ## ターゲットユーザー
 
-- GitHub Copilot CLI を使う日本語話者の開発者
+- GitHub Copilot（CLI + VS Code Chat）を使う日本語話者の開発者
 - macOS / Linux / WSL (Ubuntu) 環境
 
 ## スコープ外
 
-- VS Code Chat 単体対応 — Copilot CLI に統一
+- Cursor / Codex / Gemini CLI / その他ホスト対応 — Copilot（CLI + VS Code Chat）に集中
 - Windows PowerShell ネイティブ対応 — WSL (Ubuntu) に統一
-- Cursor / Codex / Gemini CLI / その他ホスト対応 — Copilot CLI に集中
 - テレメトリ / アナリティクス — プライバシー優先
 - テンプレートビルドシステム — 手書きで十分
 - 有料化 — OSSとして公開

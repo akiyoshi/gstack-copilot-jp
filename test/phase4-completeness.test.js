@@ -126,10 +126,10 @@ describe('VERSION for v1.0', () => {
     expect(version).toMatch(/^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$/);
   });
 
-  it('DESIGN.md references matching version', () => {
+  it('TODO.md references matching version', () => {
     const version = readFileSync(join(ROOT, 'VERSION'), 'utf-8').trim();
-    const design = readFileSync(join(ROOT, 'DESIGN.md'), 'utf-8');
-    expect(design).toContain(`VERSION: ${version}`);
+    const todo = readFileSync(join(ROOT, 'TODO.md'), 'utf-8');
+    expect(todo).toContain(version);
   });
 });
 

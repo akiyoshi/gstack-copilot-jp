@@ -115,23 +115,24 @@ describe('copilot-instructions.md 品質ゲート機能', () => {
   });
 });
 
-describe('DESIGN.md 数値整合性', () => {
-  const designPath = join(ROOT, 'DESIGN.md');
-  const designContent = readFileSync(designPath, 'utf-8');
+describe('ドキュメント数値整合性', () => {
 
   it('スキル数が実ディレクトリ数と一致する', () => {
     const skillsDir = join(ROOT, '.github', 'skills');
     const skillCount = readdirSync(skillsDir, { withFileTypes: true })
       .filter(d => d.isDirectory() && d.name !== 'bin').length;
-    // "| スキル | N |" パターンを抽出
-    const match = designContent.match(/\|\s*スキル\s*\|\s*(\d+)\s*\|/);
+    // TODO.md の "| N スキル全て" パターンを抽出
+    const todoContent = readFileSync(join(ROOT, 'TODO.md'), 'utf-8');
+    const match = todoContent.match(/(\d+)スキル全て/);
     expect(match).not.toBeNull();
     expect(parseInt(match[1])).toBe(skillCount);
   });
 
   it('バージョンがVERSIONファイルと一致する', () => {
     const version = readFileSync(join(ROOT, 'VERSION'), 'utf-8').trim();
-    expect(designContent).toContain(`VERSION: ${version}`);
+    // TODO.md に現在のバージョンが含まれる
+    const todoContent = readFileSync(join(ROOT, 'TODO.md'), 'utf-8');
+    expect(todoContent).toContain(version);
   });
 });
 
