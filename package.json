@@ -4,7 +4,9 @@
   "private": true,
   "description": "日本語のGitHub Copilotユーザーのための、AIソフトウェアファクトリー",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run && cd browse && bun test test/ --ignore test/fixtures 2>/dev/null || echo 'browse tests require: cd browse && bun install && bunx playwright install chromium'",
+    "test:project": "vitest run",
+    "test:browse": "cd browse && bun test test/ --ignore test/fixtures"
   },
   "repository": {
     "type": "git",

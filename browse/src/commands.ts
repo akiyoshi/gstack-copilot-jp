@@ -1,591 +1,284 @@
-// browse/src/commands.ts
-// ブラウザコマンドハンドラ
-import type { BrowserManager } from './browser-manager.js';
+/**
+ * Command registry — single source of truth for all browse commands.
+ *
+ * Dependency graph:
+ *   commands.ts ──▶ server.ts (runtime dispatch)
+ *                ──▶ gen-skill-docs.ts (doc generation)
+ *                ──▶ skill-parser.ts (validation)
+ *                ──▶ skill-check.ts (health reporting)
+ *
+ * Zero side effects. Safe to import from build scripts and tests.
+ */
 
-// SSRF 防止: 許可しないプロトコルと内部ネットワークを拒否
-const BLOCKED_PROTOCOLS = ['file:', 'javascript:', 'data:', 'ftp:', 'gopher:'];
-const INTERNAL_IP_PATTERNS = [
-  /^127\./,                          // loopback
-  /^10\./,                           // RFC1918
-  /^172\.(1[6-9]|2\d|3[01])\./,     // RFC1918
-  /^192\.168\./,                     // RFC1918
-  /^169\.254\./,                     // link-local / AWS metadata
-  /^0\./,                            // current network
-  /^::1$/,                           // IPv6 loopback
-  /^fc00:/i,                         // IPv6 unique local
-  /^fe80:/i,                         // IPv6 link-local
-  /^fd/i,                            // IPv6 unique local
-];
-const BLOCKED_HOSTNAMES = ['metadata.google.internal', 'metadata.google.com'];
+export const READ_COMMANDS = new Set([
+  'text', 'html', 'links', 'forms', 'accessibility',
+  'js', 'eval', 'css', 'attrs',
+  'console', 'network', 'cookies', 'storage', 'perf',
+  'dialog', 'is',
+  'inspect',
+  'media', 'data',
+]);
 
-export function validateUrl(url: string): URL {
-  const parsed = new URL(url);
-  if (BLOCKED_PROTOCOLS.includes(parsed.protocol)) {
-    throw new Error(`Protocol not allowed: ${parsed.protocol}`);
-  }
-  // IPv6 ブラケット除去: [::1] → ::1
-  const hostname = parsed.hostname.replace(/^\[|\]$/g, '');
-  if (BLOCKED_HOSTNAMES.includes(hostname.toLowerCase())) {
-    throw new Error(`Hostname not allowed: ${hostname}`);
-  }
-  if (INTERNAL_IP_PATTERNS.some(re => re.test(hostname))) {
-    throw new Error(`Internal network access not allowed: ${hostname}`);
-  }
-  return parsed;
+export const WRITE_COMMANDS = new Set([
+  'goto', 'back', 'forward', 'reload',
+  'load-html',
+  'click', 'fill', 'select', 'hover', 'type', 'press', 'scroll', 'wait',
+  'viewport', 'cookie', 'cookie-import', 'cookie-import-browser', 'header', 'useragent',
+  'upload', 'dialog-accept', 'dialog-dismiss',
+  'style', 'cleanup', 'prettyscreenshot',
+  'download', 'scrape', 'archive',
+]);
+
+export const META_COMMANDS = new Set([
+  'tabs', 'tab', 'newtab', 'closetab',
+  'status', 'stop', 'restart',
+  'screenshot', 'pdf', 'responsive',
+  'chain', 'diff',
+  'url', 'snapshot',
+  'handoff', 'resume',
+  'connect', 'disconnect', 'focus',
+  'inbox',
+  'watch',
+  'state',
+  'frame',
+  'ux-audit',
+]);
+
+export const ALL_COMMANDS = new Set([...READ_COMMANDS, ...WRITE_COMMANDS, ...META_COMMANDS]);
+
+/** Commands that return untrusted third-party page content */
+export const PAGE_CONTENT_COMMANDS = new Set([
+  'text', 'html', 'links', 'forms', 'accessibility', 'attrs',
+  'console', 'dialog',
+  'media', 'data',
+  'ux-audit',
+  // snapshot emits aria tree with attacker-controlled aria-label strings.
+  // The sidebar's system prompt pushes agents to run `$B snapshot` as the
+  // primary read path, so unwrapped snapshot output is the biggest ingress
+  // for indirect prompt injection. Envelope it like every other read.
+  'snapshot',
+]);
+
+/**
+ * Subset of PAGE_CONTENT_COMMANDS whose output is derived from the
+ * live page DOM. These channels can carry hidden elements or
+ * ARIA-injection payloads that the centralized envelope wrap alone
+ * does not neutralize, so the scoped-token pipeline runs
+ * `markHiddenElements` on the page before the read and surfaces any
+ * hits as CONTENT WARNINGS to the LLM.
+ *
+ * `console`, `dialog` intentionally excluded — they read separate
+ * runtime state (console capture, dialog events), not the DOM tree.
+ */
+export const DOM_CONTENT_COMMANDS = new Set([
+  'text', 'html', 'links', 'forms', 'accessibility', 'attrs',
+  'media', 'data', 'ux-audit',
+]);
+
+/** Wrap output from untrusted-content commands with trust boundary markers */
+export function wrapUntrustedContent(result: string, url: string): string {
+  // Sanitize URL: remove newlines to prevent marker injection via history.pushState
+  const safeUrl = url.replace(/[\n\r]/g, '').slice(0, 200);
+  // Escape marker strings in content to prevent boundary escape attacks
+  const safeResult = result.replace(/--- (BEGIN|END) UNTRUSTED EXTERNAL CONTENT/g, '--- $1 UNTRUSTED EXTERNAL C\u200BONTENT');
+  return `--- BEGIN UNTRUSTED EXTERNAL CONTENT (source: ${safeUrl}) ---\n${safeResult}\n--- END UNTRUSTED EXTERNAL CONTENT ---`;
 }
 
-export async function handleCommand(manager: BrowserManager, command: string, args: string[]): Promise<string> {
-  const page = manager.getActivePage();
-  if (!page && command !== 'status' && command !== 'tabs') {
-    throw new Error('No active page. Server may not be initialized.');
+export const COMMAND_DESCRIPTIONS: Record<string, { category: string; description: string; usage?: string }> = {
+  // Navigation
+  'goto':    { category: 'Navigation', description: 'Navigate to URL (http://, https://, or file:// scoped to cwd/TEMP_DIR)', usage: 'goto <url>' },
+  'load-html': { category: 'Navigation', description: 'Load HTML via setContent. Accepts a file path under safe-dirs (validated), OR --from-file <payload.json> with {"html":"...","waitUntil":"..."} for large inline HTML (Windows argv safe).', usage: 'load-html <file> [--wait-until load|domcontentloaded|networkidle] [--tab-id <N>]  |  load-html --from-file <payload.json> [--tab-id <N>]' },
+  'back':    { category: 'Navigation', description: 'History back' },
+  'forward': { category: 'Navigation', description: 'History forward' },
+  'reload':  { category: 'Navigation', description: 'Reload page' },
+  'url':     { category: 'Navigation', description: 'Print current URL' },
+  // Reading
+  'text':    { category: 'Reading', description: 'Cleaned page text' },
+  'html':    { category: 'Reading', description: 'innerHTML of selector (throws if not found), or full page HTML if no selector given', usage: 'html [selector]' },
+  'links':   { category: 'Reading', description: 'All links as "text → href"' },
+  'forms':   { category: 'Reading', description: 'Form fields as JSON' },
+  'accessibility': { category: 'Reading', description: 'Full ARIA tree' },
+  'media':   { category: 'Reading', description: 'All media elements (images, videos, audio) with URLs, dimensions, types', usage: 'media [--images|--videos|--audio] [selector]' },
+  'data':    { category: 'Reading', description: 'Structured data: JSON-LD, Open Graph, Twitter Cards, meta tags', usage: 'data [--jsonld|--og|--meta|--twitter]' },
+  // Inspection
+  'js':      { category: 'Inspection', description: 'Run JavaScript expression and return result as string', usage: 'js <expr>' },
+  'eval':    { category: 'Inspection', description: 'Run JavaScript from file and return result as string (path must be under /tmp or cwd)', usage: 'eval <file>' },
+  'css':     { category: 'Inspection', description: 'Computed CSS value', usage: 'css <sel> <prop>' },
+  'attrs':   { category: 'Inspection', description: 'Element attributes as JSON', usage: 'attrs <sel|@ref>' },
+  'is':      { category: 'Inspection', description: 'State check (visible/hidden/enabled/disabled/checked/editable/focused)', usage: 'is <prop> <sel>' },
+  'console': { category: 'Inspection', description: 'Console messages (--errors filters to error/warning)', usage: 'console [--clear|--errors]' },
+  'network': { category: 'Inspection', description: 'Network requests', usage: 'network [--clear]' },
+  'dialog':  { category: 'Inspection', description: 'Dialog messages', usage: 'dialog [--clear]' },
+  'cookies': { category: 'Inspection', description: 'All cookies as JSON' },
+  'storage': { category: 'Inspection', description: 'Read all localStorage + sessionStorage as JSON, or set <key> <value> to write localStorage', usage: 'storage [set k v]' },
+  'perf':    { category: 'Inspection', description: 'Page load timings' },
+  // Interaction
+  'click':   { category: 'Interaction', description: 'Click element', usage: 'click <sel>' },
+  'fill':    { category: 'Interaction', description: 'Fill input', usage: 'fill <sel> <val>' },
+  'select':  { category: 'Interaction', description: 'Select dropdown option by value, label, or visible text', usage: 'select <sel> <val>' },
+  'hover':   { category: 'Interaction', description: 'Hover element', usage: 'hover <sel>' },
+  'type':    { category: 'Interaction', description: 'Type into focused element', usage: 'type <text>' },
+  'press':   { category: 'Interaction', description: 'Press key — Enter, Tab, Escape, ArrowUp/Down/Left/Right, Backspace, Delete, Home, End, PageUp, PageDown, or modifiers like Shift+Enter', usage: 'press <key>' },
+  'scroll':  { category: 'Interaction', description: 'Scroll element into view, or scroll to page bottom if no selector', usage: 'scroll [sel]' },
+  'wait':    { category: 'Interaction', description: 'Wait for element, network idle, or page load (timeout: 15s)', usage: 'wait <sel|--networkidle|--load>' },
+  'upload':  { category: 'Interaction', description: 'Upload file(s)', usage: 'upload <sel> <file> [file2...]' },
+  'viewport':{ category: 'Interaction', description: 'Set viewport size and optional deviceScaleFactor (1-3, for retina screenshots). --scale requires a context rebuild.', usage: 'viewport [<WxH>] [--scale <n>]' },
+  'cookie':  { category: 'Interaction', description: 'Set cookie on current page domain', usage: 'cookie <name>=<value>' },
+  'cookie-import': { category: 'Interaction', description: 'Import cookies from JSON file', usage: 'cookie-import <json>' },
+  'cookie-import-browser': { category: 'Interaction', description: 'Import cookies from installed Chromium browsers (opens picker, or use --domain for direct import)', usage: 'cookie-import-browser [browser] [--domain d]' },
+  'header':  { category: 'Interaction', description: 'Set custom request header (colon-separated, sensitive values auto-redacted)', usage: 'header <name>:<value>' },
+  'useragent': { category: 'Interaction', description: 'Set user agent', usage: 'useragent <string>' },
+  'dialog-accept': { category: 'Interaction', description: 'Auto-accept next alert/confirm/prompt. Optional text is sent as the prompt response', usage: 'dialog-accept [text]' },
+  'dialog-dismiss': { category: 'Interaction', description: 'Auto-dismiss next dialog' },
+  // Data extraction
+  'download': { category: 'Extraction', description: 'Download URL or media element to disk using browser cookies', usage: 'download <url|@ref> [path] [--base64]' },
+  'scrape':   { category: 'Extraction', description: 'Bulk download all media from page. Writes manifest.json', usage: 'scrape <images|videos|media> [--selector sel] [--dir path] [--limit N]' },
+  'archive':  { category: 'Extraction', description: 'Save complete page as MHTML via CDP', usage: 'archive [path]' },
+  // Visual
+  'screenshot': { category: 'Visual', description: 'Save screenshot. --selector targets a specific element (explicit flag form). Positional selectors starting with ./#/@/[ still work.', usage: 'screenshot [--selector <css>] [--viewport] [--clip x,y,w,h] [--base64] [selector|@ref] [path]' },
+  'pdf':     { category: 'Visual', description: 'Save the current page as PDF. Supports page layout (--format, --width, --height, --margins, --margin-*), structure (--toc waits for Paged.js), branding (--header-template, --footer-template, --page-numbers), accessibility (--tagged, --outline), and --from-file <payload.json> for large payloads. Use --tab-id <N> to target a specific tab.', usage: 'pdf [path] [--format letter|a4|legal] [--width <dim> --height <dim>] [--margins <dim>] [--margin-top <dim> --margin-right <dim> --margin-bottom <dim> --margin-left <dim>] [--header-template <html>] [--footer-template <html>] [--page-numbers] [--tagged] [--outline] [--print-background] [--prefer-css-page-size] [--toc] [--tab-id <N>]  |  pdf --from-file <payload.json> [--tab-id <N>]' },
+  'responsive': { category: 'Visual', description: 'Screenshots at mobile (375x812), tablet (768x1024), desktop (1280x720). Saves as {prefix}-mobile.png etc.', usage: 'responsive [prefix]' },
+  'diff':    { category: 'Visual', description: 'Text diff between pages', usage: 'diff <url1> <url2>' },
+  // Tabs
+  'tabs':    { category: 'Tabs', description: 'List open tabs' },
+  'tab':     { category: 'Tabs', description: 'Switch to tab', usage: 'tab <id>' },
+  'newtab':  { category: 'Tabs', description: 'Open new tab. With --json, returns {"tabId":N,"url":...} for programmatic use (make-pdf).', usage: 'newtab [url] [--json]' },
+  'closetab':{ category: 'Tabs', description: 'Close tab', usage: 'closetab [id]' },
+  // Server
+  'status':  { category: 'Server', description: 'Health check' },
+  'stop':    { category: 'Server', description: 'Shutdown server' },
+  'restart': { category: 'Server', description: 'Restart server' },
+  // Meta
+  'snapshot':{ category: 'Snapshot', description: 'Accessibility tree with @e refs for element selection. Flags: -i interactive only, -c compact, -d N depth limit, -s sel scope, -D diff vs previous, -a annotated screenshot, -o path output, -C cursor-interactive @c refs', usage: 'snapshot [flags]' },
+  'chain':   { category: 'Meta', description: 'Run commands from JSON stdin. Format: [["cmd","arg1",...],...]' },
+  // Handoff
+  'handoff': { category: 'Server', description: 'Open visible Chrome at current page for user takeover', usage: 'handoff [message]' },
+  'resume':  { category: 'Server', description: 'Re-snapshot after user takeover, return control to AI', usage: 'resume' },
+  // Headed mode
+  'connect': { category: 'Server', description: 'Launch headed Chromium with Chrome extension', usage: 'connect' },
+  'disconnect': { category: 'Server', description: 'Disconnect headed browser, return to headless mode' },
+  'focus':   { category: 'Server', description: 'Bring headed browser window to foreground (macOS)', usage: 'focus [@ref]' },
+  // Inbox
+  'inbox':   { category: 'Meta', description: 'List messages from sidebar scout inbox', usage: 'inbox [--clear]' },
+  // Watch
+  'watch':   { category: 'Meta', description: 'Passive observation — periodic snapshots while user browses', usage: 'watch [stop]' },
+  // State
+  'state':   { category: 'Server', description: 'Save/load browser state (cookies + URLs)', usage: 'state save|load <name>' },
+  // Frame
+  'frame':   { category: 'Meta', description: 'Switch to iframe context (or main to return)', usage: 'frame <sel|@ref|--name n|--url pattern|main>' },
+  // CSS Inspector
+  'inspect': { category: 'Inspection', description: 'Deep CSS inspection via CDP — full rule cascade, box model, computed styles', usage: 'inspect [selector] [--all] [--history]' },
+  'style':   { category: 'Interaction', description: 'Modify CSS property on element (with undo support)', usage: 'style <sel> <prop> <value> | style --undo [N]' },
+  'cleanup': { category: 'Interaction', description: 'Remove page clutter (ads, cookie banners, sticky elements, social widgets)', usage: 'cleanup [--ads] [--cookies] [--sticky] [--social] [--all]' },
+  'prettyscreenshot': { category: 'Visual', description: 'Clean screenshot with optional cleanup, scroll positioning, and element hiding', usage: 'prettyscreenshot [--scroll-to sel|text] [--cleanup] [--hide sel...] [--width px] [path]' },
+  // UX Audit
+  'ux-audit': { category: 'Inspection', description: 'Extract page structure for UX behavioral analysis — site ID, nav, headings, text blocks, interactive elements. Returns JSON for agent interpretation.', usage: 'ux-audit' },
+};
+
+// Load-time validation: descriptions must cover exactly the command sets
+const allCmds = new Set([...READ_COMMANDS, ...WRITE_COMMANDS, ...META_COMMANDS]);
+const descKeys = new Set(Object.keys(COMMAND_DESCRIPTIONS));
+for (const cmd of allCmds) {
+  if (!descKeys.has(cmd)) throw new Error(`COMMAND_DESCRIPTIONS missing entry for: ${cmd}`);
+}
+for (const key of descKeys) {
+  if (!allCmds.has(key)) throw new Error(`COMMAND_DESCRIPTIONS has unknown command: ${key}`);
+}
+
+/**
+ * Command aliases — user-friendly names that route to canonical commands.
+ *
+ * Single source of truth: server.ts dispatch and meta-commands.ts chain prevalidation
+ * both import `canonicalizeCommand()`, so aliases resolve identically everywhere.
+ *
+ * When adding a new alias: keep the alias name guessable (e.g. setcontent → load-html
+ * helps agents migrating from Puppeteer's page.setContent()).
+ */
+export const COMMAND_ALIASES: Record<string, string> = {
+  'setcontent': 'load-html',
+  'set-content': 'load-html',
+  'setContent': 'load-html',
+};
+
+/** Resolve an alias to its canonical command name. Non-aliases pass through unchanged. */
+export function canonicalizeCommand(cmd: string): string {
+  return COMMAND_ALIASES[cmd] ?? cmd;
+}
+
+/**
+ * Commands added in specific versions — enables future "this command was added in vX"
+ * upgrade hints in unknown-command errors. Only helps agents on *newer* browse builds
+ * that encounter typos of recently-added commands; does NOT help agents on old builds
+ * that type a new command (they don't have this map).
+ */
+export const NEW_IN_VERSION: Record<string, string> = {
+  'load-html': '0.19.0.0',
+};
+
+/**
+ * Levenshtein distance (dynamic programming).
+ * O(a.length * b.length) — fast for command name sizes (<20 chars).
+ */
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const m: number[][] = [];
+  for (let i = 0; i <= a.length; i++) m.push([i, ...Array(b.length).fill(0)]);
+  for (let j = 0; j <= b.length; j++) m[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + cost);
+    }
+  }
+  return m[a.length][b.length];
+}
+
+/**
+ * Build an actionable error message for an unknown command.
+ *
+ * Pure function — takes the full command set + alias map + version map as args so tests
+ * can exercise the synthetic "older-version" case without mutating any global state.
+ *
+ *   1. Always names the input.
+ *   2. If Levenshtein distance ≤ 2 AND input.length ≥ 4, suggests the closest match
+ *      (alphabetical tiebreak for determinism). Short-input guard prevents noisy
+ *      suggestions for typos of 2-letter commands like 'js' or 'is'.
+ *   3. If the input appears in newInVersion, appends an upgrade hint. Honesty caveat:
+ *      this only fires on builds that have this handler AND the map entry; agents on
+ *      older builds hitting a newly-added command won't see it. Net benefit compounds
+ *      as more commands land.
+ */
+export function buildUnknownCommandError(
+  command: string,
+  commandSet: Set<string>,
+  aliasMap: Record<string, string> = COMMAND_ALIASES,
+  newInVersion: Record<string, string> = NEW_IN_VERSION,
+): string {
+  let msg = `Unknown command: '${command}'.`;
+
+  // Suggestion via Levenshtein, gated on input length to avoid noisy short-input matches.
+  // Candidates are pre-sorted alphabetically, so strict "d < bestDist" gives us the
+  // closest match with alphabetical tiebreak for free — first equal-distance candidate
+  // wins because subsequent equal-distance candidates fail the strict-less check.
+  if (command.length >= 4) {
+    let best: string | undefined;
+    let bestDist = 3; // sentinel: distance 3 would be rejected by the <= 2 gate below
+    const candidates = [...commandSet, ...Object.keys(aliasMap)].sort();
+    for (const cand of candidates) {
+      const d = levenshtein(command, cand);
+      if (d <= 2 && d < bestDist) {
+        best = cand;
+        bestDist = d;
+      }
+    }
+    if (best) msg += ` Did you mean '${best}'?`;
   }
 
-  switch (command) {
-    // === ナビゲーション ===
-    case 'goto': {
-      const url = args[0];
-      if (!url) throw new Error('URL required: goto <url>');
-      validateUrl(url);
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      return `Navigated to ${page.url()}`;
-    }
-
-    case 'back':
-      await page.goBack({ timeout: 10000 });
-      return `Back to ${page.url()}`;
-
-    case 'forward':
-      await page.goForward({ timeout: 10000 });
-      return `Forward to ${page.url()}`;
-
-    case 'reload':
-      await page.reload({ timeout: 30000 });
-      return `Reloaded ${page.url()}`;
-
-    case 'url':
-      return page.url();
-
-    // === 読み取り ===
-    case 'text': {
-      const selector = args[0];
-      if (selector) {
-        return await page.locator(selector).innerText({ timeout: 5000 });
-      }
-      return await page.innerText('body', { timeout: 10000 });
-    }
-
-    case 'html': {
-      const selector = args[0];
-      if (selector) {
-        return await page.locator(selector).innerHTML({ timeout: 5000 });
-      }
-      return await page.content();
-    }
-
-    case 'links': {
-      const links = await page.evaluate(() => {
-        return [...document.querySelectorAll('a[href]')].map(a => ({
-          text: a.textContent.trim().slice(0, 100),
-          href: a.href,
-        })).filter(l => l.href && !l.href.startsWith('javascript:'));
-      });
-      return links.map(l => `${l.text} → ${l.href}`).join('\n') || 'No links found';
-    }
-
-    case 'forms': {
-      const forms = await page.evaluate(() => {
-        return [...document.querySelectorAll('form')].map((form, i) => {
-          const fields = [...form.querySelectorAll('input, select, textarea')].map(f => ({
-            tag: f.tagName.toLowerCase(),
-            type: f.type || '',
-            name: f.name || f.id || '',
-            value: f.value || '',
-            placeholder: f.placeholder || '',
-          }));
-          return { index: i, action: form.action, method: form.method, fields };
-        });
-      });
-      return JSON.stringify(forms, null, 2);
-    }
-
-    case 'accessibility': {
-      const tree = await page.locator('body').ariaSnapshot({ timeout: 10000 });
-      return tree;
-    }
-
-    // === スナップショット ===
-    case 'snapshot': {
-      const options = {
-        interactive: args.includes('-i'),
-        compact: args.includes('-c'),
-        diff: args.includes('-D'),
-        cursorInteractive: args.includes('-C'),
-      };
-      const depthIdx = args.indexOf('-d');
-      if (depthIdx !== -1 && args[depthIdx + 1]) {
-        options.depth = parseInt(args[depthIdx + 1]);
-      }
-      const selIdx = args.indexOf('-s');
-      if (selIdx !== -1 && args[selIdx + 1]) {
-        options.selector = args[selIdx + 1];
-      }
-      return await manager.snapshot(page, options);
-    }
-
-    // === インタラクション ===
-    case 'click': {
-      const target = args[0];
-      if (!target) throw new Error('Target required: click <@ref|selector>');
-      if (target.startsWith('@')) {
-        const locator = manager.resolveRef(target);
-        await locator.click({ timeout: 5000 });
-      } else {
-        await page.click(target, { timeout: 5000 });
-      }
-      return `Clicked ${target}`;
-    }
-
-    case 'fill': {
-      const target = args[0];
-      const value = args.slice(1).join(' ');
-      if (!target || value === undefined) throw new Error('Usage: fill <@ref|selector> <value>');
-      if (target.startsWith('@')) {
-        const locator = manager.resolveRef(target);
-        await locator.fill(value, { timeout: 5000 });
-      } else {
-        await page.fill(target, value, { timeout: 5000 });
-      }
-      return `Filled ${target} with "${value}"`;
-    }
-
-    case 'select': {
-      const target = args[0];
-      const value = args.slice(1).join(' ');
-      if (!target) throw new Error('Usage: select <@ref|selector> <value>');
-      if (target.startsWith('@')) {
-        const locator = manager.resolveRef(target);
-        await locator.selectOption(value, { timeout: 5000 });
-      } else {
-        await page.selectOption(target, value, { timeout: 5000 });
-      }
-      return `Selected "${value}" in ${target}`;
-    }
-
-    case 'hover': {
-      const target = args[0];
-      if (!target) throw new Error('Target required: hover <@ref|selector>');
-      if (target.startsWith('@')) {
-        const locator = manager.resolveRef(target);
-        await locator.hover({ timeout: 5000 });
-      } else {
-        await page.hover(target, { timeout: 5000 });
-      }
-      return `Hovered ${target}`;
-    }
-
-    case 'type': {
-      const text = args.join(' ');
-      if (!text) throw new Error('Text required: type <text>');
-      await page.keyboard.type(text);
-      return `Typed "${text}"`;
-    }
-
-    case 'press': {
-      const key = args[0];
-      if (!key) throw new Error('Key required: press <key>');
-      await page.keyboard.press(key);
-      return `Pressed ${key}`;
-    }
-
-    case 'scroll': {
-      const direction = args[0] || 'down';
-      const amount = parseInt(args[1]) || 500;
-      if (direction === 'down') {
-        await page.evaluate(a => window.scrollBy(0, a), amount);
-      } else if (direction === 'up') {
-        await page.evaluate(a => window.scrollBy(0, -a), amount);
-      } else if (direction === 'top') {
-        await page.evaluate(() => window.scrollTo(0, 0));
-      } else if (direction === 'bottom') {
-        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-      }
-      return `Scrolled ${direction} ${amount}px`;
-    }
-
-    case 'wait': {
-      const target = args[0];
-      if (!target) throw new Error('Usage: wait <selector|milliseconds>');
-      if (/^\d+$/.test(target)) {
-        const ms = Math.min(parseInt(target), 10000); // 最大10秒
-        await page.waitForTimeout(ms);
-        return `Waited ${ms}ms`;
-      }
-      await page.waitForSelector(target, { timeout: 10000 });
-      return `Element ${target} appeared`;
-    }
-
-    case 'viewport': {
-      const size = args[0];
-      if (!size) {
-        const vp = page.viewportSize();
-        return `${vp.width}x${vp.height}`;
-      }
-      const [w, h] = size.split('x').map(Number);
-      if (!w || !h) throw new Error('Usage: viewport <width>x<height>');
-      await page.setViewportSize({ width: w, height: h });
-      return `Viewport set to ${w}x${h}`;
-    }
-
-    case 'upload': {
-      const selector = args[0];
-      const filePath = args[1];
-      if (!selector || !filePath) throw new Error('Usage: upload <selector> <filepath>');
-      const input = selector.startsWith('@') ? manager.resolveRef(selector) : page.locator(selector);
-      await input.setInputFiles(filePath);
-      return `Uploaded ${filePath} to ${selector}`;
-    }
-
-    // === 検査 ===
-    case 'js': {
-      const expr = args.join(' ');
-      if (!expr) throw new Error('Expression required: js <expression>');
-      // セキュリティ: eval されるが、ブラウザコンテキスト内なのでサーバー側は安全
-      const result = await page.evaluate(expr);
-      return typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result);
-    }
-
-    case 'console': {
-      const count = parseInt(args[0]) || 20;
-      const logs = manager.consoleLogs.slice(-count);
-      return logs.map(l => `[${l.type}] ${l.time} ${l.text}`).join('\n') || 'No console output';
-    }
-
-    case 'network': {
-      const count = parseInt(args[0]) || 20;
-      const filter = args[1]; // オプション: status code filter
-      let logs = manager.networkLogs.slice(-count * 2);
-      if (filter === 'errors') {
-        logs = logs.filter(l => l.status >= 400);
-      }
-      return logs.slice(-count).map(l => `${l.status} ${l.method} ${l.url}`).join('\n') || 'No network activity';
-    }
-
-    case 'cookies': {
-      const cookies = await manager.context.cookies();
-      const domain = args[0];
-      const filtered = domain ? cookies.filter(c => c.domain.includes(domain)) : cookies;
-      return filtered.map(c => `${c.domain} ${c.name}=${c.value.slice(0, 30)}${c.value.length > 30 ? '...' : ''}`).join('\n') || 'No cookies';
-    }
-
-    case 'storage': {
-      const type = args[0] || 'local';
-      const data = await page.evaluate(t => {
-        const storage = t === 'session' ? sessionStorage : localStorage;
-        const items = {};
-        for (let i = 0; i < storage.length; i++) {
-          const key = storage.key(i);
-          items[key] = storage.getItem(key)?.slice(0, 100);
-        }
-        return items;
-      }, type);
-      return JSON.stringify(data, null, 2);
-    }
-
-    case 'is': {
-      const state = args[0];
-      const target = args[1];
-      if (!state || !target) throw new Error('Usage: is <visible|enabled|disabled|checked|editable|focused> <selector|@ref>');
-      const locator = target.startsWith('@') ? manager.resolveRef(target) : page.locator(target);
-      let result;
-      switch (state) {
-        case 'visible': result = await locator.isVisible(); break;
-        case 'enabled': result = await locator.isEnabled(); break;
-        case 'disabled': result = await locator.isDisabled(); break;
-        case 'checked': result = await locator.isChecked(); break;
-        case 'editable': result = await locator.isEditable(); break;
-        case 'focused': result = await page.evaluate(
-          s => document.activeElement === document.querySelector(s),
-          target.startsWith('@') ? null : target
-        ); break;
-        default: throw new Error(`Unknown state: ${state}`);
-      }
-      return `${state} ${target}: ${result}`;
-    }
-
-    case 'attrs': {
-      const target = args[0];
-      if (!target) throw new Error('Usage: attrs <selector|@ref>');
-      const locator = target.startsWith('@') ? manager.resolveRef(target) : page.locator(target);
-      const attrs = await locator.evaluate(el => {
-        const result = {};
-        for (const attr of el.attributes) {
-          result[attr.name] = attr.value;
-        }
-        return result;
-      });
-      return JSON.stringify(attrs, null, 2);
-    }
-
-    case 'css': {
-      const target = args[0];
-      const prop = args[1];
-      if (!target) throw new Error('Usage: css <selector|@ref> [property]');
-      const locator = target.startsWith('@') ? manager.resolveRef(target) : page.locator(target);
-      if (prop) {
-        const value = await locator.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
-        return `${prop}: ${value}`;
-      }
-      const styles = await locator.evaluate(el => {
-        const cs = getComputedStyle(el);
-        const important = ['display', 'position', 'width', 'height', 'margin', 'padding',
-          'color', 'background-color', 'font-size', 'font-weight', 'border', 'opacity',
-          'visibility', 'overflow', 'z-index', 'flex', 'grid'];
-        const result = {};
-        for (const p of important) result[p] = cs.getPropertyValue(p);
-        return result;
-      });
-      return Object.entries(styles).map(([k, v]) => `${k}: ${v}`).join('\n');
-    }
-
-    case 'perf': {
-      const metrics = await page.evaluate(() => {
-        const perf = performance.getEntriesByType('navigation')[0];
-        const paint = performance.getEntriesByType('paint');
-        return {
-          dns: Math.round(perf?.domainLookupEnd - perf?.domainLookupStart || 0),
-          tcp: Math.round(perf?.connectEnd - perf?.connectStart || 0),
-          ttfb: Math.round(perf?.responseStart - perf?.requestStart || 0),
-          domLoad: Math.round(perf?.domContentLoadedEventEnd - perf?.startTime || 0),
-          fullLoad: Math.round(perf?.loadEventEnd - perf?.startTime || 0),
-          fcp: Math.round(paint.find(p => p.name === 'first-contentful-paint')?.startTime || 0),
-          fp: Math.round(paint.find(p => p.name === 'first-paint')?.startTime || 0),
-        };
-      });
-      return [
-        `DNS:        ${metrics.dns}ms`,
-        `TCP:        ${metrics.tcp}ms`,
-        `TTFB:       ${metrics.ttfb}ms`,
-        `DOM Load:   ${metrics.domLoad}ms`,
-        `Full Load:  ${metrics.fullLoad}ms`,
-        `FP:         ${metrics.fp}ms`,
-        `FCP:        ${metrics.fcp}ms`,
-      ].join('\n');
-    }
-
-    case 'inspect': {
-      const target = args[0];
-      if (!target) throw new Error('Usage: inspect <selector|@ref>');
-      const locator = target.startsWith('@') ? manager.resolveRef(target) : page.locator(target);
-      const info = await locator.evaluate(el => {
-        const cs = getComputedStyle(el);
-        const rect = el.getBoundingClientRect();
-        const result = {
-          tag: el.tagName.toLowerCase(),
-          id: el.id,
-          classes: [...el.classList],
-          rect: { x: Math.round(rect.x), y: Math.round(rect.y), w: Math.round(rect.width), h: Math.round(rect.height) },
-          styles: {},
-        };
-        const props = ['display', 'position', 'top', 'left', 'width', 'height',
-          'margin', 'padding', 'border', 'background', 'color', 'font',
-          'z-index', 'opacity', 'overflow', 'cursor'];
-        for (const p of props) result.styles[p] = cs.getPropertyValue(p);
-        return result;
-      });
-      return JSON.stringify(info, null, 2);
-    }
-
-    // === ビジュアル ===
-    case 'screenshot': {
-      let path = null;
-      let fullPage = true;
-      let clip = null;
-      let selector = null;
-
-      for (let i = 0; i < args.length; i++) {
-        if (args[i] === '--viewport') {
-          fullPage = false;
-        } else if (args[i] === '--clip' && args[i + 1]) {
-          const [x, y, w, h] = args[++i].split(',').map(Number);
-          clip = { x, y, width: w, height: h };
-          fullPage = false;
-        } else if (args[i].startsWith('@') || args[i].startsWith('.') || args[i].startsWith('#') || args[i].startsWith('[')) {
-          selector = args[i];
-        } else {
-          path = args[i];
-        }
-      }
-
-      const defaultPath = path || `screenshot-${Date.now()}.png`;
-      if (selector) {
-        const locator = selector.startsWith('@') ? manager.resolveRef(selector) : page.locator(selector);
-        await locator.screenshot({ path: defaultPath, timeout: 10000 });
-      } else {
-        const opts = { path: defaultPath };
-        if (clip) opts.clip = clip;
-        else opts.fullPage = fullPage;
-        await page.screenshot(opts);
-      }
-      return `Screenshot saved: ${defaultPath}`;
-    }
-
-    case 'pdf': {
-      const path = args[0] || `page-${Date.now()}.pdf`;
-      await page.pdf({ path, format: 'A4' });
-      return `PDF saved: ${path}`;
-    }
-
-    case 'responsive': {
-      const basePath = args[0] || 'responsive';
-      const viewports = [
-        { name: 'mobile', width: 375, height: 812 },
-        { name: 'tablet', width: 768, height: 1024 },
-        { name: 'desktop', width: 1280, height: 720 },
-      ];
-      const results = [];
-      const original = page.viewportSize();
-      for (const vp of viewports) {
-        await page.setViewportSize({ width: vp.width, height: vp.height });
-        const file = `${basePath}-${vp.name}.png`;
-        await page.screenshot({ path: file, fullPage: true });
-        results.push(`${vp.name} (${vp.width}x${vp.height}): ${file}`);
-      }
-      await page.setViewportSize(original);
-      return results.join('\n');
-    }
-
-    // === スタイル修正 ===
-    case 'style': {
-      if (args[0] === '--undo') {
-        // TODO: スタイル履歴管理
-        return 'Style undo not yet tracked.';
-      }
-      const [sel, prop, ...valParts] = args;
-      const val = valParts.join(' ');
-      if (!sel || !prop || !val) throw new Error('Usage: style <selector> <property> <value>');
-      await page.evaluate(({ s, p, v }) => {
-        const el = document.querySelector(s);
-        if (!el) throw new Error(`Element not found: ${s}`);
-        el.style.setProperty(p, v);
-      }, { s: sel, p: prop, v: val });
-      return `Style ${sel} { ${prop}: ${val} }`;
-    }
-
-    case 'cleanup': {
-      const all = args.includes('--all');
-      const ads = all || args.includes('--ads');
-      const cookies = all || args.includes('--cookies');
-      const sticky = all || args.includes('--sticky');
-
-      await page.evaluate(({ ads, cookies, sticky }) => {
-        const selectors = [];
-        if (ads) selectors.push('[class*="ad-"]', '[class*="ads-"]', '[id*="ad-"]', 'iframe[src*="ads"]');
-        if (cookies) selectors.push('[class*="cookie"]', '[class*="consent"]', '[id*="cookie"]');
-        if (sticky) selectors.push('[style*="position: fixed"]', '[style*="position: sticky"]');
-        for (const sel of selectors) {
-          for (const el of document.querySelectorAll(sel)) {
-            el.remove();
-          }
-        }
-      }, { ads, cookies, sticky });
-      return 'Cleanup done';
-    }
-
-    // === 環境比較 ===
-    case 'diff': {
-      const url1 = args[0];
-      const url2 = args[1];
-      if (!url1 || !url2) throw new Error('Usage: diff <url1> <url2>');
-      validateUrl(url1);
-      validateUrl(url2);
-
-      await page.goto(url1, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      const text1 = await page.innerText('body');
-
-      await page.goto(url2, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      const text2 = await page.innerText('body');
-
-      const lines1 = text1.split('\n');
-      const lines2 = text2.split('\n');
-      return manager._unifiedDiff(lines1, lines2);
-    }
-
-    // === タブ管理 ===
-    case 'newtab': {
-      const url = args[0];
-      if (url) validateUrl(url);
-      const tabId = await manager.newTab(url);
-      return `New tab ${tabId}${url ? ` at ${url}` : ''}`;
-    }
-
-    case 'tab': {
-      const tabId = parseInt(args[0]);
-      if (!tabId) throw new Error('Usage: tab <tabId>');
-      await manager.switchTab(tabId);
-      return `Switched to tab ${tabId}`;
-    }
-
-    case 'closetab': {
-      const tabId = args[0] ? parseInt(args[0]) : undefined;
-      const closed = await manager.closeTab(tabId);
-      return `Closed tab ${closed}`;
-    }
-
-    case 'tabs': {
-      const tabs = manager.listTabs();
-      return tabs.map(t => `${t.active ? '→' : ' '} Tab ${t.id}: ${t.url}`).join('\n');
-    }
-
-    // === サーバー管理 ===
-    case 'status': {
-      return [
-        `Mode: ${manager.headless ? 'headless' : 'headed'}`,
-        `Tabs: ${manager.pages.size}`,
-        `Active: ${manager.activeTabId}`,
-        `Refs: ${manager.refMap.size} (@e) + ${manager.cursorRefMap.size} (@c)`,
-        `Console logs: ${manager.consoleLogs.length}`,
-        `Network logs: ${manager.networkLogs.length}`,
-      ].join('\n');
-    }
-
-    // === Cookie インポート ===
-    case 'cookie-import': {
-      const filePath = args[0];
-      if (!filePath) throw new Error('Usage: cookie-import <json-file>');
-      const fs = await import('fs');
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      const cookies = JSON.parse(raw);
-      await manager.context.addCookies(cookies);
-      return `Imported ${cookies.length} cookies from ${filePath}`;
-    }
-
-    // === headed モード切替 ===
-    case 'connect': {
-      if (!manager.headless) return 'Already in headed mode';
-      // 現在の cookie を保存
-      const cookies = await manager.context.cookies();
-      const storage = {};
-      for (const [id, p] of manager.pages) {
-        try { storage[id] = await p.evaluate(() => JSON.stringify(localStorage)); } catch { /* ignore */ }
-      }
-      // 再起動
-      await manager.close();
-      await manager.launch({ headless: false });
-      // Cookie 復元
-      if (cookies.length > 0) await manager.context.addCookies(cookies);
-      return 'Switched to headed mode (visible Chrome)';
-    }
-
-    case 'disconnect': {
-      if (manager.headless) return 'Already in headless mode';
-      const cookies = await manager.context.cookies();
-      await manager.close();
-      await manager.launch({ headless: true });
-      if (cookies.length > 0) await manager.context.addCookies(cookies);
-      return 'Switched to headless mode';
-    }
-
-    default:
-      throw new Error(`Unknown command: ${command}. Use "status" to check server state.`);
+  if (newInVersion[command]) {
+    msg += ` This command was added in browse v${newInVersion[command]}. Upgrade: cd ~/.claude/skills/gstack && git pull && bun run build.`;
   }
+
+  return msg;
 }

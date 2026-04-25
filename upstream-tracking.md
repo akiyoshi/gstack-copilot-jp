@@ -59,7 +59,7 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `/benchmark` | ✓ | ✓ | vendored |  |
 | `/benchmark-models` | ✓ | ✓ | vendored |  |
 | `/health` | ✓ | ✓ | vendored |  |
-| `/browse` | ✓ | ✓ | vendored | Bun + Playwright |
+| `/browse` | ✓ | ✓ | vendored | 本家 browse/src/ 全ファイル vendored。Bun + Playwright |
 | `/open-gstack-browser` | ✓ | ✓ | vendored |  |
 | `/pair-agent` | ✓ | ✓ | vendored |  |
 | `/setup-browser-cookies` | ✓ | ✓ | vendored |  |

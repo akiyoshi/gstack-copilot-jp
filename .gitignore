@@ -2,3 +2,5 @@ node_modules/
 .gstack/plans/*
 !.gstack/plans/TEMPLATE.md
 browse/dist/
+.gstack/
+browse/node_modules/
