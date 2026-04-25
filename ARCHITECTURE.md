@@ -10,7 +10,7 @@ gstack-copilot-jp/
 │   ├── copilot-instructions.md   # スキルルーティング + ボイス + ethos
 │   ├── skills/ (38)              # SKILL.md — スキル定義
 │   ├── agents/ (5)               # *.agent.md — サブエージェント
-│   ├── hooks/lifecycle.json      # sessionStart/End, preToolUse, postToolUse
+│   ├── hooks/lifecycle.json      # SessionStart/Stop, PreToolUse, PostToolUse
 │   └── copilot/settings.json     # Copilot CLI リポジトリ設定
 ├── browse/                       # ヘッドレスブラウザ (Bun + Playwright)
 │   ├── src/*.ts                  # TypeScript ソース

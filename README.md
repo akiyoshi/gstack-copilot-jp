@@ -193,13 +193,15 @@ Copilot: $B goto https://staging.myapp.com
 
 Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェントも Outside Voice として使用する。
 
+アーキテクチャの詳細は [ARCHITECTURE.md](ARCHITECTURE.md)、設計方針は [DESIGN.md](DESIGN.md) を参照。
+
 ## gstackとの違い
 
 | 観点 | gstack | gstack-copilot-jp |
 |------|--------|------------------|
 | ターゲット | Claude Code | GitHub Copilot（CLI + VS Code Chat） |
 | 言語 | 英語 | 日本語 |
-| インストール | `./setup` + シンボリックリンク | `copilot plugin install` / `git clone` / `./setup` |
+| インストール | `./setup` + シンボリックリンク | `git clone` / `./setup` / `copilot plugin install`（実験的） |
 | ブラウザ | Bun コンパイル済みバイナリ | Bun コンパイル済み（本家互換、CLI専用） |
 | ホスト | 10エージェント対応 | Copilot CLI + VS Code Chat |
 | 外部の目 | Codex CLI | `code-review` + `rubber-duck` + fallback |

@@ -10,7 +10,7 @@ DESIGN.md が設計方針、このファイルがタスク管理。完了した�
 | 5エージェント動作 | ✅ | architect, design-critic, dx-tester, security, testing |
 | 4 hooks 動作 | ✅ | SessionStart, Stop, PreToolUse, PostToolUse |
 | browse ビルド成功 | ✅ | `bun build --compile` → `browse/dist/browse` |
-| Tier 1 テスト全 pass | ✅ | `npm test` (Vitest) — 442テスト |
+| Tier 1 テスト全 pass | ✅ | `npm test` (Vitest) — 444テスト |
 | 本家 v1.12.1.0 まで追跡完了 | ✅ | `upstream-tracking.md` |
 | README + getting-started 完備 | ✅ | |
 | ARCHITECTURE.md 作成 | ✅ | |
@@ -43,7 +43,7 @@ DESIGN.md が設計方針、このファイルがタスク管理。完了した�
 
 ### ドキュメント
 
-- [ ] `.github/rules/` ディレクトリの作成（README で参照しているが未作成）
+- [ ] `.github/rules/` ディレクトリの作成（copilot-instructions.md の「ルール体系」で参照している概念だが、実ファイルは未作成）
   - `common/`: coding-style.md, git-workflow.md, testing.md, security.md
   - `typescript/`: coding-style.md, testing.md
   - `python/`: coding-style.md, testing.md
