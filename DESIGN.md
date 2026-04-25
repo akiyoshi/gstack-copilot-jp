@@ -2,13 +2,13 @@
 
 ## 概要
 
-[gstack](https://github.com/garrytan/gstack)（Garry Tan作）のスキル・方法論を、**GitHub Copilot CLI + 日本語で提供する適応レイヤー**。
+[gstack](https://github.com/garrytan/gstack)（Garry Tan作）のスキル・方法論を、**GitHub Copilot（CLI + VS Code Chat）+ 日本語で提供する適応レイヤー**。
 
-本家gstackを**上流として追跡し、Copilot CLI向けに適応する**。方法論・スキル判定基準は本家に追随し、マルチホスト基盤（`hosts/`, `model-overlays/`, テンプレート生成）は追跡対象外。
+本家gstackを**上流として追跡し、GitHub Copilot向けに適応する**。方法論・スキル判定基準は本家に追随し、マルチホスト基盤（`hosts/`, `model-overlays/`, テンプレート生成）は追跡対象外。
 
-### GitHub Copilot CLI は主要プリミティブを持つ
+### GitHub Copilot は主要プリミティブを持つ
 
-調査の結果、**GitHub Copilot CLI は Claude Code とほぼ同等のエージェント基盤**を持つことが判明した（2026年4月時点）。ホストターゲットを Copilot CLI に一本化する。
+調査の結果、**GitHub Copilot CLI と VS Code Copilot Chat (Agent Mode) は共に Claude Code とほぼ同等のエージェント基盤**を持つことが判明した（2026年4月時点）。両ホストで `.github/skills/`, `.github/agents/`, `.github/hooks/` を共有する。
 
 以後の表記は次の4段階で揃える。
 
@@ -38,12 +38,12 @@
 
 ```
 gstack（本家）= 方法論 + 10ホスト対応のスキル生成パイプライン（Claude Code中心）
-gstack-copilot-jp = gstackの方法論を GitHub Copilot CLI + 日本語 で使う最速の方法
+gstack-copilot-jp = gstackの方法論を GitHub Copilot（CLI + VS Code Chat）+ 日本語 で使う最速の方法
 ```
 
 独自の価値:
 - **日本語ネイティブ** — スキル出力・ドキュメント・ボイスが全て日本語
-- **Copilot CLI 専用** — Claude Code 相当の全機能（hook、セッション永続化、自律実行）を活用
+- **マルチホスト** — Copilot CLI と VS Code Copilot Chat の両方で動作（Tier A/B/C分類）
 - **Linux 統一** — macOS / Linux ネイティブ、Windows は WSL (Ubuntu)
 
 ## アーキテクチャ

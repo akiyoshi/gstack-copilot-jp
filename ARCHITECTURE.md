@@ -52,10 +52,12 @@ SKILL.md (スキル実行)
 
 ## 設計判断
 
-### 1. Copilot CLI 専用
+### 1. マルチホスト（Copilot CLI + VS Code Chat）
 
-Claude Code、Cursor、Gemini CLI は対象外。Copilot CLI の hook、`task` tool、
-`store_memory`、`/model` 切替をフル活用する。
+Copilot CLI と VS Code Copilot Chat (Agent Mode) の両方をサポートする。
+`.github/skills/`, `.github/agents/`, `.github/hooks/` は両ホストで共有。
+スキルは Tier A（完全互換）/ B（制限付き互換）/ C（CLI専用）に分類。
+Claude Code、Cursor、Gemini CLI は対象外。
 
 ### 2. 本家 gstack 追随
 

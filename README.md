@@ -2,25 +2,40 @@
 
 日本語の GitHub Copilot ユーザーのための、AIソフトウェアファクトリー。
 
-[gstack](https://github.com/garrytan/gstack)（Garry Tan作）の思想とプロセスを、**GitHub Copilot CLI + 日本語**で使う最速の方法。
+[gstack](https://github.com/garrytan/gstack)（Garry Tan作）の思想とプロセスを、**GitHub Copilot（CLI + VS Code Chat）+ 日本語**で使う最速の方法。
 
 ## 前提条件
 
-- GitHub Copilot CLI (`copilot` コマンド)
-- Bun v1.0+
+- GitHub Copilot（CLI または VS Code Copilot Chat）
 - Git
 - Linux / macOS / WSL (Ubuntu)
+- Bun v1.0+（browse 機能を使う場合）
 
 ## クイックスタート
 
-### 1. インストール
+### Copilot CLI
 
 ```bash
 # 推奨: プラグインインストール
 copilot plugin install github:akiyoshi/gstack-copilot-jp
 ```
 
-**フォールバック（開発者向け）:**
+### VS Code Copilot Chat
+
+```bash
+# プロジェクトにクローン
+cd your-project
+git clone https://github.com/akiyoshi/gstack-copilot-jp.git .gstack-copilot-jp
+# .github/skills/ にシンボリックリンクを作成
+ln -s ../.gstack-copilot-jp/.github/skills .github/skills
+ln -s ../.gstack-copilot-jp/.github/agents .github/agents
+```
+
+VS Code で Copilot Chat を開き、`/office-hours` と入力して動作確認。
+
+> 詳細な手順は [docs/vscode-setup.md](docs/vscode-setup.md) を参照。
+
+### 開発者向け（フォールバック）
 
 ```bash
 git clone https://github.com/akiyoshi/gstack-copilot-jp.git
@@ -180,11 +195,11 @@ Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェン�
 
 | 観点 | gstack | gstack-copilot-jp |
 |------|--------|------------------|
-| ターゲット | Claude Code | GitHub Copilot CLI |
+| ターゲット | Claude Code | GitHub Copilot（CLI + VS Code Chat） |
 | 言語 | 英語 | 日本語 |
-| インストール | `./setup` + シンボリックリンク | `copilot plugin install` or `./setup` |
-| ブラウザ | Bun コンパイル済みバイナリ | Bun コンパイル済み（本家互換） |
-| ホスト | 10エージェント対応 | Copilot CLI 専用 |
+| インストール | `./setup` + シンボリックリンク | `copilot plugin install` / `git clone` / `./setup` |
+| ブラウザ | Bun コンパイル済みバイナリ | Bun コンパイル済み（本家互換、CLI専用） |
+| ホスト | 10エージェント対応 | Copilot CLI + VS Code Chat |
 | 外部の目 | Codex CLI | `code-review` + `rubber-duck` + fallback |
 | テンプレート | .tmpl + gen-skill-docs | 直接 SKILL.md |
 

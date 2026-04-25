@@ -1,28 +1,27 @@
 {
-  "version": 1,
   "hooks": {
-    "sessionStart": [
+    "SessionStart": [
       {
         "type": "command",
-        "bash": "bin/gstack-session-start.sh"
+        "command": "bash bin/gstack-session-start.sh"
       }
     ],
-    "sessionEnd": [
+    "Stop": [
       {
         "type": "command",
-        "bash": "bin/gstack-session-end.sh"
+        "command": "bash bin/gstack-session-end.sh"
       }
     ],
-    "preToolUse": [
+    "PreToolUse": [
       {
         "type": "command",
-        "bash": "bin/gstack-pre-tool-guard.sh"
+        "command": "bash bin/gstack-pre-tool-guard.sh"
       }
     ],
-    "postToolUse": [
+    "PostToolUse": [
       {
         "type": "command",
-        "bash": "bin/gstack-post-tool-log.sh"
+        "command": "bash bin/gstack-post-tool-log.sh"
       }
     ]
   }

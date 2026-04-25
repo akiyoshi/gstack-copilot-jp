@@ -1,7 +1,7 @@
 # gstack-copilot-jp
 
-GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
-本家 [gstack](https://github.com/garrytan/gstack) の方法論を Copilot CLI 向けに適応。
+GitHub Copilot（CLI + VS Code Chat）+ 日本語のAIソフトウェアファクトリー。
+本家 [gstack](https://github.com/garrytan/gstack) の方法論を GitHub Copilot 向けに適応。
 
 ## スキルルーティング
 

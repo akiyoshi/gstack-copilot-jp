@@ -130,12 +130,12 @@ describe('Phase 2: bin/ Utilities', () => {
 })
 
 describe('Phase 2: Hook System', () => {
-  it('lifecycle.json includes postToolUse hook', () => {
+  it('lifecycle.json includes PostToolUse hook', () => {
     const hooks = JSON.parse(
       fs.readFileSync(path.join(ROOT, '.github', 'hooks', 'lifecycle.json'), 'utf-8')
     )
-    expect(hooks.hooks).toHaveProperty('postToolUse')
-    expect(hooks.hooks.postToolUse.length).toBeGreaterThan(0)
+    expect(hooks.hooks).toHaveProperty('PostToolUse')
+    expect(hooks.hooks.PostToolUse.length).toBeGreaterThan(0)
   })
 
   it('postToolUse hook script exists', () => {

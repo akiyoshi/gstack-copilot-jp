@@ -137,18 +137,20 @@ describe('VERSION for v1.0', () => {
 describe('hook system completeness', () => {
   it('lifecycle.json has all 4 hooks', () => {
     const hooks = JSON.parse(readFileSync(join(ROOT, '.github', 'hooks', 'lifecycle.json'), 'utf-8'));
-    expect(hooks.hooks).toHaveProperty('sessionStart');
-    expect(hooks.hooks).toHaveProperty('sessionEnd');
-    expect(hooks.hooks).toHaveProperty('preToolUse');
-    expect(hooks.hooks).toHaveProperty('postToolUse');
+    expect(hooks.hooks).toHaveProperty('SessionStart');
+    expect(hooks.hooks).toHaveProperty('Stop');
+    expect(hooks.hooks).toHaveProperty('PreToolUse');
+    expect(hooks.hooks).toHaveProperty('PostToolUse');
   });
 
   it('all hook scripts exist', () => {
     const hooks = JSON.parse(readFileSync(join(ROOT, '.github', 'hooks', 'lifecycle.json'), 'utf-8'));
     for (const [event, handlers] of Object.entries(hooks.hooks)) {
       for (const handler of handlers) {
-        if (handler.bash) {
-          expect(existsSync(join(ROOT, handler.bash)), `${event}: ${handler.bash} missing`).toBe(true);
+        const cmd = handler.command || handler.bash;
+        if (cmd) {
+          const scriptPath = cmd.replace(/^bash\s+/, '');
+          expect(existsSync(join(ROOT, scriptPath)), `${event}: ${scriptPath} missing`).toBe(true);
         }
       }
     }
