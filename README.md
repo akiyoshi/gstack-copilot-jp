@@ -39,9 +39,6 @@ Copilot CLI でスキルを呼び出す:
 
 Copilot: [痛みを聞く → 前提を挑戦 → 3つのアプローチを工数付きで提示]
 
-あなた: /sprint
-Copilot: [計画→実装→レビュー→出荷→振り返りを自動連鎖実行]
-
 あなた: /gstack-review
 Copilot: [diff分析 → 専門家サブエージェント並列dispatch → 自動修正 → レポート]
 ```
@@ -70,8 +67,7 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | | `/plan-design-review` | シニアデザイナー — 7次元0-10評価 |
 | | `/plan-devex-review` | DXリード — TTHW計測・8次元評価 |
 | | `/autoplan` | オーケストレーター — 全レビュー一括実行 |
-| 作る | `/tdd` | TDDコーチ — RED→GREEN→REFACTOR サイクル |
-| | `/design-html` | デザインエンジニア — 本番品質HTML変換 |
+| 作る | `/design-html` | デザインエンジニア — 本番品質HTML変換 |
 | | `/investigate` | デバッガー — Iron Law: 調査なし修正禁止 |
 | レビューする | `/gstack-review` | スタッフエンジニア — 専門家サブエージェント |
 | | `/design-review` | デザイナー兼エンジニア — UI実装修正 |

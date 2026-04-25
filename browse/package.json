@@ -1,18 +1,19 @@
 {
-  "name": "gstack-copilot-jp-browse",
-  "version": "0.2.0",
-  "description": "Playwright ベースのブラウザ自動化サーバー＆CLI（Bun）",
+  "name": "gstack-browse",
+  "version": "0.3.0",
+  "description": "Playwright ベースのブラウザ自動化サーバー＆CLI（本家 gstack vendored）",
   "type": "module",
   "scripts": {
     "start": "bun src/server.ts",
     "cli": "bun src/cli.ts",
-    "build": "bun build --compile --outfile dist/browse src/cli.ts",
-    "test": "vitest run"
+    "build": "bun build --compile --outfile dist/browse src/cli.ts && bun build --compile --outfile dist/find-browse src/find-browse.ts && bash scripts/build-node-server.sh && git rev-parse HEAD > dist/.version && chmod +x dist/browse dist/find-browse",
+    "test": "bun test test/ --ignore test/fixtures"
   },
   "dependencies": {
-    "playwright": "^1.49.0"
-  },
-  "devDependencies": {
-    "vitest": "^3.1.0"
+    "@ngrok/ngrok": "^1.7.0",
+    "diff": "^7.0.0",
+    "marked": "^18.0.2",
+    "playwright": "^1.58.2",
+    "puppeteer-core": "^24.40.0"
   }
 }

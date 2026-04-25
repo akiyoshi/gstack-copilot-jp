@@ -102,7 +102,6 @@ gstack-copilot-jp は本家スキルを AI に「Copilot CLI 向けに適応し�
 | 旧名 | 新名 | 衝突相手 |
 |------|------|---------|
 | `/review` | `/gstack-review` | Copilot CLI ビルトイン `code-review` エージェント |
-| `/status` | `/gstack-status` | Copilot CLI ビルトイン `/status` コマンド |
 
 新スキル追加時は、Copilot CLI のビルトインコマンド（`/help`, `/clear`, `/model`, `/compact`, `/status`）およびエージェント名（`explore`, `task`, `code-review`, `rubber-duck`, `general-purpose`）との重複を確認する。
 
@@ -117,7 +116,7 @@ unaudited → vendored → compat-patched → behavior-verified
 | `vendored` | 3層パイプラインで取り込み済み | 37 |
 | `compat-patched` | 互換レイヤー適用 + 動作確認済み | 0（次フェーズ） |
 | `behavior-verified` | 日本語出力品質テスト通過 | 0（次フェーズ） |
-| `diverged` | gstack-copilot-jp 独自 | 3（tdd, sprint, gstack-status） |
+| `diverged` | gstack-copilot-jp 独自 | 0 |
 
 旧状態 `same` / `adapted` / `unaudited` は廃止。`upstream-tracking.json` に `upstream_commit` フィールドで commit SHA をピン留め。
 
@@ -181,4 +180,4 @@ upstream の共有ボイラープレートと local の対応:
 
 1. **状態を `compat-patched` → `behavior-verified` に進める** — 各スキルを実際に日本語で実行し、出力品質を確認
 2. **`/gstack-upgrade` スキルに upstream sync を統合** — ユーザーが `/gstack-upgrade` で本家更新を取り込めるようにする
-3. **diverged スキルの扱い** — `/tdd`, `/sprint`, `/gstack-status` は本家に同等機能が実装されたら統合検討
+3. **browse/ の本家版 vendoring** — 現在の独自 Bun+TS 実装を本家 browse に置き換え

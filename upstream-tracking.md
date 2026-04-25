@@ -13,13 +13,15 @@
 
 | 項目 | 値 |
 |------|-----|
-| 本家バージョン | v1.4.0.0 (feat: /make-pdf, /benchmark-models, open agents learnings) |
-| 最終検証日 | 2026-04-20 |
-| gstack-copilot-jp バージョン | 1.0.0-alpha.5 |
+| 本家バージョン | v1.12.1.0 (fix: remove vestigial plan-mode handshake) |
+| 最終検証日 | 2026-04-25 |
+| gstack-copilot-jp バージョン | 1.0.0-alpha.6 |
 
 ## 本家の方向性
 
 v1.0.0以降、本家は**マルチホストプラットフォーム**に進化（10ホスト対応、テンプレート生成パイプライン、Chrome拡張）。gstack-copilot-jpは**Copilot CLI専用**を維持する。マルチホスト基盤（`hosts/`, `model-overlays/`, `scripts/gen-skill-docs.ts`, `extension/`, `conductor.json`）は追跡対象外。方法論・スキル内容の改善のみを取り込む。
+
+v1.4.0.0 以降、本家は**セキュリティ層**（ML Prompt Injection Defense、Tunnel、SSRF防御）と**クロスマシンメモリ**（GBrain Sync）を大幅に拡張。これらはClaude Code固有のインフラに依存するため除外。**方法論の改善**（AskUserQuestion Decision-Brief Format、Ship workspace-aware version）は採用。
 
 ## 状態モデル
 
@@ -46,7 +48,7 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `/plan-devex-review` | ✓ | ✓ | vendored |  |
 | `/autoplan` | ✓ | ✓ | adapted | 再実行仕様追加。判断監査証跡あり |
 | `/gstack-review` | ✓ | ✓ | adapted | architectureチェックリスト追加。Outside Voice + slop検出 |
-| `/ship` | ✓ | ✓ | adapted | プラン完了監査追加。VERSION/package.jsonドリフト検出 |
+| `/ship` | ✓ | ✓ | adapted | プラン完了監査追加。VERSION/package.jsonドリフト検出 + workspace-aware version (v1.11.0.0) |
 | `/investigate` | ✓ | ✓ | vendored |  |
 | `/design-html` | ✓ | ✓ | vendored |  |
 | `/design-consultation` | ✓ | ✓ | vendored |  |
@@ -58,8 +60,8 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `/cso` | ✓ | ✓ | adapted | 全14フェーズ展開済み |
 | `/benchmark` | ✓ | ✓ | vendored |  |
 | `/benchmark-models` | ✓ | ✓ | vendored |  |
-| `/health` | ✓ | ✓ | vendored |  |
-| `/browse` | ✓ | ✓ | vendored | Bun + Playwright |
+| `/health` | ✓ | ✓ | adapted | GBrain次元(v1.12.0.0)除外。typecheck/lint/test/deadcodeの4軸 |
+| `/browse` | ✓ | ✓ | vendored | 本家 browse/src/ 全ファイル vendored。Bun + Playwright |
 | `/open-gstack-browser` | ✓ | ✓ | vendored |  |
 | `/pair-agent` | ✓ | ✓ | vendored |  |
 | `/setup-browser-cookies` | ✓ | ✓ | vendored |  |
@@ -76,10 +78,8 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `/document-release` | ✓ | ✓ | vendored |  |
 | `/canary` | ✓ | ✓ | vendored |  |
 | `/land-and-deploy` | ✓ | ✓ | vendored |  |
-| `/tdd` | — | ✓ | diverged | 独自実装 |
-| `/sprint` | — | ✓ | diverged | 独自スプリントオーケストレーター |
-| `/gstack-status` | — | ✓ | diverged | gstack-copilot-jp 状態確認 |
-| `/make-pdf` | ✓ | — | planned | browse $B pdf 対応後に実装 |
+| `/make-pdf` | ✓ | ✓ | adapted | browse $B pdf 経由。本家は専用バイナリ（make-pdf/dist/pdf） |
+| `/setup-gbrain` | ✓ | — | excluded | GBrain Sync インフラ。store_memory + session_store_sql で代替 |
 | `/codex` | ✓ | — | excluded | `/model` + `task` で代替 |
 | `/plan-tune` | ✓ | — | excluded | `store_memory` で代替 |
 
@@ -97,6 +97,12 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `openclaw/` | OpenClaw ホスト固有設定 | 他ホスト向け |
 | `contrib/add-host` | ホスト追加ツール | マルチホスト用 |
 | `design/` | Design バイナリ（GPT Image API） | Copilot CLI には別手段 |
+| `gbrain/` | GBrain Sync エンジン（8バイナリ、PGLite/Supabase） | インフラ規模大。store_memory で代替 |
+| `setup-gbrain/` | GBrain セットアップスキル（6ヘルパー） | gbrain/ と同一理由 |
+| ML Prompt Injection Defense | BERT-small/DeBERTa-v3 分類器 + 8層防御 (v1.4.0.0-v1.6.4.0) | サイドバー固有。Copilot CLI はプラットフォームレベルで防御 |
+| Tunnel dual-listener / SSRF | トンネル接続のセキュリティ強化 (v1.6.0.0) | Claude Code インフラ固有 |
+| Overlay Efficacy Harness | Agent SDK ベースのモデルオーバーレイ計測 (v1.10.1.0) | Anthropic Agent SDK 固有 |
+| Plan Mode Handshake | Agent SDK ベースのプランモード制御 (v1.11.1.0, v1.12.1.0) | Copilot CLI はネイティブ plan mode をサポート |
 
 ## 廃止済みスキル
 
@@ -154,3 +160,10 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | preamble-tier システム | v1.0.0.0 | — | 不要（テンプレート生成不使用） |
 | ETHOS.md Three Layers of Knowledge | v1.0.0.0 | ETHOS.md に反映 | ✓ 反映済み |
 | slop-scan 統合 | v0.16.3.0 | /gstack-review のスロップ検出で代替 | adapted |
+| AskUserQuestion Decision-Brief Format | v1.10.0.0 | copilot-instructions.md に反映 | ✓ 反映済み |
+| Ship workspace-aware version allocation | v1.11.0.0 | /ship SKILL.md に反映 | ✓ 反映済み |
+| ML Prompt Injection Defense (8層) | v1.4.0.0-v1.6.4.0 | — | 除外（サイドバー固有） |
+| GBrain Sync（クロスマシンメモリ） | v1.9.0.0 | — | 除外（store_memory で代替） |
+| Model Overlays / Opus 4.7 | v1.5.2.0 | — | 除外（/model でネイティブ切替） |
+| Plan Mode Handshake | v1.11.1.0-v1.12.1.0 | — | 除外（Copilot CLI ネイティブ plan mode） |
+| /health GBrain 次元 | v1.12.0.0 | — | 除外（GBrain 不使用） |

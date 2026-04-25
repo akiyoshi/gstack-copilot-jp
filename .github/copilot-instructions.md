@@ -16,7 +16,7 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | デザインレビュー、UI/UX | `/plan-design-review` |
 | 開発者体験、オンボーディング、API設計 | `/plan-devex-review` |
 | 全レビューを一括で | `/autoplan` |
-| 実装して、作って、あとはやっておいて | `/sprint` |
+
 | デザイン相談、ブランド構築 | `/design-consultation` |
 | デザイン案を複数見たい | `/design-shotgun` |
 | デザインをHTMLに変換 | `/design-html` |
@@ -35,9 +35,10 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | デプロイ後の監視 | `/canary` |
 | 週次振り返り | `/retro` |
 | ドキュメント更新 | `/document-release` |
+| PDF作成、markdownをPDFに | `/make-pdf` |
 | 学習記録の管理 | `/learn` |
 | セッション振り返り | `/learn 振り返り` |
-| TDD、テストファースト | `/tdd` |
+
 | 「慎重にやって」、安全モード | `/careful` |
 | ファイル編集を制限 | `/freeze` |
 | フル安全モード | `/guard` |
@@ -50,7 +51,7 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | アップグレード | `/gstack-upgrade` |
 | セッション保存 | `/context-save` |
 | セッション復帰、どこまでやったっけ | `/context-restore` |
-| 状態確認、バージョン | `/gstack-status` |
+
 
 ## 言語
 
@@ -83,6 +84,40 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 ### 工数見積もり
 
 常に2軸で示す: `（人間: 2日 / AI: 15分, ~100x圧縮）`
+
+### 対話型レビューの質問形式（Decision-Brief）
+
+レビュースキル（`/plan-*-review`, `/autoplan`, `/office-hours` 等）でユーザーに判断を求める場合、以下の形式を使う:
+
+```
+## D<N>: <判断の名前>
+
+<ELI10（10歳に説明するつもりで）で状況を1段落で説明>
+
+**間違えた場合のリスク**: <具体的な影響を1-2文で>
+
+**選択肢**:
+
+A) <選択肢名>
+  ✅ <メリット1>
+  ✅ <メリット2>
+  ❌ <デメリット>
+
+B) <選択肢名>
+  ✅ <メリット1>
+  ✅ <メリット2>
+  ❌ <デメリット>
+
+**推奨**: <推奨する選択肢とその理由を1文で>
+
+Net: <判断全体を1文で要約>
+```
+
+ルール:
+- 質問は**1つずつ**。複数の判断をまとめて投げない
+- 各選択肢に最低 ✅ 2個 + ❌ 1個
+- 推奨がない場合は「どちらも妥当。ユーザーの優先度次第」と明記
+- ELI16モード（並列セッション3+）では段落説明を省略し、選択肢のみ表示
 
 ## ビルダーの原則
 
@@ -172,14 +207,12 @@ gstack-copilot-jp はプロセスだ。ツール集ではない。
 
 各スキルは前のスキルの成果物を読み、次のスキルが使える成果物を残す。
 
-`/sprint` はこのプロセスの「実行エンジン」。変更種別（docs/config/refactor/bugfix/new/high-risk）とリスクに応じて実装モード（tdd/investigate-first/direct-edit）、品質モード（review-lite/full-review/security-review）、リリースモード（ship/no-ship）を自動選択する。
-
 ## プロアクティブスキル提案
 
 ブランチの状態から次のアクションを提案する:
 
 - **diff がある + テスト未実行** → 「`/gstack-review` でレビューしますか？」
-- **DESIGN.md が存在 + 実装なし** → 「`/sprint` で実装を始めますか？」
+- **DESIGN.md が存在 + 実装なし** → 「実装を始めますか？」
 - **PR 作成済み + マージ待ち** → 「`/land-and-deploy` でマージしますか？」
 - **セッション開始時 + 前回の作業あり** → 「`/context-restore` で復帰しますか？」
 

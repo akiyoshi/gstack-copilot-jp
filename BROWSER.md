@@ -42,16 +42,24 @@ gstack-copilot-jp のヘッドレスブラウザの技術仕様。
 ## コンポーネント
 
 ```
-browse/
-├── package.json              # playwright 依存
-├── src/
-│   ├── cli.ts                # シンクライアント — 状態ファイル読み取り、HTTP送信
-│   ├── server.ts             # Bun HTTP サーバー — コマンドルーティング
-│   ├── browser-manager.ts    # Chromium ライフサイクル、タブ管理、@ref マップ
-│   └── commands.ts           # 全コマンドハンドラ（50+コマンド）
-└── bin/
-    ├── browse.ps1            # Windows ラッパー
-    └── browse.sh             # Unix ラッパー
+browse/                           # 本家 gstack vendored
+├── package.json                  # playwright + 依存
+├── src/                          # 35 ファイル（本家と同一）
+│   ├── cli.ts                    # シンクライアント — 状態ファイル読み取り、HTTP送信
+│   ├── server.ts                 # Bun HTTP サーバー — コマンドルーティング
+│   ├── browser-manager.ts        # Chromium ライフサイクル、タブ管理、@ref マップ
+│   ├── commands.ts               # コアコマンドハンドラ
+│   ├── read-commands.ts          # 読み取り系コマンド
+│   ├── write-commands.ts         # 書き込み系コマンド
+│   ├── meta-commands.ts          # メタコマンド（tunnel, pair-agent等）
+│   ├── security*.ts              # 多層セキュリティ
+│   └── ...                       # cookie-picker, sidebar-agent, activity 等
+├── test/                         # 63 テストファイル（bun test で実行）
+├── bin/
+│   ├── find-browse               # browse バイナリ検索
+│   └── remote-slug               # Git リモート slug 取得
+└── scripts/
+    └── build-node-server.sh      # Windows Node.js bundle ビルド
 ```
 
 ## スナップショットシステム

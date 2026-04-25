@@ -1,10 +1,11 @@
 {
-  "upstream_version": "v1.4.0.0",
+  "upstream_version": "v1.12.1.0",
   "upstream_repo": "garrytan/gstack",
-  "upstream_commit": "656df0e37e67f8e6256d9e14d664a10b6db9c413",
-  "snapshot_path": "test/fixtures/upstream/v1.4.0.0",
-  "audited_at": "2026-04-20",
-  "local_version": "1.0.0-alpha.5",
+  "upstream_commit": "aeea57f96a3f73e13b732f036dca5ed7ed7f7bdf",
+  "snapshot_path": null,
+  "snapshot_note": "スナップショットは保持しない。upstream_commit で参照",
+  "audited_at": "2026-04-25",
+  "local_version": "1.0.0-alpha.6",
   "skills": {
     "office-hours": {
       "upstream": "office-hours/SKILL.md",
@@ -44,8 +45,8 @@
     },
     "ship": {
       "upstream": "ship/SKILL.md",
-      "status": "vendored",
-      "reason": "プラン完了監査追加。Outside Voice + テスト失敗トリアージ + VERSION/package.jsonドリフト検出。Copilot CLI向けに適応",
+      "status": "adapted",
+      "reason": "プラン完了監査追加。Outside Voice + テスト失敗トリアージ + VERSION/package.jsonドリフト検出 + workspace-aware version allocation (v1.11.0.0)。Copilot CLI向けに適応",
       "exclusions": [
         "preamble",
         "codex",
@@ -118,8 +119,8 @@
     },
     "health": {
       "upstream": "health/SKILL.md",
-      "status": "vendored",
-      "reason": ""
+      "status": "adapted",
+      "reason": "v1.12.0.0でGBrain次元(10%重み)が追加されたが除外。typecheck/lint/test/deadcodeの4軸は同一"
     },
     "browse": {
       "upstream": "browse/SKILL.md",
@@ -206,19 +207,9 @@
       "status": "vendored",
       "reason": ""
     },
-    "tdd": {
-      "upstream": null,
-      "status": "diverged",
-      "reason": "本家に対応なし。独自実装"
-    },
-    "sprint": {
-      "upstream": null,
-      "status": "diverged",
-      "reason": "本家に対応なし。独自スプリントオーケストレーター"
-    },
     "gstack-review": {
       "upstream": "review/SKILL.md",
-      "status": "vendored",
+      "status": "adapted",
       "reason": "architectureチェックリスト追加。Outside Voice + slop検出 + doc staleness check。Copilot CLI向けに適応",
       "exclusions": [
         "preamble",
@@ -228,10 +219,31 @@
         "eval-suite"
       ]
     },
-    "gstack-status": {
-      "upstream": null,
-      "status": "diverged",
-      "reason": "本家に対応なし。gstack-copilot-jp 状態確認"
+    "make-pdf": {
+      "upstream": "make-pdf/SKILL.md",
+      "status": "adapted",
+      "reason": "browse $B pdf 経由で実装。本家は専用バイナリ（make-pdf/dist/pdf）。v1.4.0.0 追加、v1.5.1.0 バグ修正反映",
+      "exclusions": [
+        "preamble",
+        "telemetry",
+        "gbrain",
+        "make-pdf-binary"
+      ]
+    },
+    "setup-gbrain": {
+      "upstream": "setup-gbrain/SKILL.md",
+      "status": "excluded",
+      "reason": "GBrain Sync インフラ (PGLite/Supabase)。Copilot CLI は store_memory + session_store_sql で代替"
+    },
+    "codex": {
+      "upstream": "codex/SKILL.md",
+      "status": "excluded",
+      "reason": "/model + task で代替"
+    },
+    "plan-tune": {
+      "upstream": "plan-tune/SKILL.md",
+      "status": "excluded",
+      "reason": "store_memory で代替"
     }
   }
 }

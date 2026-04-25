@@ -226,36 +226,3 @@ describe('/autoplan semantic contract', () => {
     expect(md).toMatch(/再実行|re-?run|やり直し/i);
   });
 });
-
-// --- P2: /sprint 契約 ---
-
-describe('/sprint semantic contract', () => {
-  const md = readSkill('sprint');
-  const sections = parseSections(md);
-
-  it('変更種別→モード選択マトリクスがある', () => {
-    // docs-only, config/infra, refactor, bug fix, new behavior, high-risk の全種別
-    expect(md).toMatch(/docs.?only/i);
-    expect(md).toMatch(/config|infra/i);
-    expect(md).toMatch(/refactor/i);
-    expect(md).toMatch(/bug.*fix/i);
-    expect(md).toMatch(/new.*behavior/i);
-    expect(md).toMatch(/high.?risk/i);
-  });
-
-  it('実装モード3種が定義されている', () => {
-    expect(md).toMatch(/tdd/i);
-    expect(md).toMatch(/investigate/i);
-    expect(md).toMatch(/direct.?edit/i);
-  });
-
-  it('失敗リカバリのフローがある', () => {
-    expect(md).toMatch(/リカバリ|recovery|リトライ|retry/i);
-  });
-
-  it('安全弁の制限値が明記されている', () => {
-    // 最大リトライ回数、味覚判断バッチサイズ等の具体的数値
-    expect(md).toMatch(/3回|最大.*リトライ/);
-    expect(md).toMatch(/5個|バッチ/);
-  });
-});
