@@ -1,39 +1,72 @@
 #!/usr/bin/env bash
-# .github/skills/bin/gstack-codex-probe — Codex CLI 検出 + ヘルパー関数
+# .github/skills/bin/gstack-codex-probe — Outside Voice config resolver
 #
 # 本家 gstack では Codex CLI を Outside Voice として使う。
-# gstack-copilot-jp では Codex CLI は使えないため、このスクリプトは
-# 全ヘルパー関数を「不在」として定義し、既存の degradation パスを正常に通す。
+# gstack-copilot-jp では Copilot のマルチモデル機能（task tool の model パラメータ）
+# で異なるモデルファミリーの subagent を Outside Voice として起動する。
+#
+# このスクリプトは本家互換の関数名を維持し、内部で task tool ベースの
+# Outside Voice に変換する。SKILL.md の `source gstack-codex-probe` がそのまま動く。
 #
 # 使い方: source .github/skills/bin/gstack-codex-probe
 
-# Codex CLI の認証チェック（常に失敗 → subagent-only モードに遷移）
-_gstack_codex_auth_probe() {
-  return 1
+# Outside Voice のモデル選択（プライマリと異なるファミリーを選ぶ）
+_gstack_outside_voice_model() {
+  # config.yaml から設定を読む（未設定ならデフォルト）
+  local config_model
+  config_model=$(.github/skills/bin/gstack-config get outside_voice_model 2>/dev/null || echo "")
+  if [ -n "$config_model" ]; then
+    echo "$config_model"
+    return
+  fi
+  # MODEL_OVERLAY（preamble 出力）からプライマリモデルファミリーを推定
+  local primary="${MODEL_OVERLAY:-claude}"
+  case "$primary" in
+    claude*) echo "gpt-5.4" ;;       # Claude → GPT でモデル多様性確保
+    gpt*)    echo "claude-sonnet-4" ;; # GPT → Claude
+    *)       echo "gpt-5.4" ;;        # デフォルト
+  esac
 }
 
-# Codex CLI のバージョンチェック（no-op）
+# 本家互換: Codex CLI 認証チェック → 常に成功（Outside Voice は task tool 経由で利用可能）
+_gstack_codex_auth_probe() {
+  return 0  # Outside Voice は常に利用可能
+}
+
+# 本家互換: バージョンチェック（no-op）
 _gstack_codex_version_check() {
   return 0
 }
 
-# Codex イベントログ（no-op、ログファイルに書くだけ）
+# 本家互換: イベントログ
 _gstack_codex_log_event() {
   local event="${1:-unknown}"
   local detail="${2:-}"
   local log_dir="${HOME}/.gstack/analytics"
   mkdir -p "$log_dir" 2>/dev/null
-  echo "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"event\":\"$event\",\"detail\":\"$detail\",\"host\":\"${GSTACK_HOST:-unknown}\"}" >> "$log_dir/codex-events.jsonl" 2>/dev/null || true
+  echo "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"event\":\"$event\",\"detail\":\"$detail\",\"host\":\"${GSTACK_HOST:-unknown}\",\"method\":\"task-multimodel\"}" >> "$log_dir/outside-voice-events.jsonl" 2>/dev/null || true
 }
 
-# Codex ハング検出ログ（no-op）
+# 本家互換: ハング検出ログ
 _gstack_codex_log_hang() {
   local skill="${1:-unknown}"
   local phase="${2:-0}"
-  _gstack_codex_log_event "codex_hang" "skill=$skill,phase=$phase"
+  _gstack_codex_log_event "outside_voice_timeout" "skill=$skill,phase=$phase"
 }
 
-# Codex 利用可能チェック（常に false）
+# 本家互換: 利用可能チェック → 常に true（task tool は常に使える）
 _gstack_codex_available() {
-  return 1
+  return 0
 }
+
+# Outside Voice のラベル（ユーザー向け表示用）
+_gstack_outside_voice_label() {
+  echo "Outside Voice ($(_gstack_outside_voice_model))"
+}
+
+# Codex CLI は使わない。以下の環境変数で SKILL.md の bash ブロックに伝達:
+# - GSTACK_OUTSIDE_VOICE=task  (Codex CLI ではなく task tool を使う)
+# - GSTACK_OUTSIDE_MODEL=<model>  (使用するモデル)
+export GSTACK_OUTSIDE_VOICE="task"
+export GSTACK_OUTSIDE_MODEL="$(_gstack_outside_voice_model)"
+
