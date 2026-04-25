@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0-alpha.8] - 2026-04-25
+
+### Added
+- **MIT LICENSE ファイル追加** — package.json/README で宣言済みだった MIT ライセンスの実ファイルを追加。LICENSE 存在テスト3件も追加
+- **README ポジショニング強化** — 「なぜ gstack 本体ではなくこれを使うのか」を冒頭に明記（Copilot CLIネイティブ/VS Code Chat統合/日本語）
+
+### Changed
+- **`copilot-plugin.json` → `plugin.json` にリネーム** — Copilot CLI の `plugin install` が認識する正式なマニフェスト名に修正
+- **インストール導線の再構成** — `git clone && ./setup` を主導線に昇格。plugin install は「実験的」に降格（プラグインシステム安定化待ち）
+- README の見出し階層を正規化（「1. インストール」「2. 使い始める」「3. 更新」）
+- VS Code パスに `mkdir -p .github` を追加（新規プロジェクトでのエラー防止）
+- `getting-started.md` の browse セットアップを `npm` → `bun` に統一
+- `copilot-instructions.md` のスキル数を 39 → 38 に修正（実際の SKILL.md 数と一致）
+
+### Fixed
+- plugin install コマンドの形式を `github:owner/repo` → `owner/repo` に修正（Copilot CLI 正式形式）
+- `.gitignore` に `land-deploy-confirmed`（ランタイム成果物）を追加
+
 ## [1.0.0-alpha.7] - 2026-04-25
 
 ### Added
@@ -28,7 +46,7 @@ All notable changes to this project will be documented in this file.
 ### Migration Notes
 - hooks イベント名が PascalCase に変更（`sessionStart` → `SessionStart`, `sessionEnd` → `Stop`）
 - hooks コマンドキーが `"bash"` → `"command"` に変更
-- `copilot-plugin.json` は VS Code では認識されない。VS Code は git clone ベースでインストール
+- `plugin.json` は VS Code では認識されない。VS Code は git clone ベースでインストール
 
 ## [1.0.0-alpha.6] - 2026-04-25
 

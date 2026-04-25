@@ -14,11 +14,21 @@ DESIGN.md が設計方針、このファイルがタスク管理。完了した�
 | 本家 v1.12.1.0 まで追跡完了 | ✅ | `upstream-tracking.md` |
 | README + getting-started 完備 | ✅ | |
 | ARCHITECTURE.md 作成 | ✅ | |
-| `copilot-plugin.json` 作成 | ✅ | |
+| `plugin.json` 作成 | ✅ | copilot-plugin.json → plugin.json にリネーム済み |
 | VERSION を `1.0.0` に更新 | 🔲 | リリース時 |
 | git tag `v1.0.0` | 🔲 | リリース時 |
 
 ## 未実装・改善項目
+
+### マルチホスト拡張（v1.0後）
+
+- [ ] **ホスト抽象化レイヤー** — ホスト判定の一元化（現在4箇所に重複: `gstack-detect-host.sh`, `gstack-env`, `gstack-session-start.sh`, `gstack-init.sh`）
+- [ ] **Host capability matrix** — ホスト毎のツール名・hook形式・browse可否を宣言的に定義
+- [ ] **OpenClaw 対応** — 第3ホストとして追加。Phase 0（互換性調査）→ Phase 1（ホスト検出）→ Phase 2（SKILL.md互換）→ Phase 3（テスト）→ Phase 4（ドキュメント）→ Phase 5（ClawHub公開）
+  - 詳細プラン: `~/.copilot/session-state/fe2d1ce5-ad27-4eab-814e-7ab810c589d9/plan.md`
+  - autoplanレビュー結果: CEO Critical 2件（v1.0前拡張リスク、互換性未検証）、Eng High 5件（判定重複、hooks固定、capability不足、配布固定、方針矛盾）
+  - 前提条件: v1.0リリース完了、ホスト抽象化レイヤー導入済み
+- [ ] **upstream OpenClaw実装の調査** — 本家 `hosts/openclaw.ts`, `scripts/host-adapters/`, `openclaw/skills/` の実装を調査し、互換可能な部分は移植する（ホスト抽象化レイヤーの設計にも反映）
 
 ### 配布
 
@@ -49,6 +59,7 @@ DESIGN.md が設計方針、このファイルがタスク管理。完了した�
 
 ## 完了済み
 
+- **Completed:** v1.0.0-alpha.8 (2026-04-25) — v1.0リリース準備（LICENSE追加、README最新化、plugin.jsonリネーム、ドキュメント整合性修正）
 - **Completed:** v1.0.0-alpha.7 (2026-04-25) — マルチホスト対応（Copilot CLI + VS Code Chat）
 - **Completed:** v1.0.0-alpha.6 (2026-04-25) — `/make-pdf`, Decision-Brief Format, upstream v1.12.1.0 catchup
 - **Completed:** v1.0.0-alpha.5 以前 — 基盤構築（38スキル、5エージェント、4 hooks、browse）

@@ -4,6 +4,11 @@
 
 [gstack](https://github.com/garrytan/gstack)（Garry Tan作）の思想とプロセスを、**GitHub Copilot（CLI + VS Code Chat）+ 日本語**で使う最速の方法。
 
+**なぜ gstack 本体ではなくこれを使うのか:**
+- **Copilot CLIネイティブ** — Claude Code 不要。GitHub Copilot だけで動く
+- **VS Code Chat 統合** — CLI だけでなく VS Code Copilot Chat でも同じスキルが使える
+- **日本語ワークフロー** — スキル出力・レビュー・ドキュメントが全て日本語
+
 ## 前提条件
 
 - GitHub Copilot（CLI または VS Code Copilot Chat）
@@ -13,20 +18,23 @@
 
 ## クイックスタート
 
-### Copilot CLI
+### 1. インストール
+
+**Copilot CLI**
 
 ```bash
-# 推奨: プラグインインストール
-copilot plugin install github:akiyoshi/gstack-copilot-jp
+git clone https://github.com/akiyoshi/gstack-copilot-jp.git
+cd gstack-copilot-jp && ./setup
 ```
 
-### VS Code Copilot Chat
+**VS Code Copilot Chat**
 
 ```bash
 # プロジェクトにクローン
 cd your-project
 git clone https://github.com/akiyoshi/gstack-copilot-jp.git .gstack-copilot-jp
 # .github/skills/ にシンボリックリンクを作成
+mkdir -p .github
 ln -s ../.gstack-copilot-jp/.github/skills .github/skills
 ln -s ../.gstack-copilot-jp/.github/agents .github/agents
 ```
@@ -35,11 +43,12 @@ VS Code で Copilot Chat を開き、`/office-hours` と入力して動作確認
 
 > 詳細な手順は [docs/vscode-setup.md](docs/vscode-setup.md) を参照。
 
-### 開発者向け（フォールバック）
+**実験的: プラグインインストール**
+
+> ⚠️ プラグインシステムの安定化後に正式対応予定。動作しない場合は上記の手動インストールを使用。
 
 ```bash
-git clone https://github.com/akiyoshi/gstack-copilot-jp.git
-cd gstack-copilot-jp && ./setup
+copilot plugin install akiyoshi/gstack-copilot-jp
 ```
 
 ### 2. 使い始める
@@ -61,10 +70,6 @@ Copilot: [diff分析 → 専門家サブエージェント並列dispatch → 自
 ### 3. 更新
 
 ```bash
-# プラグイン
-copilot plugin update gstack-copilot-jp
-
-# git clone の場合
 cd gstack-copilot-jp && git pull
 ```
 
@@ -203,16 +208,12 @@ Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェン�
 ## アンインストール
 
 ```bash
-# プラグイン
-copilot plugin uninstall gstack-copilot-jp
-
-# git clone の場合
 cd gstack-copilot-jp && ./setup --uninstall
 ```
 
 ## ライセンス
 
-MIT
+[MIT](LICENSE)
 
 ## クレジット
 
