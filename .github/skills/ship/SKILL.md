@@ -1630,6 +1630,26 @@ Read the `STATE:` line and dispatch:
 - **DRIFT_STALE_PKG** → a prior `/ship` bumped `VERSION` but failed to update `package.json`. Run the sync-only repair block below (after step 4). Do NOT re-bump. Reuse `CURRENT_VERSION` for CHANGELOG and PR body.
 - **DRIFT_UNEXPECTED** → `/ship` has halted (exit 1). Resolve manually; /ship cannot tell which file is authoritative.
 
+**Queue-aware version check (FRESH state only):**
+
+Before bumping, check if other open PRs on the same base branch already claim a version to avoid collisions:
+
+```bash
+# Check open PRs for VERSION conflicts (exclude current branch's PR)
+if command -v gh >/dev/null 2>&1; then
+  CURRENT_BRANCH=$(git branch --show-current)
+  CLAIMED_VERSIONS=$(gh pr list --base "<base>" --state open --json title,headRefName --jq '.[] | select(.headRefName != "'"$CURRENT_BRANCH"'") | .title' 2>/dev/null | grep -oP '^v\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | sort -V)
+  if [ -n "$CLAIMED_VERSIONS" ]; then
+    echo "QUEUE: Open PRs already claim these versions:"
+    echo "$CLAIMED_VERSIONS"
+  fi
+fi
+```
+
+If `NEW_VERSION` (computed in step 3) matches any claimed version, auto-increment the MICRO digit to the next unclaimed version. Display: "Version v{X} already claimed by open PR — using v{Y} instead."
+
+If `gh` is unavailable or network fails, fall back to local-only bump (no queue check). Display: "Queue check skipped (gh unavailable) — using local version arithmetic."
+
 1. Read the current `VERSION` file (4-digit format: `MAJOR.MINOR.PATCH.MICRO`)
 
 2. **Auto-decide the bump level based on the diff:**
@@ -2040,13 +2060,13 @@ you missed it.>
 - [x] All Rails tests pass (N runs, 0 failures)
 - [x] All Vitest tests pass (N tests)
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+🤖 Generated with [GitHub Copilot CLI](https://github.com/features/copilot) + [gstack-copilot-jp](https://github.com/akiyoshi/gstack-copilot-jp)
 ```
 
 **If GitHub:**
 
 ```bash
-gh pr create --base <base> --title "<type>: <summary>" --body "$(cat <<'EOF'
+gh pr create --base <base> --title "v<VERSION> <type>: <summary>" --body "$(cat <<'EOF'
 <PR body from above>
 EOF
 )"
@@ -2055,7 +2075,7 @@ EOF
 **If GitLab:**
 
 ```bash
-glab mr create -b <base> -t "<type>: <summary>" -d "$(cat <<'EOF'
+glab mr create -b <base> -t "v<VERSION> <type>: <summary>" -d "$(cat <<'EOF'
 <MR body from above>
 EOF
 )"
