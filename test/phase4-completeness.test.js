@@ -34,9 +34,9 @@ describe('bin/ syntax validation', () => {
   });
 });
 
-// === copilot-plugin.json 整合性 ===
-describe('copilot-plugin.json integrity', () => {
-  const pluginPath = join(ROOT, 'copilot-plugin.json');
+// === plugin.json 整合性 ===
+describe('plugin.json integrity', () => {
+  const pluginPath = join(ROOT, 'plugin.json');
 
   it('exists and is valid JSON', () => {
     expect(existsSync(pluginPath)).toBe(true);
@@ -233,5 +233,22 @@ describe('multi-host compatibility', () => {
       const content = readFileSync(join(ROOT, doc), 'utf-8');
       expect(content, `${doc} still contains "Copilot CLI 専用"`).not.toContain('Copilot CLI 専用');
     }
+  });
+});
+
+// === LICENSE ファイル ===
+describe('LICENSE file', () => {
+  it('LICENSE file exists', () => {
+    expect(existsSync(join(ROOT, 'LICENSE'))).toBe(true);
+  });
+
+  it('LICENSE contains MIT', () => {
+    const content = readFileSync(join(ROOT, 'LICENSE'), 'utf-8');
+    expect(content).toContain('MIT License');
+  });
+
+  it('LICENSE is consistent with package.json', () => {
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
+    expect(pkg.license).toBe('MIT');
   });
 });
