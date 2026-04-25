@@ -47,7 +47,7 @@ describe('Phase 2: Asset Cleanup', () => {
 describe('Phase 2: Skill Integrity', () => {
   it('all skill directories have a SKILL.md', () => {
     const skills = fs.readdirSync(SKILLS_DIR).filter(d =>
-      fs.statSync(path.join(SKILLS_DIR, d)).isDirectory()
+      fs.statSync(path.join(SKILLS_DIR, d)).isDirectory() && d !== 'bin'
     )
     for (const skill of skills) {
       const skillFile = path.join(SKILLS_DIR, skill, 'SKILL.md')
@@ -57,7 +57,7 @@ describe('Phase 2: Skill Integrity', () => {
 
   it('all SKILL.md files have name and description in frontmatter', () => {
     const skills = fs.readdirSync(SKILLS_DIR).filter(d =>
-      fs.statSync(path.join(SKILLS_DIR, d)).isDirectory()
+      fs.statSync(path.join(SKILLS_DIR, d)).isDirectory() && d !== 'bin'
     )
     for (const skill of skills) {
       const content = fs.readFileSync(path.join(SKILLS_DIR, skill, 'SKILL.md'), 'utf-8')

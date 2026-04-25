@@ -111,7 +111,7 @@ describe('VS Code 資産は copilot-instructions.md に統合済み', () => {
 describe('hookシステム: スキルの「次のスキル」推奨', () => {
   const skillsDir = join(ROOT, '.github', 'skills');
   const skillDirs = readdirSync(skillsDir, { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && d.name !== 'bin')
     .map(d => d.name);
 
   // Post-Hook不要のトグル/ユーティリティスキル

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# .github/skills/bin/gstack-global-discover — クロスプロジェクト学習検索 stub
+# 本家の cross-project learnings 用。gstack-copilot-jp では未実装。
+echo "CROSS_PROJECT=unset"

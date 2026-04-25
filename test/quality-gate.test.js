@@ -11,7 +11,7 @@ describe('getting-started.md 品質', () => {
     const content = readFileSync(gsPath, 'utf-8');
     const skillsDir = join(ROOT, '.github', 'skills');
     const skillCount = readdirSync(skillsDir, { withFileTypes: true })
-      .filter(d => d.isDirectory()).length;
+      .filter(d => d.isDirectory() && d.name !== 'bin').length;
     // "Nのスキル" パターンを抽出
     const match = content.match(/(\d+)のスキル/);
     expect(match).not.toBeNull();
@@ -22,7 +22,7 @@ describe('getting-started.md 品質', () => {
 describe('全スキル フロントマター検証', () => {
   const skillsDir = join(ROOT, '.github', 'skills');
   const skillDirs = readdirSync(skillsDir, { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && d.name !== 'bin')
     .map(d => d.name);
 
   it('スキルディレクトリが30個以上存在する', () => {
@@ -72,7 +72,7 @@ describe('copilot-instructions.md とスキルの整合性', () => {
     const skillsDir = join(ROOT, '.github', 'skills');
     const existingDirs = new Set(
       readdirSync(skillsDir, { withFileTypes: true })
-        .filter(d => d.isDirectory())
+        .filter(d => d.isDirectory() && d.name !== 'bin')
         .map(d => d.name)
     );
 
@@ -122,7 +122,7 @@ describe('DESIGN.md 数値整合性', () => {
   it('スキル数が実ディレクトリ数と一致する', () => {
     const skillsDir = join(ROOT, '.github', 'skills');
     const skillCount = readdirSync(skillsDir, { withFileTypes: true })
-      .filter(d => d.isDirectory()).length;
+      .filter(d => d.isDirectory() && d.name !== 'bin').length;
     // "| スキル | N |" パターンを抽出
     const match = designContent.match(/\|\s*スキル\s*\|\s*(\d+)\s*\|/);
     expect(match).not.toBeNull();

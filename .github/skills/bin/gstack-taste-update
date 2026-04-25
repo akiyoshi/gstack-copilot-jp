@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# .github/skills/bin/gstack-taste-update — テイスト判定更新 stub
+# 本家の inline tune 用。gstack-copilot-jp では未実装。
+echo "OK"

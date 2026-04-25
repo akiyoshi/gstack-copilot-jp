@@ -60,7 +60,7 @@ describe('copilot-plugin.json integrity', () => {
 describe('skill routing completeness', () => {
   const routing = readFileSync(join(ROOT, '.github', 'copilot-instructions.md'), 'utf-8');
   const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && d.name !== 'bin')
     .map(d => d.name);
 
   // ルーティングテーブルから `/skill-name` を抽出
@@ -86,7 +86,7 @@ describe('skill routing completeness', () => {
 // === voice-friendly triggers ===
 describe('voice-friendly triggers', () => {
   const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && d.name !== 'bin')
     .map(d => d.name);
 
   it.each(skillDirs)('%s description contains "Use when:"', (skill) => {
