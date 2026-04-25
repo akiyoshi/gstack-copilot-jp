@@ -591,7 +591,7 @@ copilot plugin install github:username/gstack-copilot-jp
 本家は `./setup --prefix` / `--no-prefix` で `/qa` ↔ `/gstack-qa` を切り替える。plugin ではスキル名の衝突が起こりやすいため、この制御を plugin manifest に組み込む:
 
 - 既定は **プレフィックスなし** (`/qa`, `/gstack-review` 等) — 本家と同一
-- 他のスキルパックと併用する場合は `copilot-plugin.json` の `prefix: "gstack-"` で名前空間を分離
+- 他のスキルパックと併用する場合は `plugin.json` の `prefix: "gstack-"` で名前空間を分離
 - `copilot-instructions.md` のルーティングテーブルはプレフィックスに応じて自動生成
 
 #### 18. browse バイナリのバージョン自動再起動

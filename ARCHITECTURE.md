@@ -18,7 +18,7 @@ gstack-copilot-jp/
 │   └── test/                     # Vitest テスト
 ├── bin/                          # bash ユーティリティ (19スクリプト)
 ├── test/                         # ルートテスト (Vitest)
-├── copilot-plugin.json           # プラグインマニフェスト
+├── plugin.json                   # プラグインマニフェスト
 ├── setup                         # セットアップスクリプト
 ├── TODO.md                       # ロードマップと未実装項目
 ├── DESIGN.md                     # 詳細設計ドキュメント
