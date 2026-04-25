@@ -1,8 +1,10 @@
 ---
 name: design-review
 version: 2.0.0
-description: "デザイナー兼エンジニアとしてUI実装をレビュー・修正。Use when: デザイン実装の品質チェック、CSS修正、UI/UX改善の実行、design implementation review。plan-design-reviewの実行版。"
-argument-hint: "レビュー対象のUI/コンポーネント"
+description: "デザイナー兼エンジニアとしてUI実装をレビュー・修正。Use when: デザイン実装の品質チェック、CSS修正、UI/UX改善の実行、design implementation review。plan-design-reviewの実行版。
+"
+argument-hint: "レビュー対象のUI/コンポーネント
+"
 triggers:
   - visual design audit
   - design qa
@@ -1623,51 +1625,19 @@ Record baseline design score and AI slop score at end of Phase 6.
 
 ## Design Outside Voices (parallel)
 
-**Automatic:** Outside voices run automatically when Codex is available. No opt-in needed.
+**Automatic:** Outside voices run automatically when Outside Voice is available. No opt-in needed.
 
-**Check Codex availability:**
+**Check Outside Voice availability:**
 ```bash
 ```
 
-**If Codex is available**, launch both voices simultaneously:
+**If Outside Voice is available**, launch both voices simultaneously:
 
-1. **Codex design voice** (via Bash):
-```bash
-TMPERR_DESIGN=$(mktemp /tmp/codex-design-XXXXXXXX)
-_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-- Spacing: systematic (design tokens / CSS variables) or magic numbers?
-- Typography: expressive purposeful fonts or default stacks?
-- Color: CSS variables with defined system, or hardcoded hex scattered?
-- Responsive: breakpoints defined? calc(100svh - header) for heroes? Mobile tested?
-- A11y: ARIA landmarks, alt text, contrast ratios, 44px touch targets?
-- Motion: 2-3 intentional animations, or zero / ornamental only?
-- Cards: used only when card IS the interaction? No decorative card grids?
-
-First classify as MARKETING/LANDING PAGE vs APP UI vs HYBRID, then apply matching rules.
-
-LITMUS CHECKS — answer YES/NO:
-1. Brand/product unmistakable in first screen?
-2. One strong visual anchor present?
-3. Page understandable by scanning headlines only?
-4. Each section has one job?
-5. Are cards actually necessary?
-6. Does motion improve hierarchy or atmosphere?
-7. Would design feel premium with all decorative shadows removed?
-
-HARD REJECTION — flag if ANY apply:
-1. Generic SaaS card grid as first impression
-2. Beautiful image with weak brand
-3. Strong headline with no clear action
-4. Busy imagery behind text
-5. Sections repeating same mood statement
-6. Carousel with no narrative purpose
-7. App UI made of stacked cards instead of layout
-
-Be specific. Reference file:line for every finding." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="high"' --enable web_search_cached < /dev/null 2>"$TMPERR_DESIGN"
-```
+1. **Outside Voice (design)** (via task tool, different model):
+Dispatch via the task tool with `model` set to the Outside Voice model.
+Use the same review prompt but from an independent model.
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
 ```bash
-cat "$TMPERR_DESIGN" && rm -f "$TMPERR_DESIGN"
 ```
 
 2. **Claude design subagent** (via task tool):
@@ -1681,24 +1651,24 @@ Dispatch a subagent with this prompt:
 For each finding: what's wrong, severity (critical/high/medium), and the file:line."
 
 **Error handling (all non-blocking):**
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response."
-- On any Codex error: proceed with Claude subagent output only, tagged `[single-model]`.
+- **Timeout:** "Outside Voice timed out after 5 minutes."
+- **Empty response:** "Outside Voice returned no response."
+- On any Outside Voice error: proceed with Claude subagent output only, tagged `[single-model]`.
 - If Claude subagent also fails: "Outside voices unavailable — continuing with primary review."
 
-Present Codex output under a `CODEX SAYS (design source audit):` header.
+Present Outside Voice output under a `OUTSIDE VOICE (design source audit):` header.
 Present subagent output under a `CLAUDE SUBAGENT (design consistency):` header.
 
 **Synthesis — Litmus scorecard:**
 
 Use the same scorecard format as /plan-design-review (shown above). Fill in from both outputs.
-Merge findings into the triage with `[codex]` / `[subagent]` / `[cross-model]` tags.
+Merge findings into the triage with `[outside-voice]` / `[subagent]` / `[cross-model]` tags.
 
 **Log the result:**
 ```bash
 .github/skills/bin/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Replace STATUS with "clean" or "issues_found", SOURCE with "codex+subagent", "codex-only", "subagent-only", or "unavailable".
+Replace STATUS with "clean" or "issues_found", SOURCE with "multimodel", "outside-only", "subagent-only", or "unavailable".
 
 ## Phase 7: Triage
 
@@ -1870,7 +1840,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.

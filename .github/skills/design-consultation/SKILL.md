@@ -1,8 +1,10 @@
 ---
 name: design-consultation
 version: 1.0.0
-description: "デザインパートナーとしてゼロからデザインシステムを構築。Use when: デザイン相談、ブランド構築、デザインシステム作成、design system、brand、visual identity。リサーチ→創造的リスク→DESIGN.md生成。"
-argument-hint: "プロダクトの説明またはデザインの相談内容"
+description: "デザインパートナーとしてゼロからデザインシステムを構築。Use when: デザイン相談、ブランド構築、デザインシステム作成、design system、brand、visual identity。リサーチ→創造的リスク→DESIGN.md生成。
+"
+argument-hint: "プロダクトの説明またはデザインの相談内容
+"
 triggers:
   - design system
   - create a brand
@@ -994,35 +996,24 @@ If the user said no research, skip entirely and proceed to Phase 3 using your bu
 ## Design Outside Voices (parallel)
 
 Use ask_user:
-> "Want outside design voices? Codex evaluates against OpenAI's design hard rules + litmus checks; Claude subagent does an independent design direction proposal."
+> "Want outside design voices? Outside Voice evaluates against design hard rules + litmus checks; Claude subagent does an independent design direction proposal."
 >
 > A) Yes — run outside design voices
 > B) No — proceed without
 
 If user chooses B, skip this step and continue.
 
-**Check Codex availability:**
+**Check Outside Voice availability:**
 ```bash
 ```
 
-**If Codex is available**, launch both voices simultaneously:
+**If Outside Voice is available**, launch both voices simultaneously:
 
-1. **Codex design voice** (via Bash):
-```bash
-TMPERR_DESIGN=$(mktemp /tmp/codex-design-XXXXXXXX)
-_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
-- Visual thesis: one sentence describing mood, material, and energy
-- Typography: specific font names (not defaults — no Inter/Roboto/Arial/system) + hex colors
-- Color system: CSS variables for background, surface, primary text, muted text, accent
-- Layout: composition-first, not component-first. First viewport as poster, not document
-- Differentiation: 2 deliberate departures from category norms
-- Anti-slop: no purple gradients, no 3-column icon grids, no centered everything, no decorative blobs
-
-Be opinionated. Be specific. Do not hedge. This is YOUR design direction — own it." -C "$(git rev-parse --show-toplevel)" -s read-only -c 'model_reasoning_effort="medium"' --enable web_search_cached < /dev/null 2>"$TMPERR_DESIGN"
-```
+1. **Outside Voice (design)** (via task tool, different model):
+Dispatch via the task tool with `model` set to the Outside Voice model.
+Use the same review prompt but from an independent model.
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
 ```bash
-cat "$TMPERR_DESIGN" && rm -f "$TMPERR_DESIGN"
 ```
 
 2. **Claude design subagent** (via task tool):
@@ -1035,24 +1026,24 @@ Dispatch a subagent with this prompt:
 Be bold. Be specific. No hedging."
 
 **Error handling (all non-blocking):**
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response."
-- On any Codex error: proceed with Claude subagent output only, tagged `[single-model]`.
+- **Timeout:** "Outside Voice timed out after 5 minutes."
+- **Empty response:** "Outside Voice returned no response."
+- On any Outside Voice error: proceed with Claude subagent output only, tagged `[single-model]`.
 - If Claude subagent also fails: "Outside voices unavailable — continuing with primary review."
 
-Present Codex output under a `CODEX SAYS (design direction):` header.
+Present Outside Voice output under a `OUTSIDE VOICE (design direction):` header.
 Present subagent output under a `CLAUDE SUBAGENT (design direction):` header.
 
-**Synthesis:** Claude main references both Codex and subagent proposals in the Phase 3 proposal. Present:
-- Areas of agreement between all three voices (Claude main + Codex + subagent)
+**Synthesis:** Claude main references both Outside Voice and subagent proposals in the Phase 3 proposal. Present:
+- Areas of agreement between all three voices (Claude main + Outside Voice + subagent)
 - Genuine divergences as creative alternatives for the user to choose from
-- "Codex and I agree on X. Codex suggested Y where I'm proposing Z — here's why..."
+- "The Outside Voice and I agree on X. It suggested Y where I'm proposing Z — here's why..."
 
 **Log the result:**
 ```bash
 .github/skills/bin/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Replace STATUS with "clean" or "issues_found", SOURCE with "codex+subagent", "codex-only", "subagent-only", or "unavailable".
+Replace STATUS with "clean" or "issues_found", SOURCE with "multimodel", "outside-only", "subagent-only", or "unavailable".
 
 ## Phase 3: The Complete Proposal
 
@@ -1449,7 +1440,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.

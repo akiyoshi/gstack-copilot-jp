@@ -1,8 +1,10 @@
 ---
 name: retro
 version: 2.0.0
-description: "エンジニアリングマネージャーとして週次振り返り。Use when: 振り返り、レトロスペクティブ、weekly retro、今週の成果、反省。コミット統計、テストヘルス、成長機会。"
-argument-hint: "振り返り期間（例: 今週、先月）"
+description: "エンジニアリングマネージャーとして週次振り返り。Use when: 振り返り、レトロスペクティブ、weekly retro、今週の成果、反省。コミット統計、テストヘルス、成長機会。
+"
+argument-hint: "振り返り期間（例: 今週、先月）
+"
 triggers:
   - weekly retro
   - what did we ship
@@ -1059,7 +1061,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
@@ -1404,7 +1406,7 @@ From the commit timestamps gathered in Step 3, group by date. For each date, cou
 From the discovery JSON, analyze tool usage patterns:
 - Which AI tool is used for which repos (exclusive vs. shared)
 - Session count per tool
-- Behavioral patterns (e.g., "Codex used exclusively for myapp, Claude Code for everything else")
+- Behavioral patterns (e.g., "GPT used exclusively for myapp, Claude for everything else")
 
 ### Global Step 7: Aggregate and generate narrative
 
@@ -1438,7 +1440,7 @@ align cleanly. Never truncate project names.
 ║
 ║  [N] commits across [M] projects
 ║  +[X]k LOC added · [Y]k LOC deleted · [Z]k net
-║  [N] AI coding sessions (CC: X, Codex: Y, Gemini: Z)
+║  [N] AI coding sessions (CC: X, GPT: Y, Gemini: Z)
 ║  [N]-day shipping streak 🔥
 ║
 ║  PROJECTS
@@ -1492,7 +1494,7 @@ This is the "deep dive" that follows the shareable card.
 | Projects active | N |
 | Total commits (all repos, all contributors) | N |
 | Total LOC | +N / -N |
-| AI coding sessions | N (CC: X, Codex: Y, Gemini: Z) |
+| AI coding sessions | N (CC: X, GPT: Y, Gemini: Z) |
 | Active days | N |
 | Global shipping streak (any contributor, any repo) | N consecutive days |
 | Context switches/day | N avg (max: M) |
@@ -1535,7 +1537,7 @@ Format:
 ### Tool Usage Analysis
 Per-tool breakdown with behavioral patterns:
 - Claude Code: N sessions across M repos — patterns observed
-- Codex: N sessions across M repos — patterns observed
+- GPT: N sessions across M repos — patterns observed
 - Gemini: N sessions across M repos — patterns observed
 
 ### Ship of the Week (Global)
@@ -1590,7 +1592,7 @@ Use the create tool to save JSON to `~/.gstack/retros/global-${today}-${next}.js
       "commits": 47,
       "insertions": 3200,
       "deletions": 800,
-      "sessions": { "claude_code": 15, "codex": 3, "gemini": 0 }
+      "sessions": { "claude_code": 15, "gpt": 3, "gemini": 0 }
     }
   ],
   "totals": {
@@ -1599,11 +1601,11 @@ Use the create tool to save JSON to `~/.gstack/retros/global-${today}-${next}.js
     "deletions": 4200,
     "projects": 5,
     "active_days": 6,
-    "sessions": { "claude_code": 48, "codex": 8, "gemini": 3 },
+    "sessions": { "claude_code": 48, "gpt": 8, "gemini": 3 },
     "global_streak_days": 52,
     "avg_context_switches_per_day": 2.1
   },
-  "tweetable": "Week of Mar 14: 5 projects, 182 commits, 15.3k LOC | CC: 48, Codex: 8, Gemini: 3 | Focus: gstack (58%) | Streak: 52d"
+  "tweetable": "Week of Mar 14: 5 projects, 182 commits, 15.3k LOC | CC: 48, GPT: 8, Gemini: 3 | Focus: gstack (58%) | Streak: 52d"
 }
 ```
 

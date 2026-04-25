@@ -1,8 +1,10 @@
 ---
 name: cso
 version: 2.0.0
-description: "Chief Security Officer。OWASP Top 10 + STRIDE脅威モデルでセキュリティ監査。Use when: セキュリティ監査、脆弱性スキャン、OWASP、security audit、CSO、threat model。14フェーズ。信頼度8/10以上のみ報告。"
-argument-hint: "監査対象のプロジェクトまたはコンポーネント"
+description: "Chief Security Officer。OWASP Top 10 + STRIDE脅威モデルでセキュリティ監査。Use when: セキュリティ監査、脆弱性スキャン、OWASP、security audit、CSO、threat model。14フェーズ。信頼度8/10以上のみ報告。
+"
+argument-hint: "監査対象のプロジェクトまたはコンポーネント
+"
 triggers:
   - security audit
   - check for vulnerabilities
@@ -1349,7 +1351,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.

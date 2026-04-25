@@ -1,8 +1,10 @@
 ---
 name: investigate
 version: 1.0.0
-description: "根本原因デバッガー。Iron Law: 調査なしの修正は禁止。Use when: バグ調査、エラー原因、why is this broken、デバッグ、investigate、root cause。5フェーズの体系的デバッグ。3回失敗→エスカレート。"
-argument-hint: "バグの症状、エラーメッセージ、または問題の説明"
+description: "根本原因デバッガー。Iron Law: 調査なしの修正は禁止。Use when: バグ調査、エラー原因、why is this broken、デバッグ、investigate、root cause。5フェーズの体系的デバッグ。3回失敗→エスカレート。
+"
+argument-hint: "バグの症状、エラーメッセージ、または問題の説明
+"
 triggers:
   - debug this
   - fix this bug
@@ -220,7 +222,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
