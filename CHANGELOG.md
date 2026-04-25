@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0.0] - 2026-04-25
+
+### 🎉 v1.0 リリース
+
+gstack-copilot-jp の最初の安定版リリース。日本語の GitHub Copilot ユーザーが、gstack の方法論をそのまま使える。
+
+- **38スキル** — `/office-hours` から `/ship` まで、アイディア→出荷の全工程をカバー
+- **5サブエージェント** — architect, security, testing, design-critic, dx-tester が専門レビューを担当
+- **ヘッドレスブラウザ** — `/browse` でリアルなクリック、スクリーンショット、QAテスト
+- **デュアルボイス** — Claude + GPT の独立レビューで死角を潰す `/autoplan`
+- **本家 gstack v1.12.1.0 追跡完了** — 方法論とスキル判定基準は本家に追随
+
+### Changed
+- バージョン書式を upstream に統一: semver (`1.0.0-alpha.N`) → 4桁形式 (`MAJOR.MINOR.PATCH.MICRO`)
+
 ## [1.0.0-alpha.8] - 2026-04-25
 
 ### Added

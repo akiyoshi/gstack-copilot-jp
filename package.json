@@ -1,6 +1,6 @@
 {
   "name": "gstack-copilot-jp",
-  "version": "1.0.0-alpha.8",
+  "version": "1.0.0.0",
   "private": true,
   "description": "日本語のGitHub Copilotユーザーのための、AIソフトウェアファクトリー",
   "scripts": {
