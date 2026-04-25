@@ -45,9 +45,18 @@ describe('upstream-tracking.json ↔ skills/ consistency', () => {
     expect(missing, `Missing tracking entries: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('all tracking entries have a corresponding skill directory', () => {
-    const orphaned = Object.keys(tracking.skills).filter(s => !skillDirs.includes(s));
+  it('all non-excluded tracking entries have a corresponding skill directory', () => {
+    const orphaned = Object.keys(tracking.skills).filter(s => 
+      tracking.skills[s].status !== 'excluded' && !skillDirs.includes(s)
+    );
     expect(orphaned, `Orphaned tracking entries: ${orphaned.join(', ')}`).toEqual([]);
+  });
+
+  it('excluded tracking entries do NOT have a skill directory', () => {
+    const excludedWithDir = Object.keys(tracking.skills).filter(s =>
+      tracking.skills[s].status === 'excluded' && skillDirs.includes(s)
+    );
+    expect(excludedWithDir, `Excluded but dir exists: ${excludedWithDir.join(', ')}`).toEqual([]);
   });
 });
 
