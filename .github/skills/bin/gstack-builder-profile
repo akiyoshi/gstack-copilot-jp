@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# .github/skills/bin/gstack-builder-profile — ビルダープロファイル stub
+# 本家の builder-profile.jsonl 操作用。gstack-copilot-jp では ~/.gstack/ に直接書く。
+echo "{}"

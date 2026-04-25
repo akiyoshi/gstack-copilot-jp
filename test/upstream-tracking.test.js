@@ -37,7 +37,7 @@ describe('upstream-tracking.json structure', () => {
 describe('upstream-tracking.json ↔ skills/ consistency', () => {
   const tracking = JSON.parse(readFileSync(TRACKING_PATH, 'utf-8'));
   const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && d.name !== 'bin')
     .map(d => d.name);
 
   it('all skill directories have a tracking entry', () => {

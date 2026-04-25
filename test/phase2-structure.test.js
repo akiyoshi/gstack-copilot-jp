@@ -47,7 +47,7 @@ describe('Phase 2: Asset Cleanup', () => {
 describe('Phase 2: Skill Integrity', () => {
   it('all skill directories have a SKILL.md', () => {
     const skills = fs.readdirSync(SKILLS_DIR).filter(d =>
-      fs.statSync(path.join(SKILLS_DIR, d)).isDirectory()
+      fs.statSync(path.join(SKILLS_DIR, d)).isDirectory() && d !== 'bin'
     )
     for (const skill of skills) {
       const skillFile = path.join(SKILLS_DIR, skill, 'SKILL.md')
@@ -57,7 +57,7 @@ describe('Phase 2: Skill Integrity', () => {
 
   it('all SKILL.md files have name and description in frontmatter', () => {
     const skills = fs.readdirSync(SKILLS_DIR).filter(d =>
-      fs.statSync(path.join(SKILLS_DIR, d)).isDirectory()
+      fs.statSync(path.join(SKILLS_DIR, d)).isDirectory() && d !== 'bin'
     )
     for (const skill of skills) {
       const content = fs.readFileSync(path.join(SKILLS_DIR, skill, 'SKILL.md'), 'utf-8')
@@ -130,12 +130,12 @@ describe('Phase 2: bin/ Utilities', () => {
 })
 
 describe('Phase 2: Hook System', () => {
-  it('lifecycle.json includes postToolUse hook', () => {
+  it('lifecycle.json includes PostToolUse hook', () => {
     const hooks = JSON.parse(
       fs.readFileSync(path.join(ROOT, '.github', 'hooks', 'lifecycle.json'), 'utf-8')
     )
-    expect(hooks.hooks).toHaveProperty('postToolUse')
-    expect(hooks.hooks.postToolUse.length).toBeGreaterThan(0)
+    expect(hooks.hooks).toHaveProperty('PostToolUse')
+    expect(hooks.hooks.PostToolUse.length).toBeGreaterThan(0)
   })
 
   it('postToolUse hook script exists', () => {

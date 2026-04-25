@@ -2,13 +2,13 @@
 
 ## 概要
 
-[gstack](https://github.com/garrytan/gstack)（Garry Tan作）のスキル・方法論を、**GitHub Copilot CLI + 日本語で提供する適応レイヤー**。
+[gstack](https://github.com/garrytan/gstack)（Garry Tan作）のスキル・方法論を、**GitHub Copilot（CLI + VS Code Chat）+ 日本語で提供する適応レイヤー**。
 
-本家gstackを**上流として追跡し、Copilot CLI向けに適応する**。方法論・スキル判定基準は本家に追随し、マルチホスト基盤（`hosts/`, `model-overlays/`, テンプレート生成）は追跡対象外。
+本家gstackを**上流として追跡し、GitHub Copilot向けに適応する**。方法論・スキル判定基準は本家に追随し、マルチホスト基盤（`hosts/`, `model-overlays/`, テンプレート生成）は追跡対象外。
 
-### GitHub Copilot CLI は主要プリミティブを持つ
+### GitHub Copilot は主要プリミティブを持つ
 
-調査の結果、**GitHub Copilot CLI は Claude Code とほぼ同等のエージェント基盤**を持つことが判明した（2026年4月時点）。ホストターゲットを Copilot CLI に一本化する。
+調査の結果、**GitHub Copilot CLI と VS Code Copilot Chat (Agent Mode) は共に Claude Code とほぼ同等のエージェント基盤**を持つことが判明した（2026年4月時点）。両ホストで `.github/skills/`, `.github/agents/`, `.github/hooks/` を共有する。
 
 以後の表記は次の4段階で揃える。
 
@@ -38,12 +38,12 @@
 
 ```
 gstack（本家）= 方法論 + 10ホスト対応のスキル生成パイプライン（Claude Code中心）
-gstack-copilot-jp = gstackの方法論を GitHub Copilot CLI + 日本語 で使う最速の方法
+gstack-copilot-jp = gstackの方法論を GitHub Copilot（CLI + VS Code Chat）+ 日本語 で使う最速の方法
 ```
 
 独自の価値:
 - **日本語ネイティブ** — スキル出力・ドキュメント・ボイスが全て日本語
-- **Copilot CLI 専用** — Claude Code 相当の全機能（hook、セッション永続化、自律実行）を活用
+- **マルチホスト** — Copilot CLI と VS Code Copilot Chat の両方で動作（Tier A/B/C分類）
 - **Linux 統一** — macOS / Linux ネイティブ、Windows は WSL (Ubuntu)
 
 ## アーキテクチャ
@@ -671,7 +671,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 ## 実装状態
 
-**VERSION: 1.0.0-alpha.6**
+**VERSION: 1.0.0-alpha.7**
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
@@ -683,13 +683,13 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 | テスト | 8 | Vitest（Tier 1 静的検証）。test/ 3ファイル + browse/test/ 5ファイル（407テスト） |
 | 本家追跡 | v1.12.1.0 | `upstream-tracking.md` で互換性台帳を管理 |
 
-## v1.0 仕様: Copilot CLI 専用 + 追随モデル
+## v1.0 仕様: マルチホスト + 追随モデル
 
 ### v1.0 の定義
 
-v1.0 = **Copilot CLI をホストターゲットとし、本家gstack追随モデルを確立する**。
+v1.0 = **Copilot CLI + VS Code Chat をホストターゲットとし、本家gstack追随モデルを確立する**。
 
-1. **Copilot CLI 専用** — hook、セッション永続化、自律実行をフル活用
+1. **マルチホスト** — Copilot CLI と VS Code Copilot Chat の両方で動作。Tier A/B/C 分類
 2. **Linux統一** — macOS / Linux ネイティブ、Windows は WSL (Ubuntu)
 3. **Bun browse** — 本家と同一のブラウザサブシステム
 4. **プラグイン配布** — `copilot plugin install` で一発導入。複数端末で共有可能
@@ -716,8 +716,8 @@ v1.0 = **Copilot CLI をホストターゲットとし、本家gstack追随モ�
 
 | 側面 | gstack (本家) | gstack-copilot-jp v1.0 |
 |------|--------------|------------------------|
-| 位置づけ | 方法論の源泉 + 10ホスト対応インフラ | Copilot CLI + 日本語の適応レイヤー |
-| 対象ホスト | Claude Code + Codex + Gemini + Cursor + 6その他 | Copilot CLI 専用 |
+| 位置づけ | 方法論の源泉 + 10ホスト対応インフラ | Copilot CLI + VS Code Chat + 日本語の適応レイヤー |
+| 対象ホスト | Claude Code + Codex + Gemini + Cursor + 6その他 | Copilot CLI + VS Code Chat（Tier A/B/C） |
 | 言語 | 英語 | 日本語ネイティブ |
 | プラットフォーム | macOS中心 + Windows/Linux | Linux統一（macOS / Linux / WSL） |
 | インストール | `./setup` + シンボリックリンク | `./setup` は同一。既定は project-local、user-link は opt-in |

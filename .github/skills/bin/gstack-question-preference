@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# .github/skills/bin/gstack-question-preference — 質問チューニング stub
+# 本家の /plan-tune 連携用。gstack-copilot-jp では未実装、常に ASK_NORMALLY を返す。
+# 使い方: .github/skills/bin/gstack-question-preference --check "<question_id>"
+#         .github/skills/bin/gstack-question-preference --write '<json>'
+
+case "${1:-}" in
+  --check)
+    echo "ASK_NORMALLY"
+    ;;
+  --write)
+    # 書き込みは受け入れるが永続化しない（stub）
+    echo "OK"
+    ;;
+  *)
+    echo "ASK_NORMALLY"
+    ;;
+esac

@@ -60,7 +60,7 @@ describe('copilot-plugin.json integrity', () => {
 describe('skill routing completeness', () => {
   const routing = readFileSync(join(ROOT, '.github', 'copilot-instructions.md'), 'utf-8');
   const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && d.name !== 'bin')
     .map(d => d.name);
 
   // ルーティングテーブルから `/skill-name` を抽出
@@ -86,7 +86,7 @@ describe('skill routing completeness', () => {
 // === voice-friendly triggers ===
 describe('voice-friendly triggers', () => {
   const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && d.name !== 'bin')
     .map(d => d.name);
 
   it.each(skillDirs)('%s description contains "Use when:"', (skill) => {
@@ -137,18 +137,20 @@ describe('VERSION for v1.0', () => {
 describe('hook system completeness', () => {
   it('lifecycle.json has all 4 hooks', () => {
     const hooks = JSON.parse(readFileSync(join(ROOT, '.github', 'hooks', 'lifecycle.json'), 'utf-8'));
-    expect(hooks.hooks).toHaveProperty('sessionStart');
-    expect(hooks.hooks).toHaveProperty('sessionEnd');
-    expect(hooks.hooks).toHaveProperty('preToolUse');
-    expect(hooks.hooks).toHaveProperty('postToolUse');
+    expect(hooks.hooks).toHaveProperty('SessionStart');
+    expect(hooks.hooks).toHaveProperty('Stop');
+    expect(hooks.hooks).toHaveProperty('PreToolUse');
+    expect(hooks.hooks).toHaveProperty('PostToolUse');
   });
 
   it('all hook scripts exist', () => {
     const hooks = JSON.parse(readFileSync(join(ROOT, '.github', 'hooks', 'lifecycle.json'), 'utf-8'));
     for (const [event, handlers] of Object.entries(hooks.hooks)) {
       for (const handler of handlers) {
-        if (handler.bash) {
-          expect(existsSync(join(ROOT, handler.bash)), `${event}: ${handler.bash} missing`).toBe(true);
+        const cmd = handler.command || handler.bash;
+        if (cmd) {
+          const scriptPath = cmd.replace(/^bash\s+/, '');
+          expect(existsSync(join(ROOT, scriptPath)), `${event}: ${scriptPath} missing`).toBe(true);
         }
       }
     }
@@ -167,5 +169,69 @@ describe('browse TypeScript sources', () => {
   const oldFiles = ['cli.js', 'server.js', 'browser-manager.js', 'commands.js'];
   it.each(oldFiles)('browse/src/%s does NOT exist (migrated to .ts)', (file) => {
     expect(existsSync(join(browseDir, file))).toBe(false);
+  });
+});
+
+// === マルチホスト互換性 ===
+describe('multi-host compatibility', () => {
+  it('gstack-detect-host.sh exists and is executable-syntax', () => {
+    const scriptPath = join(BIN_DIR, 'gstack-detect-host.sh');
+    expect(existsSync(scriptPath)).toBe(true);
+    const content = readFileSync(scriptPath, 'utf-8');
+    expect(content).toContain('GSTACK_HOST');
+    expect(content).toContain('--json');
+  });
+
+  it('gstack-env includes GSTACK_HOST detection', () => {
+    const content = readFileSync(join(BIN_DIR, 'gstack-env'), 'utf-8');
+    expect(content).toContain('GSTACK_HOST');
+    expect(content).toContain('VSCODE_PID');
+  });
+
+  it('gstack-env has $B fallback for missing browse', () => {
+    const content = readFileSync(join(BIN_DIR, 'gstack-env'), 'utf-8');
+    expect(content).toContain('browse: not available');
+  });
+
+  it('gstack-session-start.sh uses dynamic host path', () => {
+    const content = readFileSync(join(BIN_DIR, 'gstack-session-start.sh'), 'utf-8');
+    expect(content).toContain('hosts/${GSTACK_HOST}');
+    expect(content).not.toContain('hosts/copilot-cli"');
+  });
+
+  it('gstack-init.sh uses dynamic host path', () => {
+    const content = readFileSync(join(BIN_DIR, 'gstack-init.sh'), 'utf-8');
+    expect(content).toContain('hosts/"$GSTACK_HOST"');
+    expect(content).not.toContain('hosts/copilot-cli/{');
+  });
+
+  it('lifecycle.json uses VS Code compatible format (PascalCase)', () => {
+    const hooks = JSON.parse(readFileSync(join(ROOT, '.github', 'hooks', 'lifecycle.json'), 'utf-8'));
+    expect(hooks.hooks).toHaveProperty('SessionStart');
+    expect(hooks.hooks).toHaveProperty('PreToolUse');
+    expect(hooks.hooks).toHaveProperty('PostToolUse');
+    expect(hooks.hooks).toHaveProperty('Stop');
+    // VS Code format uses "command" key, not "bash"
+    for (const [, handlers] of Object.entries(hooks.hooks)) {
+      for (const handler of handlers) {
+        expect(handler).toHaveProperty('command');
+        expect(handler).not.toHaveProperty('bash');
+      }
+    }
+  });
+
+  it('docs/vscode-setup.md exists', () => {
+    expect(existsSync(join(ROOT, 'docs', 'vscode-setup.md'))).toBe(true);
+    const content = readFileSync(join(ROOT, 'docs', 'vscode-setup.md'), 'utf-8');
+    expect(content).toContain('Tier');
+    expect(content).toContain('VS Code');
+  });
+
+  it('no remaining "Copilot CLI 専用" in key docs', () => {
+    const docs = ['DESIGN.md', 'ARCHITECTURE.md', 'README.md', '.github/copilot-instructions.md'];
+    for (const doc of docs) {
+      const content = readFileSync(join(ROOT, doc), 'utf-8');
+      expect(content, `${doc} still contains "Copilot CLI 専用"`).not.toContain('Copilot CLI 専用');
+    }
   });
 });

@@ -5,11 +5,22 @@ set -euo pipefail
 
 GSTACK_DIR="${HOME}/.gstack"
 
-echo "gstack-copilot-jp: ~/.gstack/ を初期化..."
+# ホスト検出
+if [ -z "${GSTACK_HOST:-}" ]; then
+  if [ -n "${VSCODE_PID:-}" ] || { [ "${TERM_PROGRAM:-}" = "vscode" ] && [ -n "${TERM_PROGRAM_VERSION:-}" ]; }; then
+    GSTACK_HOST="vscode"
+  elif command -v copilot >/dev/null 2>&1; then
+    GSTACK_HOST="cli"
+  else
+    GSTACK_HOST="unknown"
+  fi
+fi
+
+echo "gstack-copilot-jp: ~/.gstack/ を初期化 (host: $GSTACK_HOST)..."
 
 # ディレクトリ構造
 mkdir -p "$GSTACK_DIR"/{projects,plans,analytics,sessions}
-mkdir -p "$GSTACK_DIR"/hosts/copilot-cli/{installations,env}
+mkdir -p "$GSTACK_DIR"/hosts/"$GSTACK_HOST"/{installations,env}
 mkdir -p "$GSTACK_DIR"/repos
 
 # config.yaml（存在しなければ作成）
@@ -23,12 +34,12 @@ EOF
   echo "  config.yaml を作成"
 fi
 
-# capabilities.json（Copilot CLI 固有）
-CAPS_FILE="$GSTACK_DIR/hosts/copilot-cli/capabilities.json"
+# capabilities.json（ホスト固有）
+CAPS_FILE="$GSTACK_DIR/hosts/$GSTACK_HOST/capabilities.json"
 if [ ! -f "$CAPS_FILE" ]; then
-  cat > "$CAPS_FILE" << 'EOF'
+  cat > "$CAPS_FILE" << EOF
 {
-  "host": "copilot-cli",
+  "host": "$GSTACK_HOST",
   "detected_at": null,
   "builtins": {
     "code-review": "unknown",
@@ -41,9 +52,7 @@ if [ ! -f "$CAPS_FILE" ]; then
     "github": "unknown",
     "playwright": "unknown",
     "fetch": "unknown"
-  },
-  "fleet": "unknown",
-  "plugin": "unknown"
+  }
 }
 EOF
   echo "  capabilities.json を作成"
