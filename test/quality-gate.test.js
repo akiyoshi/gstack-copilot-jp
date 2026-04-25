@@ -130,9 +130,9 @@ describe('ドキュメント数値整合性', () => {
 });
 
 describe('VERSION ファイル', () => {
-  it('semver形式である', () => {
+  it('upstream 4桁形式またはsemver形式である', () => {
     const version = readFileSync(join(ROOT, 'VERSION'), 'utf-8').trim();
-    expect(version).toMatch(/^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$/);
+    expect(version).toMatch(/^\d+\.\d+\.\d+(\.\d+)?(-[a-zA-Z0-9.-]+)?$/);
   });
 });
 

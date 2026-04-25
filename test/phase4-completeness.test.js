@@ -121,9 +121,9 @@ describe('setup script', () => {
 
 // === VERSION format ===
 describe('VERSION for v1.0', () => {
-  it('is valid semver', () => {
+  it('is valid version (4-digit upstream or semver)', () => {
     const version = readFileSync(join(ROOT, 'VERSION'), 'utf-8').trim();
-    expect(version).toMatch(/^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$/);
+    expect(version).toMatch(/^\d+\.\d+\.\d+(\.\d+)?(-[a-zA-Z0-9.-]+)?$/);
   });
 
   it('TODO.md references matching version', () => {
