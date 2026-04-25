@@ -6,10 +6,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GSTACK_DIR="${HOME}/.gstack"
 SESSIONS_DIR="${GSTACK_DIR}/sessions"
-SESS_FILE="${SESSIONS_DIR}/${PPID}"
 
-# セッションファイル削除
-rm -f "$SESS_FILE" 2>/dev/null
+# セッションファイル削除（PPID-* パターンで session-start と一致させる）
+find "$SESSIONS_DIR" -maxdepth 1 -name "${PPID:-$$}-*" -type f -delete 2>/dev/null
+# レガシー形式（PPID のみ）のクリーンアップ
+rm -f "${SESSIONS_DIR}/${PPID}" 2>/dev/null
 
 # スキル使用ログ (JSONL)
 SLUG=$("$SCRIPT_DIR/gstack-slug" 2>/dev/null || echo "unknown")

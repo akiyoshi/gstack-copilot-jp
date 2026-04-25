@@ -9,10 +9,15 @@ set -euo pipefail
 # ホスト検出
 detect_host() {
   if [ -n "${GSTACK_HOST:-}" ]; then
+    # サニタイズ: 英小文字・数字・ハイフン・アンダースコアのみ許可
+    if ! printf '%s' "$GSTACK_HOST" | grep -qE '^[a-z0-9_-]+$'; then
+      echo "unknown"
+      return
+    fi
     echo "$GSTACK_HOST"  # 手動上書き（エスケープハッチ）
     return
   fi
-  if [ -n "${VSCODE_PID:-}" ] || [ -n "${TERM_PROGRAM_VERSION:-}" ] && [ "${TERM_PROGRAM:-}" = "vscode" ]; then
+  if [ -n "${VSCODE_PID:-}" ] || { [ -n "${TERM_PROGRAM_VERSION:-}" ] && [ "${TERM_PROGRAM:-}" = "vscode" ]; }; then
     echo "vscode"
   elif command -v copilot >/dev/null 2>&1; then
     echo "cli"
