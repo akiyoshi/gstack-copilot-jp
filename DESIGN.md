@@ -660,7 +660,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 | `/setup-browser-cookies` | 同一 | |
 | `/setup-deploy` | 同一 | |
 | `/benchmark-models` | 適応 | Copilot CLI マルチモデル環境向け |
-| `/health` | 同一 | typecheck/lint/test/deadcode を wrap して 0-10 スコア |
+| `/health` | 同一 | typecheck/lint/test/deadcode を wrap して 0-10 スコア。GBrain次元(v1.12.0.0)は除外 |
 | `/careful` | 同一 | |
 | `/freeze` | 同一 | |
 | `/guard` | 同一 | |
@@ -671,17 +671,17 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 ## 実装状態
 
-**VERSION: 1.0.0-alpha.5**
+**VERSION: 1.0.0-alpha.6**
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
-| スキル | 37 | スプリントプロセス全フェーズ + パワーツール |
+| スキル | 38 | スプリントプロセス全フェーズ + パワーツール + make-pdf |
 | エージェント | 5 | architect, design-critic, dx-tester, security, testing |
 | bin/ | 18 | gstack-slug, gstack-config, gstack-env, gstack-diff-scope 等の本家互換ユーティリティ |
 | ブラウザ | 1 | Bun コンパイル + Playwright（本家互換） |
 | hookシステム | 4 | sessionStart, sessionEnd, preToolUse, postToolUse |
 | テスト | 8 | Vitest（Tier 1 静的検証）。test/ 3ファイル + browse/test/ 5ファイル（407テスト） |
-| 本家追跡 | v1.4.0.0 | `upstream-tracking.md` で互換性台帳を管理 |
+| 本家追跡 | v1.12.1.0 | `upstream-tracking.md` で互換性台帳を管理 |
 
 ## v1.0 仕様: Copilot CLI 専用 + 追随モデル
 
@@ -693,7 +693,7 @@ v1.0 = **Copilot CLI をホストターゲットとし、本家gstack追随モ�
 2. **Linux統一** — macOS / Linux ネイティブ、Windows は WSL (Ubuntu)
 3. **Bun browse** — 本家と同一のブラウザサブシステム
 4. **プラグイン配布** — `copilot plugin install` で一発導入。複数端末で共有可能
-5. **本家 v1.1 の方法論を反映** — 各スキルの判定基準・ワークフローが本家と同等
+5. **本家 v1.12.1.0 の方法論を反映** — 各スキルの判定基準・ワークフローが本家と同等。AskUserQuestion Decision-Brief Format 採用
 
 ### v1.0 リリース基準
 
@@ -704,37 +704,13 @@ v1.0 = **Copilot CLI をホストターゲットとし、本家gstack追随モ�
 | 4 hooks 動作 | ✅ | sessionStart, sessionEnd, preToolUse, postToolUse |
 | browse ビルド成功 | ✅ | `bun build --compile` → `browse/dist/browse` |
 | Tier 1 テスト全 pass | ✅ | `npm test` (Vitest) |
-| 本家 v1.4.0.0 まで追跡完了 | ✅ | `upstream-tracking.md` |
+| 本家 v1.12.1.0 まで追跡完了 | ✅ | `upstream-tracking.md` |
 | README + getting-started 完備 | ✅ | |
 | ARCHITECTURE.md 作成 | ✅ | |
 | `copilot-plugin.json` 作成 | ✅ | |
 | VERSION を `1.0.0` に更新 | 🔲 | リリース時 |
 | git tag `v1.0.0` | 🔲 | リリース時 |
 
-### 既知の制限事項
-
-v1.0 で意図的に含めないもの:
-
-| 項目 | 理由 | 対応予定 |
-|------|------|---------|
-| browse Puppeteer parity (`load-html`, `--selector`, `--scale`, `file://`) | 本家が Puppeteer→Playwright 移行中 | v1.1 |
-| `/make-pdf` | browse `$B pdf` 対応が前提 | v1.1 |
-| `gstack-update-check` | sessionStart hook が静かにスキップ | v1.1 |
-| `gstack-uninstall` | `setup --uninstall` で手動対応可 | v1.1 |
-| Tier 2 E2E テスト (`copilot -p`) | インフラ構築が必要 | v1.1 |
-| `/plan-tune` | `store_memory` で簡易代替可 | v1.1 |
-| `$D` (design binary) | テキストベースで代替 | スコープ外 |
-| CI 自動ビルド・公開 | GitHub Actions 構築が必要 | v1.1 |
-
-### v1.1 方向性
-
-v1.0 リリース後の優先事項:
-
-1. **browse Puppeteer parity** — `load-html`, `--selector`, `--scale`, `file://` ナビゲーション対応
-2. **`/make-pdf`** — browse `$B pdf` を活用した PDF 生成スキル
-3. **Tier 2 E2E テスト基盤** — `copilot -p --output-format json` による自動スキルテスト
-4. **CI/CD パイプライン** — GitHub Actions で Tier 1 テスト + browse ビルド + plugin 公開
-5. **`/plan-tune`** — `store_memory` と `copilot-instructions.md` を活用した質問チューニング
 
 ## 本家gstackとの構造的差異
 
@@ -782,6 +758,9 @@ v1.0 リリース後の優先事項:
 - テレメトリ / アナリティクス — プライバシー優先
 - テンプレートビルドシステム — 手書きで十分
 - 有料化 — OSSとして公開
+- GBrain Sync（クロスマシンメモリ） — store_memory + session_store_sql で代替
+- ML Prompt Injection Defense（BERT分類器） — サイドバー固有。Copilot CLIはプラットフォームレベルで防御
+- Model Overlays — Copilot CLI `/model` でネイティブ切替
 
 ## 設計原則
 
