@@ -8,7 +8,7 @@ gstack-copilot-jp のアーキテクチャと設計判断の記録。
 gstack-copilot-jp/
 ├── .github/
 │   ├── copilot-instructions.md   # スキルルーティング + ボイス + ethos
-│   ├── skills/ (40)              # SKILL.md — スキル定義
+│   ├── skills/ (38)              # SKILL.md — スキル定義
 │   ├── agents/ (5)               # *.agent.md — サブエージェント
 │   ├── hooks/lifecycle.json      # sessionStart/End, preToolUse, postToolUse
 │   └── copilot/settings.json     # Copilot CLI リポジトリ設定
@@ -16,10 +16,11 @@ gstack-copilot-jp/
 │   ├── src/*.ts                  # TypeScript ソース
 │   ├── dist/browse               # コンパイル済みバイナリ (gitignore)
 │   └── test/                     # Vitest テスト
-├── bin/                          # bash ユーティリティ (18スクリプト)
+├── bin/                          # bash ユーティリティ (19スクリプト)
 ├── test/                         # ルートテスト (Vitest)
 ├── copilot-plugin.json           # プラグインマニフェスト
 ├── setup                         # セットアップスクリプト
+├── TODO.md                       # ロードマップと未実装項目
 ├── DESIGN.md                     # 詳細設計ドキュメント
 ├── ETHOS.md                      # 3つの原則
 └── VERSION                       # セマンティックバージョニング

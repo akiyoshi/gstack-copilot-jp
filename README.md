@@ -91,6 +91,7 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | | `/qa-only` | QAレポーター — レポートのみ |
 | | `/cso` | CISO — OWASP + STRIDE監査 |
 | | `/benchmark` | パフォーマンスエンジニア — 計測・比較 |
+| | `/health` | コード品質ダッシュボード — 4軸0-10スコア |
 | 出荷する | `/ship` | リリースエンジニア — テスト→PR作成 |
 | | `/land-and-deploy` | SRE — マージ→デプロイ→検証 |
 | | `/canary` | SRE — デプロイ後監視 |
@@ -111,6 +112,9 @@ gstack-copilot-jpは**プロセス**であり、ツール集ではない。ス�
 | | `/open-gstack-browser` | 可視ブラウザ起動 |
 | | `/setup-browser-cookies` | Cookie インポート |
 | | `/pair-agent` | マルチエージェント ブラウザ共有 |
+| ドキュメント | `/make-pdf` | Markdown → 出版品質PDF変換 |
+| | `/context-save` | セッション保存（チェックポイント） |
+| | `/context-restore` | セッション復帰 |
 | 安全 | `/careful` | 破壊的コマンド警告 |
 | | `/freeze` | 編集ロック（指定ディレクトリのみ許可） |
 | | `/guard` | careful + freeze 統合 |
@@ -159,21 +163,14 @@ Copilot: $B goto https://staging.myapp.com
 ## ルール体系
 
 スキルは呼び出し時のみ発動するが、**ルールは常時適用**される。
+`copilot-instructions.md` の「コーディング規約」セクションに定義:
 
-```
-.github/rules/
-  common/               # 言語非依存（常に適用）
-    coding-style.md     # 命名、不変性、ファイル構成
-    git-workflow.md     # コミット形式、ブランチ戦略
-    testing.md          # カバレッジ基準、テスト構造
-    security.md         # 入力検証、シークレット管理
-  typescript/           # TS/JS ファイルに適用
-    coding-style.md     # 型安全性、React規約
-    testing.md          # Vitest/Jest、Testing Library
-  python/               # Python ファイルに適用
-    coding-style.md     # 型ヒント、構造、フォーマット
-    testing.md          # pytest、フィクスチャ
-```
+- **共通**: 命名、不変性、ファイル構成、エラー処理
+- **TypeScript**: `any` 禁止、`import type`、`async/await`
+- **Python**: 型ヒント、`dataclass`/`pydantic`、裸の `except` 禁止
+- **Git**: Conventional Commits、PR差分300行以下
+- **セキュリティ**: 入力バリデーション、シークレット管理
+- **テスト**: AAAパターン、カバレッジ基準（ビジネスロジック80%+）
 
 詳細は `copilot-instructions.md` を参照。
 

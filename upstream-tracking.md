@@ -15,7 +15,7 @@
 |------|-----|
 | 本家バージョン | v1.12.1.0 (fix: remove vestigial plan-mode handshake) |
 | 最終検証日 | 2026-04-25 |
-| gstack-copilot-jp バージョン | 1.0.0-alpha.6 |
+| gstack-copilot-jp バージョン | 1.0.0-alpha.7 |
 
 ## 本家の方向性
 
