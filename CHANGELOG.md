@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - feat/multi-host
+
+### Added
+- **マルチホスト対応**: Copilot CLI + VS Code Copilot Chat の両方で動作する構成に移行
+- `bin/gstack-detect-host.sh`: capability-based ホスト検出（JSON出力対応）
+- `docs/vscode-setup.md`: VS Code Copilot Chat 向けセットアップガイド
+- マルチホスト互換性テスト 9件追加（442テスト全通過）
+- スキル互換性 Tier 分類: A（完全互換）/ B（制限付き互換）/ C（CLI専用）
+
+### Changed
+- `GSTACK_HOST` 環境変数でホスト自動検出 + 手動上書き（エスケープハッチ）
+- `bin/gstack-env`: `$B` フォールバック追加（browse 未インストール時にエラーではなく案内）
+- `bin/gstack-session-start.sh`: `hosts/${GSTACK_HOST}/` 動的パス、UUID セッションID
+- `bin/gstack-init.sh`: `hosts/copilot-cli` ハードコード → `hosts/${GSTACK_HOST}` 動的化
+- `.github/hooks/lifecycle.json`: VS Code 互換形式（PascalCase + `command` key）
+- DESIGN.md / ARCHITECTURE.md / README.md: 「CLI専用」→「マルチホスト」に改訂
+- copilot-instructions.md: CLI限定記述を修正
+
+### Migration Notes
+- hooks イベント名が PascalCase に変更（`sessionStart` → `SessionStart`, `sessionEnd` → `Stop`）
+- hooks コマンドキーが `"bash"` → `"command"` に変更
+- `copilot-plugin.json` は VS Code では認識されない。VS Code は git clone ベースでインストール
+
 ## [1.0.0-alpha.6] - 2026-04-25
 
 ### Added
