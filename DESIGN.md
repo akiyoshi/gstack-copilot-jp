@@ -683,13 +683,13 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 | テスト | 8 | Vitest（Tier 1 静的検証）。test/ 3ファイル + browse/test/ 5ファイル（407テスト） |
 | 本家追跡 | v1.12.1.0 | `upstream-tracking.md` で互換性台帳を管理 |
 
-## v1.0 仕様: Copilot CLI 専用 + 追随モデル
+## v1.0 仕様: マルチホスト + 追随モデル
 
 ### v1.0 の定義
 
-v1.0 = **Copilot CLI をホストターゲットとし、本家gstack追随モデルを確立する**。
+v1.0 = **Copilot CLI + VS Code Chat をホストターゲットとし、本家gstack追随モデルを確立する**。
 
-1. **Copilot CLI 専用** — hook、セッション永続化、自律実行をフル活用
+1. **マルチホスト** — Copilot CLI と VS Code Copilot Chat の両方で動作。Tier A/B/C 分類
 2. **Linux統一** — macOS / Linux ネイティブ、Windows は WSL (Ubuntu)
 3. **Bun browse** — 本家と同一のブラウザサブシステム
 4. **プラグイン配布** — `copilot plugin install` で一発導入。複数端末で共有可能
@@ -716,8 +716,8 @@ v1.0 = **Copilot CLI をホストターゲットとし、本家gstack追随モ�
 
 | 側面 | gstack (本家) | gstack-copilot-jp v1.0 |
 |------|--------------|------------------------|
-| 位置づけ | 方法論の源泉 + 10ホスト対応インフラ | Copilot CLI + 日本語の適応レイヤー |
-| 対象ホスト | Claude Code + Codex + Gemini + Cursor + 6その他 | Copilot CLI 専用 |
+| 位置づけ | 方法論の源泉 + 10ホスト対応インフラ | Copilot CLI + VS Code Chat + 日本語の適応レイヤー |
+| 対象ホスト | Claude Code + Codex + Gemini + Cursor + 6その他 | Copilot CLI + VS Code Chat（Tier A/B/C） |
 | 言語 | 英語 | 日本語ネイティブ |
 | プラットフォーム | macOS中心 + Windows/Linux | Linux統一（macOS / Linux / WSL） |
 | インストール | `./setup` + シンボリックリンク | `./setup` は同一。既定は project-local、user-link は opt-in |
