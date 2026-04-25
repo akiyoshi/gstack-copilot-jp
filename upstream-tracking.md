@@ -76,9 +76,6 @@ v1.0.0以降、本家は**マルチホストプラットフォーム**に進化�
 | `/document-release` | ✓ | ✓ | vendored |  |
 | `/canary` | ✓ | ✓ | vendored |  |
 | `/land-and-deploy` | ✓ | ✓ | vendored |  |
-| `/tdd` | — | ✓ | diverged | 独自実装 |
-| `/sprint` | — | ✓ | diverged | 独自スプリントオーケストレーター |
-| `/gstack-status` | — | ✓ | diverged | gstack-copilot-jp 状態確認 |
 | `/make-pdf` | ✓ | — | planned | browse $B pdf 対応後に実装 |
 | `/codex` | ✓ | — | excluded | `/model` + `task` で代替 |
 | `/plan-tune` | ✓ | — | excluded | `store_memory` で代替 |

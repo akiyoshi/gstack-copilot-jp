@@ -631,10 +631,8 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 | | `/plan-design-review` | 同一 |
 | | `/plan-devex-review` | 同一 |
 | | `/autoplan` | 同一 |
-| 作る | `/tdd` | 独自（維持。本家に実装されたら統合） |
-| | `/design-html` | 同一 |
+| 作る | `/design-html` | 同一 |
 | | `/investigate` | 同一 |
-| | `/sprint` | 独自（維持。スプリントオーケストレーター） |
 | レビュー | `/gstack-review` | 適応（`code-review` + `/model` 切替 + fallback） |
 | | `/design-review` | 同一 |
 | | `/devex-review` | 同一 |
@@ -677,7 +675,7 @@ Copilot CLI 側の API や built-in agent が変わっても即死しないよ�
 
 | カテゴリ | 数量 | 内容 |
 |---------|------|------|
-| スキル | 40 | スプリントプロセス全フェーズ + パワーツール |
+| スキル | 37 | スプリントプロセス全フェーズ + パワーツール |
 | エージェント | 5 | architect, design-critic, dx-tester, security, testing |
 | bin/ | 18 | gstack-slug, gstack-config, gstack-env, gstack-diff-scope 等の本家互換ユーティリティ |
 | ブラウザ | 1 | Bun コンパイル + Playwright（本家互換） |

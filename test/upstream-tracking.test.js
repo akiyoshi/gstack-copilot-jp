@@ -78,6 +78,12 @@ describe('upstream-tracking.json state integrity', () => {
     }
   });
 
+  it('no diverged entries remain', () => {
+    const diverged = Object.entries(tracking.skills)
+      .filter(([, e]) => e.status === 'diverged');
+    expect(diverged, `diverged entries found: ${diverged.map(([n]) => n).join(', ')}`).toHaveLength(0);
+  });
+
   it('non-diverged entries have upstream path', () => {
     for (const [name, entry] of Object.entries(tracking.skills)) {
       if (entry.status !== 'diverged' && entry.status !== 'excluded') {

@@ -206,16 +206,6 @@
       "status": "vendored",
       "reason": ""
     },
-    "tdd": {
-      "upstream": null,
-      "status": "diverged",
-      "reason": "本家に対応なし。独自実装"
-    },
-    "sprint": {
-      "upstream": null,
-      "status": "diverged",
-      "reason": "本家に対応なし。独自スプリントオーケストレーター"
-    },
     "gstack-review": {
       "upstream": "review/SKILL.md",
       "status": "vendored",
@@ -227,11 +217,6 @@
         "greptile",
         "eval-suite"
       ]
-    },
-    "gstack-status": {
-      "upstream": null,
-      "status": "diverged",
-      "reason": "本家に対応なし。gstack-copilot-jp 状態確認"
     }
   }
 }

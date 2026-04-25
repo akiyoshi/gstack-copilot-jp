@@ -17,11 +17,6 @@ describe('getting-started.md 品質', () => {
     expect(match).not.toBeNull();
     expect(parseInt(match[1])).toBe(skillCount);
   });
-
-  it('/sprint の記載がある', () => {
-    const content = readFileSync(gsPath, 'utf-8');
-    expect(content).toContain('/sprint');
-  });
 });
 
 describe('全スキル フロントマター検証', () => {
@@ -59,11 +54,8 @@ describe('全スキル フロントマター検証', () => {
       it('フロントマターに version フィールドがある', () => {
         const content = readFileSync(skillPath, 'utf-8');
         const frontmatter = content.split('---')[1];
-        // diverged スキル（tdd, sprint, gstack-status）は手書きのため version なし
-        const diverged = ['tdd', 'sprint', 'gstack-status'];
-        if (!diverged.includes(skill)) {
-          expect(frontmatter).toMatch(/version:\s*\d+\.\d+\.\d+/);
-        }
+        // 全スキルが vendored であるため version フィールドは必須
+        expect(frontmatter).toMatch(/version:\s*\d+\.\d+\.\d+/);
       });
     });
   }
@@ -86,7 +78,7 @@ describe('copilot-instructions.md とスキルの整合性', () => {
 
     // ルーティングされたスキルのうち、ディレクトリが存在しないものがない
     // (learn 振り返り → learn, gstack-upgrade → upgrade のようなエイリアスは除外)
-    const aliases = { 'learn': 'learn', 'gstack-upgrade': 'gstack-upgrade', 'health': 'health', 'gstack-review': 'gstack-review', 'gstack-status': 'gstack-status' };
+    const aliases = { 'learn': 'learn', 'gstack-upgrade': 'gstack-upgrade', 'health': 'health', 'gstack-review': 'gstack-review' };
     for (const skill of routedSkills) {
       const dirName = aliases[skill] || skill;
       expect(existingDirs.has(dirName), `ルート /${skill} に対応するディレクトリ ${dirName}/ が見つからない`).toBe(true);

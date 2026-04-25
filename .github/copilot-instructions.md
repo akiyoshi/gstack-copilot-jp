@@ -16,7 +16,7 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | デザインレビュー、UI/UX | `/plan-design-review` |
 | 開発者体験、オンボーディング、API設計 | `/plan-devex-review` |
 | 全レビューを一括で | `/autoplan` |
-| 実装して、作って、あとはやっておいて | `/sprint` |
+
 | デザイン相談、ブランド構築 | `/design-consultation` |
 | デザイン案を複数見たい | `/design-shotgun` |
 | デザインをHTMLに変換 | `/design-html` |
@@ -37,7 +37,7 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | ドキュメント更新 | `/document-release` |
 | 学習記録の管理 | `/learn` |
 | セッション振り返り | `/learn 振り返り` |
-| TDD、テストファースト | `/tdd` |
+
 | 「慎重にやって」、安全モード | `/careful` |
 | ファイル編集を制限 | `/freeze` |
 | フル安全モード | `/guard` |
@@ -50,7 +50,7 @@ GitHub Copilot CLI + 日本語のAIソフトウェアファクトリー。
 | アップグレード | `/gstack-upgrade` |
 | セッション保存 | `/context-save` |
 | セッション復帰、どこまでやったっけ | `/context-restore` |
-| 状態確認、バージョン | `/gstack-status` |
+
 
 ## 言語
 
@@ -172,14 +172,12 @@ gstack-copilot-jp はプロセスだ。ツール集ではない。
 
 各スキルは前のスキルの成果物を読み、次のスキルが使える成果物を残す。
 
-`/sprint` はこのプロセスの「実行エンジン」。変更種別（docs/config/refactor/bugfix/new/high-risk）とリスクに応じて実装モード（tdd/investigate-first/direct-edit）、品質モード（review-lite/full-review/security-review）、リリースモード（ship/no-ship）を自動選択する。
-
 ## プロアクティブスキル提案
 
 ブランチの状態から次のアクションを提案する:
 
 - **diff がある + テスト未実行** → 「`/gstack-review` でレビューしますか？」
-- **DESIGN.md が存在 + 実装なし** → 「`/sprint` で実装を始めますか？」
+- **DESIGN.md が存在 + 実装なし** → 「実装を始めますか？」
 - **PR 作成済み + マージ待ち** → 「`/land-and-deploy` でマージしますか？」
 - **セッション開始時 + 前回の作業あり** → 「`/context-restore` で復帰しますか？」
 

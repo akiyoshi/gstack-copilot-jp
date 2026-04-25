@@ -88,7 +88,7 @@ describe('Phase 2: Skill Integrity', () => {
     const routing = fs.readFileSync(
       path.join(ROOT, '.github', 'copilot-instructions.md'), 'utf-8'
     )
-    const activeSkills = ['/gstack-review', '/ship', '/health', '/sprint', '/tdd', '/gstack-upgrade']
+    const activeSkills = ['/gstack-review', '/ship', '/health', '/gstack-upgrade']
     for (const skill of activeSkills) {
       expect(routing, `routing missing ${skill}`).toContain(skill)
     }

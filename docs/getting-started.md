@@ -1,6 +1,6 @@
 # はじめに
 
-gstack-copilot-jp には40のスキルがある。全部を覚える必要はない。
+gstack-copilot-jp には37のスキルがある。全部を覚える必要はない。
 
 **最初に試す3つ**:
 
@@ -52,15 +52,12 @@ Copilotが6つの問いかけで「TODOアプリ」を磨く。終わると `DES
 /office-hours     → DESIGN.md 生成
 /plan-ceo-review  → 戦略レビュー
 /plan-eng-review  → アーキテクチャ図・テスト計画
-/tdd              → テストファースト実装
 /gstack-review           → コードレビュー・自動修正
 /qa               → QA・バグ修正ループ
 /ship             → PR作成・出荷
 ```
 
 全部手動で呼ぶのが面倒なら `/autoplan` で計画フェーズを一括実行できる。
-
-実装タスクを自動で回したいなら `/sprint` でスプリント全体を自動連鎖実行できる。
 
 ## よくある問題
 
