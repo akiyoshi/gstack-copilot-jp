@@ -96,13 +96,6 @@ describe('レガシー清掃', () => {
   });
 });
 
-describe('Confusion Protocol', () => {
-  it('copilot-instructions.md に Confusion Protocol がある', () => {
-    const copilotPath = join(ROOT, '.github', 'copilot-instructions.md');
-    const content = readFileSync(copilotPath, 'utf-8');
-    expect(content).toContain('Confusion Protocol');
-  });
-});
 
 describe('copilot-instructions.md 品質ゲート機能', () => {
   const copilotPath = join(ROOT, '.github', 'copilot-instructions.md');

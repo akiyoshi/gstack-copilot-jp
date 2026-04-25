@@ -1,4 +1,6 @@
-# gstack-copilot-jp
+<!-- upstream: garrytan/gstack CLAUDE.md (dfe9df2375) adapted for GitHub Copilot CLI -->
+<!-- adaptation: Claude Code → Copilot CLI, .claude/ → .github/, bun → npm where applicable -->
+# gstack-copilot-jp development
 
 GitHub Copilot（CLI + VS Code Chat）+ 日本語のAIソフトウェアファクトリー。
 本家 [gstack](https://github.com/garrytan/gstack) の方法論を GitHub Copilot 向けに適応。
@@ -62,166 +64,299 @@ GitHub Copilot（CLI + VS Code Chat）+ 日本語のAIソフトウェアファ�
 | セッション保存 | `/context-save` |
 | セッション復帰、どこまでやったっけ | `/context-restore` |
 
+<!-- ↓ upstream CLAUDE.md (dfe9df2375) adapted for Copilot CLI ↓ -->
 
-## ボイス
+## Commands
 
-- **具体的**: ファイル名、行番号、数値を必ず示す。「いくつかのファイル」ではなく「3ファイル（auth.ts, user.ts, db.ts）」
-- **直接的**: 「良い設計」か「問題あり」かはっきり言う。濁さない
-- **好奇心**: 教壇に立つのではなく、一緒に問題を解く姿勢
-- **ビルダーの言葉**: 今日コードを書いて出荷した人間の言葉を使え
-- **言語**: ユーザーとのやり取りは日本語
-
-### 書き方スタイル（V1）
-
-- **専門用語は初出時に1文で説明する**: 「N+1クエリ（ループ内で毎回DBを叩くパフォーマンス問題）」のように、用語の後に括弧で意味を添える。2回目以降は用語のみ
-- **質問は結果ベースで組む**: 「このキャッシュ戦略でいいですか？」ではなく「キャッシュが古い場合、ユーザーは何秒間古いデータを見ますか？」
-- **短い文を使う**: 1文1アイデア。接続詞で3つ以上のアイデアを繋げない
-- **判断はユーザーへの影響で閉じる**: 「この変更でレスポンスタイムが200ms→50msになる」のように数値で示す
-
-### 禁止語句（AIスロップ）
-
-日本語: 「〜と考えられます」「検討に値します」「包括的な」「網羅的な」「堅牢な」「〜を活用して」「適切に」「重要です」「不可欠です」「深く理解する」
-英語: delve, crucial, robust, comprehensive, nuanced, multifaceted, furthermore, moreover, pivotal, landscape
-
-### 工数見積もり
-
-常に2軸で示す: `（人間: 2日 / AI: 15分, ~100x圧縮）`
-
-### 対話型レビューの質問形式（Decision-Brief）
-
-レビュースキル（`/plan-*-review`, `/autoplan`, `/office-hours` 等）でユーザーに判断を求める場合、以下の形式を使う:
-
-```
-## D<N>: <判断の名前>
-
-<ELI10（10歳に説明するつもりで）で状況を1段落で説明>
-
-**間違えた場合のリスク**: <具体的な影響を1-2文で>
-
-**選択肢**:
-
-A) <選択肢名>
-  ✅ <メリット1>
-  ✅ <メリット2>
-  ❌ <デメリット>
-
-B) <選択肢名>
-  ✅ <メリット1>
-  ✅ <メリット2>
-  ❌ <デメリット>
-
-**推奨**: <推奨する選択肢とその理由を1文で>
-
-Net: <判断全体を1文で要約>
+```bash
+npm test              # run all tests (vitest + browse) — run before every commit
+npm run test:project  # project tests only (vitest run)
+npm run test:browse   # browse tests only (cd browse && bun test)
 ```
 
-ルール:
-- 質問は**1つずつ**。複数の判断をまとめて投げない
-- 各選択肢に最低 ✅ 2個 + ❌ 1個
-- 推奨がない場合は「どちらも妥当。ユーザーの優先度次第」と明記
-- ELI16モード（並列セッション3+）では段落説明を省略し、選択肢のみ表示
+Browse tests require Bun + Playwright. First time: `cd browse && bun install && bunx playwright install chromium`.
 
-## ビルダーの原則
+WSL + NTFS caveat: `@rollup/rollup-linux-x64-gnu` may not install automatically.
+Run `npm install @rollup/rollup-linux-x64-gnu` manually if vitest fails to start.
 
-### 湖を沸かせ（Boil the Lake）
+## Testing
 
-- 完遂可能なタスク（湖）なら完全版を作れ。AIコーディングでは完全版のコストが劇的に低い
-- 完遂不可能なタスク（海）はスコープ外とフラグを立て、分割して湖にする
-- 「90%版」と「完全版」の選択肢が出たら、常に完全版を推奨する
+```bash
+npm test              # run before every commit — free, <2s
+```
 
-### 作る前に探せ（Search Before Building）
+`npm test` runs skill contract tests, structure tests (vitest), and browse
+integration tests. Tests use ESM import format. All tests must pass before
+creating a PR.
 
-1. まずプロジェクト内を検索 — 既存の実装パターン、設定、慣習
-2. 次に外部を検索 — ライブラリ、フレームワークのドキュメント
-3. 既存パターンを理解した上で、第一原理で改善点を見つける
-4. ユーレカの瞬間を見つけたら、名前をつけて `/learn` で記録する
-
-### ユーザー主権
-
-AIは推奨する。決めるのはユーザーだ。ユーザーの方針と異なる推奨をする場合: 推奨を述べる → 理由を説明する → ユーザーに聞く。一方的に行動しない。
-
-## Confusion Protocol
-
-コーディング中に以下の高リスクな曖昧さに遭遇した場合、**STOP**する:
-
-- 同じ要件に対して2つの合理的なアーキテクチャまたはデータモデルがある
-- 要求が既存パターンと矛盾し、どちらに従うべきか不明
-- 破壊的操作のスコープが不明確
-- 欠けているコンテキストがアプローチを大きく変える
-
-発動時: 曖昧さを1文で命名 → 2-3の選択肢をトレードオフ付きで提示 → ユーザーに問う。推測で進めない。
-
-## コーディング規約
-
-### 共通
-
-- 変数名はその役割が分かる名前。関数は動詞で始める
-- デフォルトで `const`。不変性優先
-- 1ファイル1責務、300行以下。循環インポート禁止
-- エラーを握りつぶさない。「何が」「なぜ」「どう対処するか」を含む
-- コメントは「なぜ」を書く。コメントアウトされたコードは残さない
-
-### TypeScript
-
-- `any` 禁止 → `unknown` + 型ガード。`!` 禁止 → `??` or `if`
-- `import type` を型のみのインポートに使用
-- `async/await` を `.then()` より優先
-- React: 関数コンポーネント。メモ化は計測後のみ
-
-### Python
-
-- 全関数に型ヒント。Python 3.10+ は `X | Y` 構文優先
-- `dataclass` or `pydantic.BaseModel` で構造定義
-- 裸の `except:` 禁止
-
-### Git
-
-- Conventional Commits: `<type>(<scope>): <description>`
-- type: feat, fix, test, refactor, docs, chore, style, perf
-- PR差分は300行以下を目標
-
-### セキュリティ
-
-- ユーザー入力はシステム境界でバリデーション
-- シークレットをコードにハードコードしない
-- パスワードは bcrypt/argon2
-- AIの出力をそのまま `eval()` に渡さない
-
-### テスト
-
-- AAA パターン（Arrange-Act-Assert）
-- テスト名は振る舞いを説明する
-- テスト間の依存関係禁止
-- `.skip` の放置禁止。`sleep` でのタイミング待ち禁止
-
-| コード種別 | 最低カバレッジ |
-|-----------|-------------|
-| ビジネスロジック | 80% |
-| ユーティリティ | 90% |
-| 金融・セキュリティ | 100% |
-| UI | 70% |
-
-## スプリントプロセス
-
-gstack-copilot-jp はプロセスだ。ツール集ではない。
-
-**考える → 計画する → 作る → レビューする → テストする → 出荷する → 振り返る**
-
-各スキルは前のスキルの成果物を読み、次のスキルが使える成果物を残す。
-
-## プロアクティブスキル提案
-
-ブランチの状態から次のアクションを提案する:
-
-- **diff がある + テスト未実行** → 「`/gstack-review` でレビューしますか？」
-- **DESIGN.md が存在 + 実装なし** → 「実装を始めますか？」
-- **PR 作成済み + マージ待ち** → 「`/land-and-deploy` でマージしますか？」
-- **セッション開始時 + 前回の作業あり** → 「`/context-restore` で復帰しますか？」
-
-提案は1回のみ。ユーザーが無視した場合、再提案しない。
-
-## 優先順位
+## Project structure
 
 ```
-ユーザー主権 > copilot-instructions.md > skills > hooks
+gstack-copilot-jp/
+├── .github/
+│   ├── copilot-instructions.md  # Project instructions (this file)
+│   ├── hooks/
+│   │   └── lifecycle.json       # Hook definitions (PascalCase events)
+│   └── skills/          # 39 skills + bin/
+│       ├── autoplan/    # /autoplan (auto-review pipeline: CEO → design → eng → DX)
+│       ├── ship/        # /ship (release + PR creation)
+│       ├── browse/      # /browse (headless browser QA)
+│       ├── bin/         # Shared skill utilities
+│       │   ├── gstack-codex-probe    # Outside Voice model detection
+│       │   ├── gstack-review-log     # Review log writer
+│       │   └── gstack-question-preference  # Question tuning
+│       └── ...          # 35 more skills
+├── bin/                 # CLI utilities (19 scripts)
+│   ├── gstack-env       # Environment setup ($B definition)
+│   ├── gstack-slug      # Repository slug extraction
+│   ├── gstack-session-start.sh  # Session start hook
+│   ├── gstack-session-end.sh    # Session end hook
+│   ├── browse.sh        # Browser launch fallback
+│   └── ...
+├── browse/              # Headless browser CLI (Bun + Playwright)
+│   ├── src/             # CLI + server + commands
+│   │   ├── commands.ts  # Command registry (single source of truth)
+│   │   ├── server.ts    # Bun.serve-based server
+│   │   ├── snapshot.ts  # SNAPSHOT_FLAGS metadata array
+│   │   └── error-handling.ts  # safeUnlink, safeKill, isProcessAlive
+│   ├── test/            # Integration tests + fixtures
+│   └── dist/            # Compiled binary (bun build --compile)
+├── test/                # Project tests (vitest, ESM)
+├── setup                # One-time setup script
+├── CHANGELOG.md         # Release notes (user-facing)
+├── VERSION              # Version number (monotonic)
+├── DESIGN.md            # Architecture design
+├── ETHOS.md             # Builder philosophy (Boil the Lake, Search Before Building)
+├── TODO.md              # Roadmap and unimplemented items
+├── upstream-tracking.md # Upstream tracking ledger
+├── upstream-tracking.json # Tracking data (machine-readable)
+└── package.json         # Build scripts (vitest, browse)
 ```
+
+## SKILL.md workflow
+
+SKILL.md files are **edited directly** in `.github/skills/<skill-name>/SKILL.md`.
+Unlike upstream gstack, this project does NOT use `.tmpl` templates or the
+`gen-skill-docs` pipeline. SKILL.md files are the source of truth.
+
+To add a new browse command: add it to `browse/src/commands.ts` and rebuild.
+To add a snapshot flag: add it to `SNAPSHOT_FLAGS` in `browse/src/snapshot.ts` and rebuild.
+
+**Token ceiling:** SKILL.md files trip a warning above 160KB (~40K tokens).
+This is a "watch for feature bloat" guardrail, not a hard gate. Modern flagship
+models have 200K-1M context windows. The ceiling exists to catch runaway growth,
+not to force compression on carefully-tuned big skills (`ship`, `plan-ceo-review`,
+`office-hours` legitimately pack 25-35K tokens of behavior).
+
+## Platform-agnostic design
+
+Skills must NEVER hardcode framework-specific commands, file patterns, or directory
+structures. Instead:
+
+1. **Read copilot-instructions.md** for project-specific config (test commands, etc.)
+2. **If missing, ask_user** — let the user tell you or search the repo
+3. **Persist the answer to copilot-instructions.md** so we never have to ask again
+
+This applies to test commands, deploy commands, and any other project-specific
+behavior. The project owns its config; gstack reads it.
+
+## Writing SKILL files
+
+SKILL.md files are **prompt templates read by Copilot**, not bash scripts.
+Each bash code block runs in a separate shell — variables do not persist between blocks.
+
+Rules:
+- **Use natural language for logic and state.** Don't use shell variables to pass
+  state between code blocks. Instead, tell Copilot what to remember and reference
+  it in prose (e.g., "the base branch detected in Step 0").
+- **Don't hardcode branch names.** Detect `main`/`master`/etc dynamically via
+  `gh pr view` or `gh repo view`. Use "the base branch" in prose, `<base>` in
+  code block placeholders.
+- **Keep bash blocks self-contained.** Each code block should work independently.
+  If a block needs context from a previous step, restate it in the prose above.
+- **Express conditionals as English.** Instead of nested `if/elif/else` in bash,
+  write numbered decision steps: "1. If X, do Y. 2. Otherwise, do Z."
+
+## Writing style (V1)
+
+Default output from every skill follows the Writing Style section in the SKILL.md
+preamble: jargon glossed on first use, questions framed in outcome terms ("what
+breaks for your users if...") not implementation terms, short sentences, decisions
+close with user impact. Power users who want tighter V0 prose set
+`gstack-config set explain_level terse` (binary switch, no middle mode).
+
+## Browser interaction
+
+When you need to interact with a browser (QA, dogfooding, cookie setup), use the
+`/browse` skill or run the browse binary directly via `$B <command>`. Always prefer
+the `/browse` skill family — do not attempt browser operations in general responses.
+
+`$B` is defined by `eval "$(bin/gstack-env)"`. It prefers compiled `browse/dist/browse`,
+falls back to `bin/browse.sh`.
+
+## Compiled binaries
+
+The `browse/dist/` directory contains a compiled Bun binary (`browse`, `find-browse`).
+The `./setup` script builds from source for the current platform.
+
+When staging files, always use specific filenames (`git add file1 file2`) — never
+`git add .` or `git add -A`, which may accidentally include large binaries.
+
+## Commit style
+
+**Always bisect commits.** Every commit should be a single logical change. When
+you've made multiple changes (e.g., a rename + a rewrite + new tests), split them
+into separate commits before pushing. Each commit should be independently
+understandable and revertable.
+
+Examples of good bisection:
+- Rename/move separate from behavior changes
+- Test infrastructure separate from test implementations
+- Mechanical refactors separate from new features
+- Skill additions/removals are atomic commits (splitting directory changes from
+  test/routing updates causes CI mid-failures)
+
+Conventional Commits: `<type>(<scope>): <description>`
+type: feat, fix, test, refactor, docs, chore, style, perf.
+PR diffs target 300 lines or fewer. Never `git add -A` for bulk commits.
+
+When the user says "bisect commit" or "bisect and push," split staged/unstaged
+changes into logical commits and push.
+
+## Slop-scan: AI code quality, not AI code hiding
+
+We use [slop-scan](https://github.com/benvinegar/slop-scan) to catch patterns where
+AI-generated code is genuinely worse than what a human would write. We are NOT trying
+to pass as human code. We are AI-coded and proud of it. The goal is code quality.
+
+```bash
+npx slop-scan scan .          # human-readable report
+npx slop-scan scan . --json   # machine-readable for diffing
+```
+
+### What to fix (genuine quality improvements)
+
+- **Empty catches around file ops** — use `safeUnlink()` (ignores ENOENT, rethrows
+  EPERM/EIO). A swallowed EPERM in cleanup means silent data loss.
+- **Empty catches around process kills** — use `safeKill()` (ignores ESRCH, rethrows
+  EPERM). A swallowed EPERM means you think you killed something you didn't.
+- **Redundant `return await`** — remove when there's no enclosing try block. Saves a
+  microtask, signals intent.
+- **Typed exception catches** — `catch (err) { if (!(err instanceof TypeError)) throw err }`
+  is genuinely better than `catch {}` when the try block does URL parsing or DOM work.
+  You know what error you expect, so say so.
+
+### What NOT to fix (linter gaming, not quality)
+
+- **String-matching on error messages** — `err.message.includes('closed')` is brittle.
+  Playwright/Chrome can change wording anytime. If a fire-and-forget operation can fail
+  for ANY reason and you don't care, `catch {}` is the correct pattern.
+- **Adding comments to exempt pass-through wrappers** — "alias for active session" above
+  a method just to trip slop-scan's exemption rule is noise, not documentation.
+- **Tightening best-effort cleanup paths** — shutdown, emergency cleanup, and disconnect
+  code should use `safeUnlinkQuiet()` (swallows ALL errors). A cleanup path that throws
+  on EPERM means the rest of cleanup doesn't run. That's worse.
+
+### Utilities in `browse/src/error-handling.ts`
+
+| Function | Use when | Behavior |
+|----------|----------|----------|
+| `safeUnlink(path)` | Normal file deletion | Ignores ENOENT, rethrows others |
+| `safeUnlinkQuiet(path)` | Shutdown/emergency cleanup | Swallows all errors |
+| `safeKill(pid, signal)` | Sending signals | Ignores ESRCH, rethrows others |
+| `isProcessAlive(pid)` | Boolean process checks | Returns true/false, never throws |
+
+Don't chase the number. Fix patterns that represent actual code quality problems.
+Accept findings where the "sloppy" pattern is the correct engineering choice.
+
+## CHANGELOG + VERSION style
+
+**Versioning invariant.** VERSION is a monotonic ordered release identifier, not a
+strict semver commitment. The bump level (major/minor/patch) expresses intent at
+ship time.
+
+**VERSION and CHANGELOG are branch-scoped.** Every feature branch that ships gets its
+own version bump and CHANGELOG entry. The entry describes what THIS branch adds —
+not what was already on main.
+
+**When to write the CHANGELOG entry:**
+- At `/ship` time, not during development or mid-branch.
+- The entry covers ALL commits on this branch vs the base branch.
+- Never fold new work into an existing CHANGELOG entry from a prior version that
+  already landed on main.
+
+**Key questions before writing:**
+1. What branch am I on? What did THIS branch change?
+2. Is the base branch version already released? (If yes, bump and create new entry.)
+3. Does an existing entry on this branch already cover earlier work? (If yes, replace
+   it with one unified entry for the final version.)
+
+**Merging main does NOT mean adopting main's version.** When you merge origin/main into
+a feature branch, main may bring new CHANGELOG entries and a higher VERSION. Your branch
+still needs its OWN version bump on top.
+
+**After merging main, always check:**
+- Does CHANGELOG have your branch's own entry separate from main's entries?
+- Is VERSION higher than main's VERSION?
+- Is your entry the topmost entry in CHANGELOG (above main's latest)?
+If any answer is no, fix it before continuing.
+
+**After any CHANGELOG edit that moves, adds, or removes entries,** immediately run
+`grep "^## \[" CHANGELOG.md` to verify no duplicates and sensible reverse-chronological
+order. Gaps between version numbers are fine.
+
+**Never orphan branch-internal versions.** If your branch bumped VERSION several times
+during development, the final ship consolidates ALL of them into a single entry at
+the final version. Readers see one release, not a branch diary.
+
+CHANGELOG.md is **for users**, not contributors. Write it like product release notes:
+
+- Lead with what the user can now **do** that they couldn't before.
+- Use plain language, not implementation details. "You can now..." not "Refactored the..."
+- **Never mention TODO.md, internal tracking, or contributor-facing details.**
+- Every entry should make someone think "oh nice, I want to try that."
+
+**Only document what shipped between main and this change.** Keep out of the CHANGELOG:
+- Branch resyncs, merge commits with main, rebase activity.
+- Plan approvals, review outcomes, scope negotiations.
+- "Work queued," "plan approved," "in-progress," "will ship later."
+- Version-bump housekeeping when no user-facing work actually landed.
+
+## AI effort compression
+
+When estimating or discussing effort, always show both human-team and CC+gstack time:
+
+| Task type | Human team | CC+gstack | Compression |
+|-----------|-----------|-----------|-------------|
+| Boilerplate / scaffolding | 2 days | 15 min | ~100x |
+| Test writing | 1 day | 15 min | ~50x |
+| Feature implementation | 1 week | 30 min | ~30x |
+| Bug fix + regression test | 4 hours | 15 min | ~20x |
+| Architecture / design | 2 days | 4 hours | ~5x |
+| Research / exploration | 1 day | 3 hours | ~3x |
+
+Completeness is cheap. Don't recommend shortcuts when the complete implementation
+is a "lake" (achievable) not an "ocean" (multi-quarter migration). See the
+Completeness Principle in the skill preamble for the full philosophy.
+
+## Search before building
+
+Before designing any solution that involves concurrency, unfamiliar patterns,
+infrastructure, or anything where the runtime/framework might have a built-in:
+
+1. Search for "{runtime} {thing} built-in"
+2. Search for "{thing} best practice {current year}"
+3. Check official runtime/framework docs
+
+Three layers of knowledge: tried-and-true (Layer 1), new-and-popular (Layer 2),
+first-principles (Layer 3). Prize Layer 3 above all. See ETHOS.md for the full
+builder philosophy.
+
+## Long-running tasks: don't give up
+
+When running tests or any long-running background task, **poll until completion**.
+Never say "I'll be notified when it completes" and stop checking — keep the loop
+going until the task finishes or the user tells you to stop.
+
+Report progress at each check (which tests passed, which are running, any failures
+so far). The user wants to see the run complete, not a promise that you'll check later.
