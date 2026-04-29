@@ -1,8 +1,8 @@
 ---
 name: guard
 version: 0.1.0
-description: "フルセーフティモード。/careful + /freeze 統合。Use when: 最大限の安全、guard mode、full safety、本番作業。"
-argument-hint: "編集を許可するディレクトリ（省略可）"
+description: "フルセーフティモード。/careful + /freeze 統合。Use when: 最大限の安全、guard mode、full safety、本番作業。"
+argument-hint: "編集を許可するディレクトリ（省略可）"
 triggers:
   - full safety mode
   - guard against mistakes
@@ -11,25 +11,6 @@ allowed-tools:
   - ask_user
   - bash
   - view
----
-
----
-name: guard
-version: 0.1.0
-description: |
-  Full safety mode: destructive command warnings + directory-scoped edits.
-  Combines /careful (warns before rm -rf, DROP TABLE, force-push, etc.) with
-  /freeze (blocks edits outside a specified directory). Use for maximum safety
-  when touching prod or debugging live systems. Use when asked to "guard mode",
-  "full safety", "lock it down", or "maximum safety". (gstack)
-triggers:
-  - full safety mode
-  - guard against mistakes
-  - maximum safety
-allowed-tools:
-  - Bash
-  - Read
-  - ask_user
 hooks:
   PreToolUse:
     - matcher: "Bash"

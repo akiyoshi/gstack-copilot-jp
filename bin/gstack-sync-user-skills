@@ -1,0 +1,248 @@
+#!/usr/bin/env bash
+# bin/gstack-sync-user-skills
+#
+# `~/.copilot/skills/<skill>` を `<repo>/.github/skills/<skill>` と同期する。
+#
+# 背景:
+#   `setup --mode user-link` は repo root に1つ symlink を貼るだけで、
+#   個別スキルディレクトリは管理していなかった。そのため:
+#     - スキル追加 → user-scope に反映されない
+#     - スキルリネーム/削除 → user-scope に dangling link が残る
+#   結果 VS Code Copilot Chat / Copilot CLI でスキルが認識されない。
+#
+# 動作:
+#   1. `<repo>/.github/skills/<dir>/SKILL.md` がある全ディレクトリを発見
+#   2. `~/.copilot/skills/<dir>` が無ければ link を作成
+#      - macOS/Linux/WSL: ln -s
+#      - Windows Git Bash: cmd //c mklink //J  (junction = 管理者権限不要)
+#   3. `~/.copilot/skills/<dir>` がリンクで、target に SKILL.md が無ければ削除
+#   4. `~/.copilot/skills/<dir>` がディレクトリ (リンクではない) の場合は警告のみ
+#   5. 結果サマリを出力
+#
+# 使い方:
+#   bin/gstack-sync-user-skills            # 同期実行
+#   bin/gstack-sync-user-skills --dry-run  # 実際には変更せず、何が起きるか表示
+#   bin/gstack-sync-user-skills --quiet    # 変更があった場合のみ出力
+#
+# 終了コード:
+#   0 = 成功 (変更あり/なしを問わず)
+#   1 = エラー (必須ディレクトリ無し等)
+
+set -euo pipefail
+
+DRY_RUN=0
+QUIET=0
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run|-n) DRY_RUN=1 ;;
+    --quiet|-q)   QUIET=1 ;;
+    -h|--help)
+      sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      echo "See: $(basename "$0") --help" >&2
+      exit 1
+      ;;
+  esac
+done
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SKILLS_SRC="$ROOT_DIR/.github/skills"
+SKILLS_DST="$HOME/.copilot/skills"
+
+if [ ! -d "$SKILLS_SRC" ]; then
+  echo "ERROR: source skills directory not found: $SKILLS_SRC" >&2
+  exit 1
+fi
+
+mkdir -p "$SKILLS_DST"
+
+# Windows (Git Bash / MSYS / Cygwin) 検出
+IS_WINDOWS=0
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*) IS_WINDOWS=1 ;;
+esac
+
+log() {
+  [ "$QUIET" -eq 1 ] && return 0
+  echo "$@"
+}
+
+create_link() {
+  # $1 = link path (POSIX), $2 = target path (POSIX)
+  local link="$1" target="$2"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    return 0
+  fi
+  if [ "$IS_WINDOWS" -eq 1 ]; then
+    # Windows: junction を使用 (管理者権限不要、directory のみ)
+    local win_link win_target
+    win_link=$(cygpath -w "$link" 2>/dev/null || echo "$link")
+    win_target=$(cygpath -w "$target" 2>/dev/null || echo "$target")
+    cmd //c mklink //J "$win_link" "$win_target" >/dev/null 2>&1
+  else
+    ln -s "$target" "$link"
+  fi
+}
+
+remove_link() {
+  # $1 = link path (POSIX)
+  local link="$1"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    return 0
+  fi
+  if [ "$IS_WINDOWS" -eq 1 ] && [ ! -L "$link" ] && [ -d "$link" ]; then
+    # Windows junction は -L で検出されないことがある。rmdir で外す
+    cmd //c rmdir "$(cygpath -w "$link")" >/dev/null 2>&1 || rm -rf "$link"
+  else
+    rm -f "$link" || rm -rf "$link"
+  fi
+}
+
+# --- フェーズ 1: 期待される skill 名セットを構築 ---
+
+# VS Code Copilot Chat 組み込みのスラッシュコマンド名
+# (test/reserved-names.js と同期した一覧)。
+# スキル `name:` がこれらと一致すると built-in 機能 (例: /review) を
+# 静かに上書きしてしまう。このスクリプトでは link 作成を拒否する。
+RESERVED_NAMES=(explain review tests fix new newNotebook semanticSearch setupTests \
+                error compact chronicle generate edit search)
+
+is_reserved() {
+  local n="$1"
+  for r in "${RESERVED_NAMES[@]}"; do
+    [ "$n" = "$r" ] && return 0
+  done
+  return 1
+}
+
+declare -A EXPECTED=()
+declare -A REJECTED=()
+for src_dir in "$SKILLS_SRC"/*/; do
+  [ -d "$src_dir" ] || continue
+  name=$(basename "$src_dir")
+  # 'bin' は補助ツールディレクトリで skill ではない
+  [ "$name" = "bin" ] && continue
+  [ -f "$src_dir/SKILL.md" ] || continue
+  if is_reserved "$name"; then
+    REJECTED["$name"]=1
+    continue
+  fi
+  EXPECTED["$name"]=1
+done
+
+# 予約名と衝突するスキルがあれば fail-fast (CI/setup から呼ばれた時に気付ける)
+if [ "${#REJECTED[@]}" -gt 0 ]; then
+  echo "ERROR: 以下のスキルは VS Code 組み込みコマンドと衝突します:" >&2
+  for name in "${!REJECTED[@]}"; do
+    echo "  - $name (built-in /$name を上書きしてしまう)" >&2
+  done
+  echo "  解決: スキルディレクトリと frontmatter name を 'gstack-<name>' 等にリネーム" >&2
+  exit 2
+fi
+
+# --- フェーズ 2: 既存リンクを走査 — dangling は削除 ---
+
+removed_count=0
+removed_names=()
+warned_dirs=()
+if [ -d "$SKILLS_DST" ]; then
+  for dst_dir in "$SKILLS_DST"/*/; do
+    [ -d "$dst_dir" ] || [ -L "${dst_dir%/}" ] || continue
+    name=$(basename "$dst_dir")
+    link="$SKILLS_DST/$name"
+    target_skill="$link/SKILL.md"
+
+    # gstack-copilot-jp 自身の root link はスキルではないので skip
+    [ "$name" = "gstack-copilot-jp" ] && continue
+
+    is_link=0
+    [ -L "$link" ] && is_link=1
+    # Windows junction 判定 (-L が偽でも target が repo を指していれば link 扱い)
+    if [ "$IS_WINDOWS" -eq 1 ] && [ "$is_link" -eq 0 ] && [ -d "$link" ]; then
+      # readlink がある場合はそれで判定、無ければ NTFS junction を fsutil で確認
+      if command -v fsutil >/dev/null 2>&1; then
+        if fsutil reparsepoint query "$(cygpath -w "$link")" >/dev/null 2>&1; then
+          is_link=1
+        fi
+      fi
+    fi
+
+    if [ "$is_link" -eq 0 ]; then
+      # 実ディレクトリ — ユーザーが手動でコピーした可能性。警告のみで触らない
+      warned_dirs+=("$name")
+      continue
+    fi
+
+    # link は存在するが SKILL.md が解決できない → dangling
+    if [ ! -f "$target_skill" ]; then
+      log "REMOVE  $name  (dangling link)"
+      remove_link "$link"
+      removed_count=$((removed_count + 1))
+      removed_names+=("$name")
+      continue
+    fi
+
+    # link は存在するが、もう source 側に対応するスキルが無い → 古いリネーム残骸
+    if [ -z "${EXPECTED[$name]:-}" ]; then
+      log "REMOVE  $name  (no matching source skill)"
+      remove_link "$link"
+      removed_count=$((removed_count + 1))
+      removed_names+=("$name")
+      continue
+    fi
+  done
+fi
+
+# --- フェーズ 3: 不足リンクを作成 ---
+
+created_count=0
+created_names=()
+for name in "${!EXPECTED[@]}"; do
+  link="$SKILLS_DST/$name"
+  target="$SKILLS_SRC/$name"
+
+  # 既に link/dir として存在し、SKILL.md が解決できれば OK
+  if [ -e "$link" ] && [ -f "$link/SKILL.md" ]; then
+    continue
+  fi
+
+  # 上のフェーズ 2 で削除済みのケースを含む — 改めて作る
+  log "CREATE  $name  -> $target"
+  if create_link "$link" "$target"; then
+    created_count=$((created_count + 1))
+    created_names+=("$name")
+  else
+    echo "ERROR: failed to create link: $link" >&2
+  fi
+done
+
+# --- フェーズ 4: サマリ ---
+
+if [ "$DRY_RUN" -eq 1 ]; then
+  prefix="[DRY-RUN] "
+else
+  prefix=""
+fi
+
+if [ "$created_count" -eq 0 ] && [ "$removed_count" -eq 0 ] && [ "${#warned_dirs[@]}" -eq 0 ]; then
+  log "${prefix}gstack-sync-user-skills: in sync (${#EXPECTED[@]} skills)"
+else
+  log ""
+  log "${prefix}Summary:"
+  log "  Source:  $SKILLS_SRC (${#EXPECTED[@]} skills)"
+  log "  Target:  $SKILLS_DST"
+  log "  Created: $created_count"
+  log "  Removed: $removed_count"
+  if [ "${#warned_dirs[@]}" -gt 0 ]; then
+    log "  Warning: ${#warned_dirs[@]} non-link directories left untouched:"
+    for w in "${warned_dirs[@]}"; do
+      log "    - $w (real directory, not managed)"
+    done
+  fi
+fi
+
+exit 0

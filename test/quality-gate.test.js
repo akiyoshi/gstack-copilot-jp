@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { RESERVED_BUILTIN_COMMANDS, isReservedName } from './reserved-names.js';
 
 const ROOT = join(import.meta.dirname, '..');
 
@@ -62,8 +63,105 @@ describe('全スキル フロントマター検証', () => {
         // 全スキルが vendored であるため version フィールドは必須
         expect(frontmatter).toMatch(/version:\s*\d+\.\d+\.\d+/);
       });
+
+      it('フロントマターブロックが1つだけである (重複なし)', () => {
+        // v1.1.2: gstack-upgrade に upstream マージ取りこぼしで 2 つの YAML
+        // フロントマターブロックが残っていた事故の再発防止。
+        // 正しい構造: `---\n<yaml>\n---\n<body>`。body 中の `---` は
+        // markdown 水平線として正常なので、第 2 ブロック開始だけを検出する。
+        const content = readFileSync(skillPath, 'utf-8').replace(/\r\n/g, '\n');
+        expect(content.startsWith('---\n')).toBe(true);
+        // 最初のブロックの終端 `---` を見つける
+        const closeIdx = content.indexOf('\n---\n', 4);
+        expect(closeIdx, `${skill}/SKILL.md のフロントマターが閉じていない`).toBeGreaterThan(0);
+        const body = content.slice(closeIdx + 5); // skip "\n---\n"
+        // 直後 (空行を許容) に再び `---\n<key>:` が来たら重複ブロック
+        const trimmedBody = body.replace(/^\n+/, '');
+        const dupMatch = trimmedBody.match(/^---\n[a-zA-Z][\w-]*:/);
+        expect(
+          dupMatch,
+          `${skill}/SKILL.md に複数のフロントマターブロックがある (重複検出: ${dupMatch ? dupMatch[0].slice(0, 40) : ''})`
+        ).toBeNull();
+      });
+
+      it('フロントマターの name が VS Code 組み込みスラッシュコマンドと衝突しない', () => {
+        // v1.1.2: built-in `/review` `/explain` `/fix` 等と name 衝突すると
+        // VS Code Copilot Chat の組み込み機能を静かに上書きしてしまう。
+        // (例: name: review → built-in /review 不可視化)
+        // 衝突したら fail させて再発防止。
+        // skill-contracts.test.js と同一の kebab-case 厳格パターンを使う。
+        const content = readFileSync(skillPath, 'utf-8').replace(/\r\n/g, '\n');
+        const fm = content.split('---')[1] || '';
+        const m = fm.match(/^name:\s*([a-z][a-z0-9-]*)\s*$/m);
+        expect(m, `${skill}/SKILL.md の name フィールドが解析できない (kebab-case 必須)`).toBeTruthy();
+        const skillName = m[1];
+        expect(
+          isReservedName(skillName),
+          `${skill}/SKILL.md の name "${skillName}" は VS Code 組み込みコマンドと衝突する。リネームしてください (例: gstack-${skillName})。Reserved: ${RESERVED_BUILTIN_COMMANDS.join(', ')}`
+        ).toBe(false);
+      });
+
+      it('スキルディレクトリ名がフロントマター name と一致する', () => {
+        // VS Code Copilot Chat はディレクトリ名ベースで /<name> を登録する。
+        // ディレクトリ名と name フィールドが食い違うと skill が認識されない
+        // (silently skipped)。両者一致を契約化。
+        const content = readFileSync(skillPath, 'utf-8').replace(/\r\n/g, '\n');
+        const fm = content.split('---')[1] || '';
+        const m = fm.match(/^name:\s*([a-z][a-z0-9-]*)\s*$/m);
+        expect(m, `${skill}/SKILL.md の name が見つからない`).toBeTruthy();
+        expect(
+          m[1],
+          `${skill}/SKILL.md: ディレクトリ名 (${skill}) と name (${m[1]}) が一致しない`
+        ).toBe(skill);
+      });
     });
   }
+});
+
+describe('Reserved 名リスト同期 (v1.2.1+)', () => {
+  // RESERVED_BUILTIN_COMMANDS は test/reserved-names.js が canonical source。
+  // 同じリストが bin/gstack-sync-user-skills (bash) と
+  // bin/gstack-sync-user-skills.ps1 (PowerShell) に **コピー** されており、
+  // 同期が崩れると skill 衝突検出が片方で抜ける。
+  // 3 ファイルが同一リストを保持していることを契約化する。
+
+  function extractBashList(content) {
+    // RESERVED_NAMES=(... ) からトークンを抽出
+    const m = content.match(/RESERVED_NAMES=\(([^)]*)\)/s);
+    if (!m) return null;
+    return m[1]
+      .replace(/\\\n/g, ' ') // bash 行継続を除去
+      .split(/\s+/)
+      .map(t => t.trim())
+      .filter(t => t && t !== '\\'); // 空文字と継続文字を除外
+  }
+
+  function extractPs1List(content) {
+    // $ReservedNames = @(...) から quoted トークンを抽出
+    const m = content.match(/\$ReservedNames\s*=\s*@\(([^)]*)\)/s);
+    if (!m) return null;
+    return [...m[1].matchAll(/'([^']+)'/g)].map(x => x[1]);
+  }
+
+  it('bash 版 (bin/gstack-sync-user-skills) の RESERVED_NAMES が canonical と一致する', () => {
+    const bashContent = readFileSync(
+      join(ROOT, 'bin', 'gstack-sync-user-skills'),
+      'utf-8',
+    );
+    const bashList = extractBashList(bashContent);
+    expect(bashList, 'bash の RESERVED_NAMES=(...) ブロックが見つからない').toBeTruthy();
+    expect(new Set(bashList)).toEqual(new Set(RESERVED_BUILTIN_COMMANDS));
+  });
+
+  it('PowerShell 版 (bin/gstack-sync-user-skills.ps1) の $ReservedNames が canonical と一致する', () => {
+    const ps1Content = readFileSync(
+      join(ROOT, 'bin', 'gstack-sync-user-skills.ps1'),
+      'utf-8',
+    );
+    const ps1List = extractPs1List(ps1Content);
+    expect(ps1List, 'ps1 の $ReservedNames = @(...) ブロックが見つからない').toBeTruthy();
+    expect(new Set(ps1List)).toEqual(new Set(RESERVED_BUILTIN_COMMANDS));
+  });
 });
 
 describe('copilot-instructions.md とスキルの整合性', () => {
