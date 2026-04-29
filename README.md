@@ -199,9 +199,9 @@ Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェン�
 ### 必要なソフトウェア（Windows）
 
 - **Git for Windows**（Git Bash 同梱）または WSL2 Ubuntu
-- **Bun v1.0+**（`browse` 機能 + `gstack-next-version` 用）
-- **Node.js v18+**（Bun#4253 回避フォールバック用、tsx 経由で TypeScript 直接実行）
-- **GitHub CLI (`gh`)**（`/ship` `/landing-report` `/land-and-deploy` 用）
+- **Bun v1.0+** — **必須**: `browse` 機能 + `bin/gstack-next-version`（`/landing-report` の前提）。Node.js 単独では動かない
+- **Node.js v18+** — `browse` 機能専用の Bun#4253 回避フォールバック（Playwright pipe transport bug）。`gstack-next-version` には影響しない
+- **GitHub CLI (`gh`)** — `/ship` `/landing-report` `/land-and-deploy` で必須。`gh auth login` 推奨
 
 ### Windows でのインストール
 

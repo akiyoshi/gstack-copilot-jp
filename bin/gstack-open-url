@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
 # gstack-open-url — cross-platform URL opener
 #
-# gstack-copilot-jp v1.1: WSL2 検出を追加（Windows ホスト上の WSL2 から
-# 実行された場合は xdg-open ではなく PowerShell start を使う）。
+# gstack-copilot-jp v1.1.1: PowerShell injection 修正 + scheme allowlist 追加。
+# v1.1: WSL2 検出を追加（Windows ホスト上の WSL2 から実行された場合は
+#       xdg-open ではなく PowerShell start を使う）。
 #
 # Usage: gstack-open-url <url>
 set -euo pipefail
 
 URL=${1:?Usage: gstack-open-url <url>}
 
+# セキュリティ: scheme を http/https のみ許可。
+# file:// / javascript: / data: 等の任意スキームを排除。攻撃面を狭める。
+if [[ ! "$URL" =~ ^https?:// ]]; then
+  echo "ERROR: gstack-open-url は http/https URL のみサポートします: $URL" >&2
+  exit 1
+fi
+
 # WSL2 検出: /proc/version に "microsoft" が含まれる場合 WSL 配下
 is_wsl=0
-if [ -r /proc/version ] && grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
+if [ -r /proc/version ] && grep -qi 'microsoft' /proc/version 2>/dev/null; then
   is_wsl=1
 fi
 
@@ -19,8 +27,10 @@ case "$(uname -s)" in
   Darwin)  open "$URL" ;;
   Linux)
     if [ "$is_wsl" = "1" ] && command -v powershell.exe >/dev/null 2>&1; then
-      # WSL2 環境ではブラウザが無いことがあるため Windows 側で開く
-      powershell.exe -NoProfile -Command "Start-Process '$URL'" 2>/dev/null \
+      # WSL2: ブラウザが無いことがあるため Windows 側で開く。
+      # セキュリティ: PowerShell の単一引用符への文字列補間を避け、環境変数経由
+      # で URL を渡す（`$URL` に ' が含まれても引用符 breakout できない）。
+      GSTACK_URL="$URL" powershell.exe -NoProfile -Command 'Start-Process -FilePath $env:GSTACK_URL' 2>/dev/null \
         || xdg-open "$URL" 2>/dev/null \
         || echo "$URL"
     else

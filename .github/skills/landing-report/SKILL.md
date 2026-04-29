@@ -28,13 +28,26 @@ allowed-tools:
 ## Step 1: ベース branch とプラットフォームを検出
 
 ```bash
+# 前提条件チェック: gh CLI と認証、Bun ランタイム
+if ! command -v gh >/dev/null 2>&1; then
+  echo "❌ gh CLI がインストールされていません。https://cli.github.com から インストールしてください。" >&2
+  exit 1
+fi
+if ! gh auth status >/dev/null 2>&1; then
+  echo "❌ gh CLI が未認証です。`gh auth login` を実行してください。" >&2
+  exit 1
+fi
+if ! command -v bun >/dev/null 2>&1; then
+  echo "❌ bun がインストールされていません。https://bun.sh からインストールしてください。" >&2
+  echo "   注記: bin/gstack-next-version は Bun 必須。Node.js 単独では動作しません。" >&2
+  exit 1
+fi
+
 BASE_BRANCH=$(gh pr view --json baseRefName -q .baseRefName 2>/dev/null \
   || gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null \
   || echo main)
 echo "Base branch: $BASE_BRANCH"
 ```
-
-`gh` 不在 / 未認証なら ❌ で停止し、`gh auth login` を案内する。
 
 ---
 
@@ -68,7 +81,8 @@ for LEVEL in micro patch minor major; do
 done
 ```
 
-`bun` 不在時は Node.js + `tsx` でフォールバック実行（Windows 対応）。
+`bun` 不在時は Step 1 でエラーとして出るため、ここに達した時点で bun は利用可能と仮定される。
+Node.js フォールバックは v1.2 (Phase C) で評価予定。
 
 ---
 
