@@ -214,6 +214,33 @@ CONVERTED=$(echo "$BODY" \
   | sed '/TMPERR_SKETCH/d' \
   | sed '/TMPERR_ADV/d' \
   \
+  | sed '/npm install -g @openai\/codex/d' \
+  | sed 's|`npm install -g @openai/codex`||g' \
+  | sed 's/CODEX SAYS/OUTSIDE VOICE SAYS/g' \
+  | sed 's/\[codex-only\]/[outside-only]/g' \
+  | sed 's/\[subagent-only\]/[primary-only]/g' \
+  | sed 's/Codex timed out after \([0-9]*\) minute/Outside Voice timed out after \1 minute/g' \
+  | sed 's/Codex returned no response/Outside Voice unavailable/g' \
+  | sed 's/Codex returned empty/Outside Voice returned empty/g' \
+  | sed 's/Codex CLI not found[^"]*/Outside Voice unavailable — running with primary subagent only/g' \
+  | sed 's/Install Codex for cross-model coverage[^"]*/See DESIGN.md for the multi-model Outside Voice architecture/g' \
+  | sed 's/codex-plan-review/outside-voice-plan-review/g' \
+  | sed 's/codex-review/outside-voice-review/g' \
+  | sed 's|/tmp/codex-\([a-z]*\)-|/tmp/outside-voice-\1-|g' \
+  | sed 's/Claude  Codex  Consensus/Primary  OutVoice  Consensus/g' \
+  | sed 's/Claude subagent/Primary subagent/g' \
+  | sed 's/Codex \(CEO\|design\|eng\|DX\) voice/Outside Voice (\1)/g' \
+  | sed 's/\bCODEX\b/OUTSIDE VOICE/g' \
+  | sed 's/\bCodex\b/Outside Voice/g' \
+  \
+  | sed 's/(Primary subagent)/(independent subagent)/g' \
+  | sed 's/CLAUDE SUBAGENT/INDEPENDENT SUBAGENT/g' \
+  | sed 's/"outside voice+subagent"/"outside+independent"/g' \
+  | sed 's/"outside voice-only"/"outside-only"/g' \
+  | sed 's/"subagent-only"/"independent-only"/g' \
+  | sed 's/SAYS (plan review — outside voice)/SAYS (plan review)/g' \
+  | sed 's/`adversarial-review` (new auto-scaled) and `outside-voice-review` (legacy)/`adversarial-review` and `outside-voice-review` (same review log cluster)/g' \
+  \
   | sed '/\$D variants/d' \
   | sed '/\$D compare/d' \
   | sed '/\$D iterate/d' \

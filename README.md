@@ -171,6 +171,17 @@ Copilot: $B goto https://staging.myapp.com
 
 Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェントも Outside Voice として使用する。
 
+### マルチモデル Outside Voice
+
+`/autoplan` などのレビュー系スキルは「2 つの voices = 2 つのモデルファミリー」で動作する。
+プライマリ voice はユーザーが選択中のモデル、Outside voice は異なるモデルファミリー
+（例: Claude 系プライマリ → GPT 系 Outside、GPT 系プライマリ → Claude 系 Outside）が
+自動選択される。本家 gstack の `codex exec` 起動は使わず、Copilot のマルチモデル機能
+（`runSubagent` の `model` パラメータ / task tool）で voice 多様性を確保する。
+
+設定は [.gstack/model-routing.yaml](.gstack/model-routing.yaml) で上書き可能。詳細は
+[DESIGN.md §6.5](DESIGN.md) を参照。
+
 アーキテクチャの全体像は [ARCHITECTURE.md](ARCHITECTURE.md)、設計判断の記録は [DESIGN.md](DESIGN.md)、未実装項目は [ROADMAP.md](ROADMAP.md) を参照。
 
 ## gstackとの違い
@@ -182,7 +193,7 @@ Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェン�
 | インストール | `./setup` + シンボリックリンク | VS Code Plugin From Source / `chat.pluginLocations` / `./setup` |
 | ブラウザ | Bun コンパイル済みバイナリ | Bun コンパイル済み（CLI専用） |
 | ホスト | 10エージェント対応 | Copilot CLI + VS Code Chat |
-| 外部の目 | Codex CLI | `code-review` + `rubber-duck` + fallback |
+| 外部の目 | 外部 CLI 起動 | Copilot マルチモデル（`runSubagent` + 異モデルファミリー） |
 | テンプレート | .tmpl + gen-skill-docs | 直接 SKILL.md |
 
 ## Windows 対応（実験的）
