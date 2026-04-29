@@ -1,6 +1,7 @@
 # ROADMAP — 未実装項目と将来計画
 
 **現在のリリース:** v1.1.1.0（2026-04-29）
+**次のリリース:** v1.2.0.0 — Outside Voice 刷新（Codex CLI 依存撤廃）
 **追跡 upstream:** garrytan/gstack v1.20.0.0
 **完了済みリリース履歴:** [CHANGELOG.md](CHANGELOG.md)
 
@@ -21,7 +22,20 @@ SemVer に準拠（上流 gstack の 4 桁形式 `MAJOR.MINOR.PATCH.BUILD` に�
 
 ## 進行中
 
-なし（v1.0.3 出荷済み、次リリースは v1.1.0.0）。
+### v1.2.0.0 — Outside Voice 刷新（Codex CLI 依存撤廃）
+
+設計判断（マルチホスト + マルチモデル）と SKILL.md 表面の乖離を解消する。
+詳細は [docs/v1.2-outside-voice-redesign.md](docs/v1.2-outside-voice-redesign.md) 参照。
+
+**スコープ**:
+- 17 スキル × 280 箇所の `Codex` 言及を `Outside Voice` / 具体モデル名に刷新
+- autoplan の `command -v codex` ガード撤去（既存の `gstack-codex-probe` シム経由に統一）
+- `gstack-codex-probe` → `gstack-outside-voice` rename + thin wrapper 残置
+- 契約テストで `Codex` 文字列の再混入を fail-fast 検出
+- adapter 翻案ルール追加（本家 sync で再混入しない）
+- DESIGN.md / README に「マルチモデル Outside Voice」明記
+
+**前提**: B-2 (`/gstack-claude`) の取込判断は本リリースの Outside Voice 設計確定後に再評価する。
 
 ---
 
@@ -159,7 +173,51 @@ upstream は v1.0 から Windows 11（Git Bash / WSL）を公式サポート。d
 
 ---
 
-## v1.2 — Phase C: テスト基盤 + Phase D: Browser-Skills（評価次第）
+## v1.2 — Outside Voice 刷新（Codex CLI 依存撤廃）
+
+詳細スコープ・前提・受入基準は [docs/v1.2-outside-voice-redesign.md](docs/v1.2-outside-voice-redesign.md)。
+
+### OV-1: autoplan の Codex preflight 撤去
+
+- [ ] Phase 0.5 を「Outside Voice preflight」に書き換え
+- [ ] `command -v codex` ガード削除、`gstack-codex-probe` シム source の 1 行に統一
+- [ ] Phase 1-3.5 の `**Codex {role} voice** (via Bash)` セクションを `**Outside Voice ({role}) — via task tool with model override**` に刷新
+- [ ] CONSENSUS TABLE / phase-transition summary のラベル統一（`Codex` → `OutVoice`、`Claude subagent` → `Primary subagent` 等）
+
+### OV-2 〜 OV-5: 下流スキルの言語刷新
+
+- [ ] `bin/decodex-skills.sh`（新規 wrapper、dry-run モード付き）で機械置換
+- [ ] OV-2: `plan-ceo-review` `plan-design-review` `plan-eng-review` `plan-devex-review`
+- [ ] OV-3: `design-consultation` `design-review` `devex-review`
+- [ ] OV-4: `office-hours` `ship` `retro`（誤誘導 `npm install -g @openai/codex` も削除）
+- [ ] OV-5: 軽微 6 スキル（`pair-agent` `cso` `investigate` `qa` `qa-only` `land-and-deploy`）
+- [ ] allowlist: `pair-agent`（外部エージェント連携機能）、`retro`（analytics 表示）
+
+### OV-6: `gstack-codex-probe` rename — **v1.4 へ繰り延べ**
+
+互換シム名と `_gstack_codex_*` 関数名は契約テストで例外処理しており、現状で機能は完結している。rename は Browser-Skills 取込（v1.4）と同期させると、本家 sync の摩擦増加を一回に押さえられる。
+
+### OV-7: 契約テスト
+
+- [ ] `test/skill-contracts.test.js` に「Codex 文字列が SKILL.md / copilot-instructions.md に混入しない」契約を追加
+- [ ] autoplan/SKILL.md に `command -v codex` が無いことを fail-fast 検証
+- [ ] PR-1 で **先に** 落ちる状態で landing → 以降の PR がグリーン化を進める
+
+### OV-8: adapter の翻案ルール拡張
+
+- [ ] `bin/adapt-upstream-skill.sh` Layer 2.4 として `CODEX SAYS` → `OUTSIDE VOICE SAYS` 等の sed 置換を追加
+- [ ] `test/adapter.test.js` に翻案ルールの単体テスト追加
+- [ ] 本家 sync 後も契約テストグリーンを維持
+
+### OV-9 / OV-10: 文書整合
+
+- [ ] DESIGN.md に「6.5 Outside Voice の正体」セクション追加
+- [ ] README に「マルチモデル Outside Voice」段落追加、DESIGN.md へリンク
+- [ ] `.github/copilot-instructions.md` のルーティング表で Codex 残存があれば置換
+
+---
+
+## v1.3 — Phase C: テスト基盤
 
 ### C-1: テストランナー方針
 
@@ -178,7 +236,7 @@ upstream は v1.0 から Windows 11（Git Bash / WSL）を公式サポート。d
 
 upstream の `test/skill-validation.test.ts` を翻案:
 - [ ] フロントマター必須フィールドの厳格検証（host, triggers, args, allowed-tools）
-- [ ] description 長さ制限（Codex 1024 文字相当）
+- [ ] description 長さ制限（VS Code Copilot Chat / Codex 双方の上限相当 = 1024 文字）
 - [ ] triggers が string[] であること
 - [ ] allowed-tools の値が既知ツールセットに含まれること
 
@@ -194,12 +252,34 @@ upstream `test/helpers/claude-pty-runner.ts`（654 行）を `copilot -p` 用に
 - [ ] スキル本文の AskUserQuestion ブロックを抽出
 - [ ] ELI10 / Recommendation / Pros (✅) / Cons (❌) / Net / `(recommended)` ラベルの有無を検証
 
-### D: Browser-Skills runtime 取込（**判断保留**）
+### v1.1.1 から繰り延べた項目
+
+- [ ] F3 [LOW] (URL 長さ制限・ASCII enforcement) — Phase C で再評価
+- [ ] F8 [INFO] (`bin/gstack-next-version` smoke test) — `gh` モックフレームワークと同時実装
+- [ ] F9 [INFO] (CHANGELOG regex fragility) — F7 で部分的に解消、残りは Phase C で
+
+### v1.1 から繰り延べた項目
+
+- [ ] `/landing-report` smoke テスト追加（`gh` モック）
+- [ ] `/ship` の workspace-aware 版番割当を実コード化（上流仕様は /ship SKILL.md に記述済み）
+- [ ] upstream `CLAUDE.md` (v1.20.0.0) に対する diff の完全適応
+
+---
+
+## v1.4 — Phase D: Browser-Skills runtime 取込（評価次第）
 
 upstream v1.20 の `/scrape` + `/skillify` + 三層ストレージ + 155 unit テスト。
 - 取込量が大きい（5 モジュール、`$B skill` サブコマンド 5 つ、`browser-skill-write.ts` の atomic-write contract）
 - 本家 `/automate` 出荷（v1.21+ 予定）を待ってまとめて取り込む案も
-- [ ] **v1.1 出荷後に再評価**して取込判断
+- [ ] **v1.2 / v1.3 出荷後に再評価**して取込判断
+- [ ] 取り込む場合: `bin/gstack-codex-probe` thin wrapper の削除も同期
+
+### OV-6 繰り延べ分（v1.2 から）
+
+- [ ] `bin/gstack-codex-probe` を `bin/gstack-outside-voice` に rename
+- [ ] 本家互換関数名 `_gstack_codex_*` は維持（本家 sync の API 名空間契約）
+- [ ] 旧 `gstack-codex-probe` は thin wrapper（`exec gstack-outside-voice`）として残置、下流リポへの影響を限定
+- [ ] v1.5+ で wrapper 削除を CHANGELOG に予告
 
 ---
 

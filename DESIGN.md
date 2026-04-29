@@ -100,7 +100,29 @@ npm test                       # テスト
 2. Copilot CLI ビルトイン `rubber-duck` エージェント
 3. 一般 `task` tool + 敵対レビュー用プロンプト
 
-**理由:** 本家は `codex exec` を使うが、Copilot CLI には Codex 連携はなく `/model` ネイティブ切替がある。fallback でロックインを回避。
+**理由:** 本家は外部 CLI を使うが、Copilot CLI には外部 CLI 連携はなく `/model` ネイティブ切替がある。fallback でロックインを回避。
+
+### 6.5. マルチモデル Outside Voice（v1.2 で確定）
+
+**判断:** Outside Voice は VS Code Copilot Chat / Copilot CLI のマルチモデル機能で実装する。本家 gstack の `codex exec` を直接呼ぶことはしない。
+
+**仕組み:**
+
+| 役割 | 実装 |
+|------|------|
+| **プライマリ voice** | ユーザーが選択中のモデル（例: Claude Sonnet 4.6） |
+| **Outside voice** | 異なるモデルファミリー（例: GPT-5.4 / Gemini 3.1 Pro） |
+| **選択戦略** | `.gstack/model-routing.yaml` + `bin/gstack-codex-probe`（v1.4 で `gstack-outside-voice` rename 予定）が決定。primary が Claude 系なら GPT を、GPT 系なら Claude を自動選択 |
+| **起動方法** | `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", ... })` または task tool の model パラメータ |
+
+**理由（撤廃）:**
+
+- 外部 CLI 不要（Copilot サブスクリプションだけで完結）
+- モデル多様性は Copilot がサポートするモデル分だけ確保される
+- ユーザーが GPT 単独契約でも Claude を呼べる（Copilot 経由なら）
+- 本家の `codex exec` 起動コードをそのまま引き継ぐと「外部 CLI 必須」の誤読を生むため、SKILL.md は `Outside Voice` 表記に統一する
+
+**互換シム名 `gstack-codex-probe` の維持:** 関数名 `_gstack_codex_*`（auth_probe / version_check / log_event / log_hang / available）は本家との API 互換のため保持する。これは Codex CLI への依存ではなく、本家 sync の摩擦低減のための名前空間契約。v1.4 で `gstack-outside-voice` への rename を予定（thin wrapper を残置）。
 
 ### 7. インストール: 3 方式
 

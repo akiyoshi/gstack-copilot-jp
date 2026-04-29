@@ -913,17 +913,17 @@ Record baseline design score and AI slop score at end of Phase 6.
 
 ## Design Outside Voices (parallel)
 
-**Automatic:** Outside voices run automatically when Codex is available. No opt-in needed.
+**Automatic:** Outside voices run automatically when Outside Voice is available. No opt-in needed.
 
-**Check Codex availability:**
+**Check Outside Voice availability:**
 ```bash
 ```
 
-**If Codex is available**, launch both voices simultaneously:
+**If Outside Voice is available**, launch both voices simultaneously:
 
-1. **Codex design voice** (via Bash):
+1. **Outside Voice (design)** (via Bash):
 ```bash
-TMPERR_DESIGN=$(mktemp /tmp/codex-design-XXXXXXXX)
+TMPERR_DESIGN=$(mktemp /tmp/outside-voice-design-XXXXXXXX)
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
 - Spacing: systematic (design tokens / CSS variables) or magic numbers?
 - Typography: expressive purposeful fonts or default stacks?
@@ -971,24 +971,24 @@ Dispatch a subagent with this prompt:
 For each finding: what's wrong, severity (critical/high/medium), and the file:line."
 
 **Error handling (all non-blocking):**
-- **Timeout:** "Codex timed out after 5 minutes."
-- **Empty response:** "Codex returned no response."
-- On any Codex error: proceed with Claude subagent output only, tagged `[single-model]`.
-- If Claude subagent also fails: "Outside voices unavailable — continuing with primary review."
+- **Timeout:** "Outside Voice timed out after 5 minutes."
+- **Empty response:** "Outside Voice unavailable."
+- On any Outside Voice error: proceed with Primary subagent output only, tagged `[single-model]`.
+- If Primary subagent also fails: "Outside voices unavailable — continuing with primary review."
 
-Present Codex output under a `CODEX SAYS (design source audit):` header.
-Present subagent output under a `CLAUDE SUBAGENT (design consistency):` header.
+Present Outside Voice output under a `OUTSIDE VOICE SAYS (design source audit):` header.
+Present subagent output under a `INDEPENDENT SUBAGENT (design consistency):` header.
 
 **Synthesis — Litmus scorecard:**
 
 Use the same scorecard format as /plan-design-review (shown above). Fill in from both outputs.
-Merge findings into the triage with `[codex]` / `[subagent]` / `[cross-model]` tags.
+Merge findings into the triage with `[outside voice]` / `[subagent]` / `[cross-model]` tags.
 
 **Log the result:**
 ```bash
 .github/skills/bin/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Replace STATUS with "clean" or "issues_found", SOURCE with "codex+subagent", "codex-only", "subagent-only", or "unavailable".
+Replace STATUS with "clean" or "issues_found", SOURCE with "outside+independent", "outside-only", "independent-only", or "unavailable".
 
 ## Phase 7: Triage
 
@@ -1160,7 +1160,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.

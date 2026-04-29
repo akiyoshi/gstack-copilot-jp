@@ -296,3 +296,79 @@ describe('全スキル frontmatter 契約 (v1.0.3+)', () => {
     });
   }
 });
+
+// --- v1.2: Outside Voice 言語契約 ---
+//
+// 設計判断: gstack-copilot-jp は Copilot のマルチモデル機能（task tool / runSubagent
+// + 異なるモデルファミリー指定）で Outside Voice を実装する。Codex CLI は呼ばない。
+// upstream sync で Codex 表記が再混入しないよう、SKILL.md / copilot-instructions.md に
+// `Codex` 文字列が混ざらないことを契約として固定する。
+//
+// 互換シム名は許容: `gstack-codex-probe` ファイルパス、および `_gstack_codex_*` 関数名は
+// 本家 gstack 互換 API としてシム実装で保持される。これらの文字列は Codex CLI への
+// 依存ではなく、シムの公開関数面である（v1.4 で `gstack-outside-voice` rename 予定）。
+//
+// allowlist:
+//   - pair-agent: 外部エージェント連携機能で Codex CLI を例示する必要がある
+//   - retro: analytics 表示で過去ユーザーの Codex 使用パターンを参照する
+//   - cso, investigate, qa, qa-only: Codex 言及が文脈上意味を持つ
+//   - land-and-deploy: 過渡的な保護（v1.2 の刷新対象だが慎重に処理）
+
+describe('Outside Voice 言語契約 (v1.2+)', () => {
+  // codex 文字列のうち、シム互換 API への参照は除外する。
+  // 残った素の `Codex` だけが「Codex CLI への依存」として検出対象になる。
+  function stripShimReferences(content) {
+    return content
+      // `gstack-codex-probe` (互換シムのファイル名)
+      .replace(/gstack-codex-probe/g, '')
+      // `_gstack_codex_*` (互換関数: auth_probe / version_check / log_event / log_hang / available)
+      .replace(/_gstack_codex_[a-z_]+/g, '');
+  }
+
+  const ALLOWLIST = new Set([
+    'pair-agent',
+    'retro',
+    'cso',
+    'investigate',
+    'qa',
+    'qa-only',
+    'land-and-deploy',
+  ]);
+
+  const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
+    .filter(d => d.isDirectory() && d.name !== 'bin')
+    .map(d => d.name);
+
+  for (const skill of skillDirs) {
+    if (ALLOWLIST.has(skill)) continue;
+    it(`${skill}/SKILL.md に Codex 文字列が混入しない`, () => {
+      const content = stripShimReferences(readSkill(skill));
+      const matches = content.match(/\bcodex\b/gi);
+      const samples = matches ? [...new Set(matches.slice(0, 3))] : [];
+      expect(matches, `${skill}: Codex 残存 (${matches?.length} 箇所): ${samples.join(', ')}`)
+        .toBeNull();
+    });
+  }
+
+  it('autoplan/SKILL.md に command -v codex ガードが残っていない', () => {
+    const content = readSkill('autoplan');
+    expect(content, 'autoplan: command -v codex ガードが残存している')
+      .not.toMatch(/command\s+-v\s+codex/);
+  });
+
+  it('copilot-instructions.md に Codex 文字列が混入しない', () => {
+    const routingPath = join(ROOT, '.github', 'copilot-instructions.md');
+    const content = stripShimReferences(readFileSync(routingPath, 'utf-8'));
+    expect(content.match(/\bcodex\b/i),
+      'copilot-instructions.md: Codex 残存').toBeNull();
+  });
+
+  it('autoplan/SKILL.md は Outside Voice 用のシムを source している', () => {
+    // gstack-codex-probe (互換名) または gstack-outside-voice (新名) のいずれか。
+    // Phase 0.5 で source されることでシム経由のマルチモデル Outside Voice が有効化される。
+    const content = readSkill('autoplan');
+    expect(content,
+      'autoplan: Outside Voice シムが source されていない')
+      .toMatch(/source\s+\.github\/skills\/bin\/gstack-(codex-probe|outside-voice)/);
+  });
+});
