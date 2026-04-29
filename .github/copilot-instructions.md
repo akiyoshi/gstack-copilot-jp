@@ -129,7 +129,7 @@ gstack-copilot-jp/
 ├── DESIGN.md            # Design decision record (why we chose this shape)
 ├── ARCHITECTURE.md      # Current system layout & data flow
 ├── ETHOS.md             # Builder philosophy (Boil the Lake, Search Before Building)
-├── ROADMAP.md           # Pending work and future plans
+├── TODOS.md             # Pending work and future plans
 ├── upstream-tracking.md # Upstream tracking ledger
 ├── upstream-tracking.json # Tracking data (machine-readable)
 ├── docs/
@@ -318,7 +318,7 @@ CHANGELOG.md is **for users**, not contributors. Write it like product release n
 
 - Lead with what the user can now **do** that they couldn't before.
 - Use plain language, not implementation details. "You can now..." not "Refactored the..."
-- **Never mention ROADMAP.md, internal tracking, or contributor-facing details.**
+- **Never mention TODOS.md, internal tracking, or contributor-facing details.**
 - Every entry should make someone think "oh nice, I want to try that."
 
 **Only document what shipped between main and this change.** Keep out of the CHANGELOG:

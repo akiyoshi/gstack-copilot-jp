@@ -204,7 +204,7 @@ Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェン�
 設定は [.gstack/model-routing.yaml](.gstack/model-routing.yaml) で上書き可能。詳細は
 [DESIGN.md §6.5](DESIGN.md) を参照。
 
-アーキテクチャの全体像は [ARCHITECTURE.md](ARCHITECTURE.md)、設計判断の記録は [DESIGN.md](DESIGN.md)、未実装項目は [ROADMAP.md](ROADMAP.md) を参照。
+アーキテクチャの全体像は [ARCHITECTURE.md](ARCHITECTURE.md)、設計判断の記録は [DESIGN.md](DESIGN.md)、未実装項目は [TODOS.md](TODOS.md) を参照。
 
 ## gstackとの違い
 
@@ -277,7 +277,7 @@ cd ~/.gstack-copilot-jp
 | [DESIGN.md](DESIGN.md) | 設計判断の記録（なぜ現在の形なのか） |
 | [BROWSER.md](BROWSER.md) | `/browse` の技術詳細・コマンドリファレンス |
 | [ETHOS.md](ETHOS.md) | 3 つの原則（哲学） |
-| [ROADMAP.md](ROADMAP.md) | 未実装項目・将来計画 |
+| [TODOS.md](TODOS.md) | 未実装項目・将来計画 |
 | [CHANGELOG.md](CHANGELOG.md) | リリース履歴 |
 | [upstream-tracking.md](upstream-tracking.md) | 本家 gstack との互換性台帳 |
 | [docs/archive/](docs/archive/) | 過去の設計探索資料 |

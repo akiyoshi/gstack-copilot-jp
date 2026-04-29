@@ -212,8 +212,8 @@ describe('ドキュメント数値整合性', () => {
 
   it('バージョンがVERSIONファイルと一致する', () => {
     const version = readFileSync(join(ROOT, 'VERSION'), 'utf-8').trim();
-    // ROADMAP.md に現在のバージョンが含まれる
-    const roadmapContent = readFileSync(join(ROOT, 'ROADMAP.md'), 'utf-8');
+    // TODOS.md に現在のバージョンが含まれる
+    const roadmapContent = readFileSync(join(ROOT, 'TODOS.md'), 'utf-8');
     expect(roadmapContent).toContain(version);
   });
 });
