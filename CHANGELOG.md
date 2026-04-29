@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.5.0] - 2026-04-29
+
+### 🔁 出荷時 CHANGELOG 必須化（preference 撤回）
+
+「CHANGELOG 不要」というユーザー preference を撤回し、`/ship` ほかスキル本来の動作に戻した。CHANGELOG はリリースノートとして利用者向けの主要なコミュニケーション手段なので、不要 preference は実態と乖離していた（実際にすべてのリリースで CHANGELOG エントリは書かれていた）。
+
+### Changed
+
+- **`test/quality-gate.test.js` のスキル数整合チェック** — `if (!existsSync(changelogPath)) return` の早期 return を削除し、`CHANGELOG.md is required` の `expect` に変更。CHANGELOG 不在は失敗扱い
+
 ## [1.2.4.0] - 2026-04-29
 
 ### 🔄 upstream 整合：`TODOS.md` 命名へ統一
