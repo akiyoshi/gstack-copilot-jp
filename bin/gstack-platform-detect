@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# bin/gstack-platform-detect — AI コーディングエージェントの検出 + gstack-copilot-jp の状態
+#
+# 上流 (garrytan/gstack) の同名スクリプトを Copilot CLI / VS Code 向けに翻案。
+# 上流は hosts/*.ts の HostConfig を bun でロードして動的に走査するが、
+# gstack-copilot-jp は単一ホストではなく複数ホストの「クライアント」として動くので、
+# 検出対象を bash でハードコードする。
+#
+# 使い方:
+#   bin/gstack-platform-detect           # 表形式
+#   bin/gstack-platform-detect --json    # JSON 出力 (--json)
+set -euo pipefail
+
+JSON_MODE=0
+for arg in "$@"; do
+  case "$arg" in
+    --json) JSON_MODE=1 ;;
+    -h|--help)
+      echo "Usage: $(basename "$0") [--json]"
+      echo "  AI コーディングエージェントの検出と gstack-copilot-jp 連携状態を表示。"
+      exit 0
+      ;;
+  esac
+done
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# 検出対象: gstack-copilot-jp が連携しうるホスト
+# (CLI コマンド名, 表示名, スキル配置先のヒント)
+HOSTS=(
+  "copilot|GitHub Copilot CLI|~/.copilot/skills"
+  "code|VS Code (Copilot Chat)|<workspace>/.github/skills"
+  "claude|Claude Code|~/.claude/skills"
+  "codex|OpenAI Codex CLI|~/.codex"
+  "cursor|Cursor|~/.cursor/skills"
+)
+
+# gstack-copilot-jp 自体のインストール状態を判定
+detect_gstack_install() {
+  local host="$1"
+  case "$host" in
+    copilot)
+      [ -L "$HOME/.copilot/skills/gstack-copilot-jp" ] && echo "user-link" && return
+      [ -d "$HOME/.copilot/skills/gstack-copilot-jp" ] && echo "user-dir" && return
+      [ -f "$HOME/.gstack/hosts/copilot-cli/installations/gstack-copilot-jp.json" ] && echo "manifest" && return
+      ;;
+    code)
+      # workspace ローカルのみ確認 (ROOT_DIR が gstack-copilot-jp なら自分自身)
+      if [ "$(basename "$ROOT_DIR")" = "gstack-copilot-jp" ]; then
+        echo "self"; return
+      fi
+      ;;
+    claude)
+      [ -L "$HOME/.claude/skills/gstack-copilot-jp" ] && echo "user-link" && return
+      ;;
+  esac
+  echo "-"
+}
+
+get_version() {
+  local cmd="$1"
+  local raw
+  raw=$("$cmd" --version 2>/dev/null | head -1 || echo "")
+  echo "${raw:-unknown}"
+}
+
+if [ "$JSON_MODE" -eq 1 ]; then
+  printf '{\n  "agents": [\n'
+  first=1
+  for spec in "${HOSTS[@]}"; do
+    cmd="${spec%%|*}"
+    rest="${spec#*|}"
+    name="${rest%%|*}"
+    skill_path="${rest##*|}"
+    [ "$first" -eq 0 ] && printf ',\n'
+    first=0
+    if command -v "$cmd" >/dev/null 2>&1; then
+      version=$(get_version "$cmd")
+      install=$(detect_gstack_install "$cmd")
+      printf '    {"agent":"%s","name":"%s","installed":true,"version":"%s","skill_path":"%s","gstack_status":"%s"}' \
+        "$cmd" "$name" "$version" "$skill_path" "$install"
+    else
+      printf '    {"agent":"%s","name":"%s","installed":false,"version":null,"skill_path":"%s","gstack_status":"-"}' \
+        "$cmd" "$name" "$skill_path"
+    fi
+  done
+  printf '\n  ],\n'
+  printf '  "gstack_copilot_jp": {\n'
+  printf '    "root": "%s",\n' "$ROOT_DIR"
+  printf '    "version": "%s"\n' "$(cat "$ROOT_DIR/VERSION" 2>/dev/null || echo unknown)"
+  printf '  }\n}\n'
+  exit 0
+fi
+
+# 表形式
+printf '%-12s %-22s %-15s %s\n' "Agent" "Name" "Version" "gstack-copilot-jp"
+printf '%-12s %-22s %-15s %s\n' "-----" "----" "-------" "-----------------"
+for spec in "${HOSTS[@]}"; do
+  cmd="${spec%%|*}"
+  rest="${spec#*|}"
+  name="${rest%%|*}"
+  if command -v "$cmd" >/dev/null 2>&1; then
+    version=$(get_version "$cmd")
+    install=$(detect_gstack_install "$cmd")
+    printf '%-12s %-22s %-15s %s\n' "$cmd" "$name" "$version" "$install"
+  else
+    printf '%-12s %-22s %-15s %s\n' "$cmd" "$name" "(not found)" "-"
+  fi
+done
+
+echo ""
+echo "gstack-copilot-jp:"
+echo "  root:    $ROOT_DIR"
+echo "  version: $(cat "$ROOT_DIR/VERSION" 2>/dev/null || echo unknown)"

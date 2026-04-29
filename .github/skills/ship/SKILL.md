@@ -103,13 +103,13 @@ Display:
 **Review tiers:**
 - **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
 - **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
-- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Outside Voice adversarial challenge. Large diffs (200+ lines) additionally get Outside Voice structured review with P1 gate. No configuration needed.
-- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Outside Voice is unavailable. Never gates shipping.
+- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Codex adversarial challenge. Large diffs (200+ lines) additionally get Codex structured review with P1 gate. No configuration needed.
+- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Codex is unavailable. Never gates shipping.
 
 **Verdict logic:**
 - **CLEARED**: Eng Review has >= 1 entry within 7 days from either \`review\` or \`plan-eng-review\` with status "clean" (or \`skip_eng_review\` is \`true\`)
 - **NOT CLEARED**: Eng Review missing, stale (>7 days), or has open issues
-- CEO, Design, and Outside Voice reviews are shown for context but never block shipping
+- CEO, Design, and Codex reviews are shown for context but never block shipping
 - If \`skip_eng_review\` config is \`true\`, Eng Review shows "SKIPPED (global)" and verdict is CLEARED
 
 **Staleness detection:** After displaying the dashboard, check if any existing reviews may be stale:
@@ -794,7 +794,7 @@ REPO=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
 _PLAN_SLUG=$(git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*/[^/]*\)\.git$|\1|;s|.*[:/]\([^/]*/[^/]*\)$|\1|' | tr '/' '-' | tr -cd 'a-zA-Z0-9._-') || true
 _PLAN_SLUG="${_PLAN_SLUG:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9._-')}"
 # Search common plan file locations (project designs first, then personal/local)
-for PLAN_DIR in "$HOME/.gstack/projects/$_PLAN_SLUG" "$HOME/.gstack/plans" "$HOME/.copilot/plans" ".gstack/plans"; do
+for PLAN_DIR in "$HOME/.gstack/projects/$_PLAN_SLUG" "$HOME/.gstack/plans" "$HOME/.codex/plans" ".gstack/plans"; do
   [ -d "$PLAN_DIR" ] || continue
   PLAN=$(ls -t "$PLAN_DIR"/*.md 2>/dev/null | xargs grep -l "$BRANCH" 2>/dev/null | head -1)
   [ -z "$PLAN" ] && PLAN=$(ls -t "$PLAN_DIR"/*.md 2>/dev/null | xargs grep -l "$REPO" 2>/dev/null | head -1)
@@ -1099,23 +1099,26 @@ source <(.github/skills/bin/gstack-diff-scope <base> 2>/dev/null)
 
 Substitute: TIMESTAMP = ISO 8601 datetime, STATUS = "clean" if 0 findings or "issues_found", N = total findings, M = auto-fixed count, COMMIT = output of `git rev-parse --short HEAD`.
 
-7. **Outside Voice (design)** (optional, automatic if available):
+7. **Codex design voice** (optional, automatic if available):
 
 ```bash
 ```
 
-If Outside Voice is available, run a lightweight design check on the diff:
+If Codex is available, run a lightweight design check on the diff:
 
-Dispatch via the task tool with `model` set to the Outside Voice model.
-Use the same review prompt but from an independent model.
+```bash
+TMPERR_DRL=$(mktemp /tmp/codex-drl-XXXXXXXX)
+_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+```
 
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
 ```bash
+cat "$TMPERR_DRL" && rm -f "$TMPERR_DRL"
 ```
 
 **Error handling:** All errors are non-blocking. On auth failure, timeout, or empty response — skip with a brief note and continue.
 
-Present Outside Voice output under a `CODEX (design):` header, merged with the checklist findings above.
+Present Codex output under a `CODEX (design):` header, merged with the checklist findings above.
 
    Include any design findings alongside the code review findings. They follow the same Fix-First flow below.
 
@@ -1437,7 +1440,7 @@ For each comment in `comments`:
 
 ## Step 11: Adversarial review (always-on)
 
-Every diff gets adversarial review from both Claude and the Outside Voice. LOC is not a proxy for risk — a 5-line auth change can be critical.
+Every diff gets adversarial review from both Claude and Codex. LOC is not a proxy for risk — a 5-line auth change can be critical.
 
 **Detect diff size and tool availability:**
 
@@ -1445,15 +1448,15 @@ Every diff gets adversarial review from both Claude and the Outside Voice. LOC i
 DIFF_INS=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
 DIFF_DEL=$(git diff origin/<base> --stat | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
 DIFF_TOTAL=$((DIFF_INS + DIFF_DEL))
-# Legacy opt-out — only gates Outside Voice passes, Claude always runs
+# Legacy opt-out — only gates Codex passes, Claude always runs
 OLD_CFG=$(
 echo "DIFF_SIZE: $DIFF_TOTAL"
 echo "OLD_CFG: ${OLD_CFG:-not_set}"
 ```
 
-If `OLD_CFG` is `disabled`: skip Outside Voice passes only. Claude adversarial subagent still runs (it's free and fast). Jump to the "Claude adversarial subagent" section.
+If `OLD_CFG` is `disabled`: skip Codex passes only. Claude adversarial subagent still runs (it's free and fast). Jump to the "Claude adversarial subagent" section.
 
-**User override:** If the user explicitly requested "full review", "structured review", or "P1 gate", also run the Outside Voice structured review regardless of diff size.
+**User override:** If the user explicitly requested "full review", "structured review", or "P1 gate", also run the Codex structured review regardless of diff size.
 
 ---
 
@@ -1470,9 +1473,9 @@ If the subagent fails or times out: "Claude adversarial subagent unavailable. Co
 
 ---
 
-### Outside Voice adversarial challenge (always runs when available)
+### Codex adversarial challenge (always runs when available)
 
-If Outside Voice is available AND `OLD_CFG` is NOT `disabled`:
+If Codex is available AND `OLD_CFG` is NOT `disabled`:
 
 ```bash
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
@@ -1485,33 +1488,37 @@ Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the 
 Present the full output verbatim. This is informational — it never blocks shipping.
 
 **Error handling:** All errors are non-blocking — adversarial review is a quality enhancement, not a prerequisite.
-- **Timeout:** "Outside Voice timed out after 5 minutes."
-- **Empty response:** "Outside Voice returned no response. Stderr: <paste relevant error>."
-If Outside Voice is NOT available: "Outside Voice model not configured — running Claude adversarial only. Configure outside_voice_model for cross-model coverage: `outside_voice_model` in `~/.gstack/config.yaml`"
+- **Timeout:** "Codex timed out after 5 minutes."
+- **Empty response:** "Codex returned no response. Stderr: <paste relevant error>."
+If Codex is NOT available: "Codex CLI not found — running Claude adversarial only. Install Codex for cross-model coverage: `npm install -g @openai/codex`"
 
 ---
 
-### Outside Voice structured review (large diffs only, 200+ lines)
+### Codex structured review (large diffs only, 200+ lines)
 
-If `DIFF_TOTAL >= 200` AND Outside Voice is available AND `OLD_CFG` is NOT `disabled`:
+If `DIFF_TOTAL >= 200` AND Codex is available AND `OLD_CFG` is NOT `disabled`:
 
-Dispatch via the task tool with `model` set to the Outside Voice model.
-Use the same review prompt but from an independent model.
+```bash
+TMPERR=$(mktemp /tmp/codex-review-XXXXXXXX)
+_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+cd "$(git rev-parse --show-toplevel)"
+```
 
-Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. Present output under `OUTSIDE VOICE (code review):` header.
+Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. Present output under `CODEX SAYS (code review):` header.
 Check for `[P1]` markers: found → `GATE: FAIL`, not found → `GATE: PASS`.
 
 If GATE is FAIL, use ask_user:
 ```
-Outside Voice found N critical issues in the diff.
+Codex found N critical issues in the diff.
 
 A) Investigate and fix now (recommended)
 B) Continue — review will still complete
 ```
-Read stderr for errors (same error handling as Outside Voice adversarial above).
+Read stderr for errors (same error handling as Codex adversarial above).
 
+After stderr: `rm -f "$TMPERR"`
 
-If `DIFF_TOTAL < 200`: skip this section silently. The Claude + Outside Voice adversarial passes provide sufficient coverage for smaller diffs.
+If `DIFF_TOTAL < 200`: skip this section silently. The Claude + Codex adversarial passes provide sufficient coverage for smaller diffs.
 
 ---
 
@@ -1521,7 +1528,7 @@ After all passes complete, persist:
 ```bash
 .github/skills/bin/gstack-review-log '{"skill":"adversarial-review","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","tier":"always","gate":"GATE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Substitute: STATUS = "clean" if no findings across ALL passes, "issues_found" if any pass found issues. SOURCE = "both" if Outside Voice ran, "claude" if only Claude subagent ran. GATE = the Outside Voice structured review gate result ("pass"/"fail"), "skipped" if diff < 200, or "informational" if Outside Voice was unavailable. If all passes failed, do NOT persist.
+Substitute: STATUS = "clean" if no findings across ALL passes, "issues_found" if any pass found issues. SOURCE = "both" if Codex ran, "claude" if only Claude subagent ran. GATE = the Codex structured review gate result ("pass"/"fail"), "skipped" if diff < 200, or "informational" if Codex was unavailable. If all passes failed, do NOT persist.
 
 ---
 
@@ -1535,8 +1542,8 @@ ADVERSARIAL REVIEW SYNTHESIS (always-on, N lines):
   High confidence (found by multiple sources): [findings agreed on by >1 pass]
   Unique to Claude structured review: [from earlier step]
   Unique to Claude adversarial: [from subagent]
-  Unique to Outside Voice: [from outside voice adversarial or code review, if ran]
-  Models used: Claude structured ✓  Claude adversarial ✓/✗  Outside ✓/✗
+  Unique to Codex: [from codex adversarial or code review, if ran]
+  Models used: Claude structured ✓  Claude adversarial ✓/✗  Codex ✓/✗
 ════════════════════════════════════════════════════════════
 ```
 
@@ -1558,7 +1565,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
+`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
@@ -1619,29 +1626,9 @@ fi
 Read the `STATE:` line and dispatch:
 
 - **FRESH** → proceed with the bump action below (steps 1–4).
-- **ALREADY_BUMPED** → skip the bump. Reuse `CURRENT_VERSION` for CHANGELOG and PR body. Continue to the next step.
-- **DRIFT_STALE_PKG** → a prior `/ship` bumped `VERSION` but failed to update `package.json`. Run the sync-only repair block below (after step 4). Do NOT re-bump. Reuse `CURRENT_VERSION` for CHANGELOG and PR body.
+- **ALREADY_BUMPED** → skip the bump by default, BUT check for queue drift first: call `bin/gstack-next-version` with the implied bump level (derived from `CURRENT_VERSION` vs `BASE_VERSION`), compare its `.version` against `CURRENT_VERSION`. If they differ (queue moved since last ship), use **ask_user**: "VERSION drift detected: you claim v<CURRENT> but next available is v<NEW> (queue moved). A) Rebump to v<NEW> and rewrite CHANGELOG header + PR title (recommended), B) Keep v<CURRENT> — will be rejected by CI version-gate until resolved." If A, treat this as FRESH with `NEW_VERSION=<new>` and run steps 1-4 (which will also trigger Step 13 CHANGELOG header rewrite and Step 19 PR title rewrite). If B, reuse `CURRENT_VERSION` and warn that CI will likely reject. If util is offline, warn and reuse `CURRENT_VERSION`.
+- **DRIFT_STALE_PKG** → a prior `/ship` bumped `VERSION` but failed to update `package.json`. Run the sync-only repair block below (after step 4). Do NOT re-bump. Reuse `CURRENT_VERSION` for CHANGELOG and PR body. (Queue check still runs in ALREADY_BUMPED terms after repair.)
 - **DRIFT_UNEXPECTED** → `/ship` has halted (exit 1). Resolve manually; /ship cannot tell which file is authoritative.
-
-**Queue-aware version check (FRESH state only):**
-
-Before bumping, check if other open PRs on the same base branch already claim a version to avoid collisions:
-
-```bash
-# Check open PRs for VERSION conflicts (exclude current branch's PR)
-if command -v gh >/dev/null 2>&1; then
-  CURRENT_BRANCH=$(git branch --show-current)
-  CLAIMED_VERSIONS=$(gh pr list --base "<base>" --state open --json title,headRefName --jq '.[] | select(.headRefName != "'"$CURRENT_BRANCH"'") | .title' 2>/dev/null | grep -oP '^v\K[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | sort -V)
-  if [ -n "$CLAIMED_VERSIONS" ]; then
-    echo "QUEUE: Open PRs already claim these versions:"
-    echo "$CLAIMED_VERSIONS"
-  fi
-fi
-```
-
-If `NEW_VERSION` (computed in step 3) matches any claimed version, auto-increment the MICRO digit to the next unclaimed version. Display: "Version v{X} already claimed by open PR — using v{Y} instead."
-
-If `gh` is unavailable or network fails, fall back to local-only bump (no queue check). Display: "Queue check skipped (gh unavailable) — using local version arithmetic."
 
 1. Read the current `VERSION` file (4-digit format: `MAJOR.MINOR.PATCH.MICRO`)
 
@@ -1653,9 +1640,33 @@ If `gh` is unavailable or network fails, fall back to local-only bump (no queue 
    - **MINOR** (2nd digit): **ASK the user** if ANY feature signal is detected, OR 500+ lines changed, OR new modules/packages added
    - **MAJOR** (1st digit): **ASK the user** — only for milestones or breaking changes
 
-3. Compute the new version:
-   - Bumping a digit resets all digits to its right to 0
-   - Example: `0.19.1.0` + PATCH → `0.19.2.0`
+   Save the chosen level as `BUMP_LEVEL` (one of `major`, `minor`, `patch`, `micro`). This is the user-intended level. The next step decides *placement* — the level stays the same even if queue-aware allocation has to advance past a claimed slot.
+
+3. **Queue-aware version pick (workspace-aware ship, v1.6.4.0+).** Call `bin/gstack-next-version` to see what's already claimed by open PRs + active sibling Conductor worktrees, then render the queue state to the user:
+
+   ```bash
+   QUEUE_JSON=$(bun run bin/gstack-next-version \
+     --base <base> \
+     --bump "$BUMP_LEVEL" \
+     --current-version "$BASE_VERSION" 2>/dev/null || echo '{"offline":true}')
+   NEW_VERSION=$(echo "$QUEUE_JSON" | jq -r '.version // empty')
+   CLAIMED_COUNT=$(echo "$QUEUE_JSON" | jq -r '.claimed | length')
+   ACTIVE_SIBLING_COUNT=$(echo "$QUEUE_JSON" | jq -r '.active_siblings | length')
+   OFFLINE=$(echo "$QUEUE_JSON" | jq -r '.offline // false')
+   REASON=$(echo "$QUEUE_JSON" | jq -r '.reason // ""')
+   ```
+
+   - If `OFFLINE=true` or the util fails (auth expired, no `gh`/`glab`, network): fall back to local `BUMP_LEVEL` arithmetic (bump `BASE_VERSION` at the chosen level). Print `⚠ workspace-aware ship offline — using local bump only`. Continue.
+   - If `CLAIMED_COUNT > 0`: render the queue table to the user so they can see landing order at a glance:
+     ```
+     Queue on <base> (vBASE_VERSION):
+       #<pr> <branch> → v<version>   [⚠ collision with #<other>]
+     Active sibling workspaces (WIP, not yet PR'd):
+       <path> → v<version> (committed Nh ago)
+     Your branch will claim: vNEW_VERSION  (<reason>)
+     ```
+   - If `ACTIVE_SIBLING_COUNT > 0` and any active sibling's VERSION is `>= NEW_VERSION`, use **ask_user**: "Sibling workspace <path> has v<X> committed <N>h ago but hasn't PR'd yet. Wait for them to ship first, or advance past? A) Advance past (recommended for unrelated work), B) Abort /ship and sync up with sibling first."
+   - Validate `NEW_VERSION` matches `MAJOR.MINOR.PATCH.MICRO`. If util returns an empty or malformed version, fall back to local bump.
 
 4. **Validate** `NEW_VERSION` and write it to **both** `VERSION` and `package.json`. This block runs only when `STATE: FRESH`.
 
@@ -1863,7 +1874,7 @@ Decide at runtime which option applies. If unsure, prefer stopping and asking th
 user via ask_user rather than destroying non-WIP commits.
 
 **Anti-footgun rules:**
-- NEVER blind `git reset --soft` if there are non-WIP commits. The Outside Voice flagged this
+- NEVER blind `git reset --soft` if there are non-WIP commits. Codex flagged this
   as destructive — it would uncommit real landed work and turn the push step into
   a non-fast-forward push for anyone who already pushed.
 - Only proceed to Step 15.1 after WIP commits are successfully squashed/absorbed
@@ -1991,7 +2002,11 @@ gh pr view --json url,number,state -q 'if .state == "OPEN" then "PR #\(.number):
 glab mr view -F json 2>/dev/null | jq -r 'if .state == "opened" then "MR_EXISTS" else "NO_MR" end' 2>/dev/null || echo "NO_MR"
 ```
 
-If an **open** PR/MR already exists: **update** the PR body using `gh pr edit --body "..."` (GitHub) or `glab mr update -d "..."` (GitLab). Always regenerate the PR body from scratch using this run's fresh results (test output, coverage audit, review findings, adversarial review, TODOS summary, documentation_section from Step 18). Never reuse stale PR body content from a prior run. Print the existing URL and continue to Step 20.
+If an **open** PR/MR already exists: **update** the PR body using `gh pr edit --body "..."` (GitHub) or `glab mr update -d "..."` (GitLab). Always regenerate the PR body from scratch using this run's fresh results (test output, coverage audit, review findings, adversarial review, TODOS summary, documentation_section from Step 18). Never reuse stale PR body content from a prior run.
+
+**Also update the PR title** if the version changed on rerun. PR titles use the workspace-aware format `v<NEW_VERSION> <type>: <summary>` — version ALWAYS first. If the current title's version prefix doesn't match `NEW_VERSION`, run `gh pr edit --title "v$NEW_VERSION <type>: <summary>"` (or the `glab mr update -t ...` equivalent). This keeps the title truthful when Step 12's queue-drift detection rebumps a stale version. If the title has no `v<X.Y.Z.W>` prefix (a custom title kept intentionally), leave the title alone — only rewrite titles that already follow the format.
+
+Print the existing URL and continue to Step 20.
 
 If no PR/MR exists: create a pull request (GitHub) or merge request (GitLab) using the platform detected in Step 0.
 
@@ -2053,13 +2068,13 @@ you missed it.>
 - [x] All Rails tests pass (N runs, 0 failures)
 - [x] All Vitest tests pass (N tests)
 
-🤖 Generated with [GitHub Copilot CLI](https://github.com/features/copilot) + [gstack-copilot-jp](https://github.com/akiyoshi/gstack-copilot-jp)
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
 **If GitHub:**
 
 ```bash
-gh pr create --base <base> --title "v<VERSION> <type>: <summary>" --body "$(cat <<'EOF'
+gh pr create --base <base> --title "v$NEW_VERSION <type>: <summary>" --body "$(cat <<'EOF'
 <PR body from above>
 EOF
 )"
@@ -2068,7 +2083,7 @@ EOF
 **If GitLab:**
 
 ```bash
-glab mr create -b <base> -t "v<VERSION> <type>: <summary>" -d "$(cat <<'EOF'
+glab mr create -b <base> -t "v$NEW_VERSION <type>: <summary>" -d "$(cat <<'EOF'
 <MR body from above>
 EOF
 )"
@@ -2112,7 +2127,7 @@ This step is automatic — never skip it, never ask for confirmation.
 - **Never skip tests.** If tests fail, stop.
 - **Never skip the pre-landing review.** If checklist.md is unreadable, stop.
 - **Never force push.** Use regular `git push` only.
-- **Never ask for trivial confirmations** (e.g., "ready to push?", "create PR?"). DO stop for: version bumps (MINOR/MAJOR), pre-landing review findings (ASK items), and Outside Voice structured review [P1] findings (large diffs only).
+- **Never ask for trivial confirmations** (e.g., "ready to push?", "create PR?"). DO stop for: version bumps (MINOR/MAJOR), pre-landing review findings (ASK items), and Codex structured review [P1] findings (large diffs only).
 - **Always use the 4-digit version format** from the VERSION file.
 - **Date format in CHANGELOG:** `YYYY-MM-DD`
 - **Split commits for bisectability** — each commit = one logical change.

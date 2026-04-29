@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2.0] - 2026-04-29
+
+### Fixed (critical)
+
+- **`bin/upstream-diff.sh` のサイレント追従停止を解消** — `git pull --ff-only` が浅いクローン（`--depth 50`）+ 多コミット間隔でサイレント失敗していた。結果として 3 か月分（v1.13-v1.20、8 リリース）の本家進化を見逃していた。完全クローンに変更し、pull/unshallow 失敗を exit code 1 で表面化、HEAD と pinned commit の lag 数を表示。
+- **`bin/adapt-upstream-skill.sh` の awk anchor バグ修正** — `^# [A-Z]` が upstream の `# /skill-name` 形式 h1 にマッチせず、フォールバックでファイル全体コピー → preamble の bash が混入してコードフェンス不均衡が発生する deep regression。アンカーを `^# (\/|[A-Z])` に修正、フォールバックを fail-fast (`exit 2`) に変更、Layer 2.5 にコードフェンス balance バリデーションを追加。
+- **`bin/browse.ps1` を機能する状態に復旧** — 存在しない `cli.js` を参照していた壊れた PowerShell ラッパーを修正。Windows 用 `.exe` バイナリ → Bun 直接実行 → Node + tsx の 3 段フォールバック構成に。
+
+### Added
+
+- **`bin/gstack-platform-detect`** — Copilot CLI / VS Code / Claude / Codex / Cursor の検出と gstack-copilot-jp インストール状態の表示（`--json` 対応、Bun 非依存）。
+- **`bin/gstack-update-check`** — 24h キャッシュで本家追従ラグを通知。severity 階段（none/info/warn）、`--json` 対応。`bin/gstack-session-start.sh` から実呼び出しに（旧: 「Phase 3 で実装予定」のサイレントスキップ）。
+- **テスト 40 件追加** — Phase A bin 存在確認 (2) + 全 SKILL.md コードフェンス balance 動的検証 (38)。adapter regression の再発防止。
+
+### Changed
+
+- **upstream を v1.20.0.0 (e8893a18) に同期** — 27 SKILL.md を一括更新（+5813 / -3805 行）。v1.13-v1.20 の方法論改善（preamble 削減、AskUserQuestion 強化、`/health` 軸調整、`/ship` workspace-aware 等）が反映。
+- **`upstream-tracking.json/md`** — `upstream_version` を `1.20.0.0` に、`upstream_commit` を `e8893a18` に更新。新規取込予定スキル（`landing-report`, `claude`, `scrape`, `skillify`）を `planned` ステータスで追加。`tracking.test.js` に planned サポート。
+- **ROADMAP.md** — Phase A 完了状態に更新。重複セクション整理。Phase B-E (v1.1) と Phase C-D (v1.2) を再構成。
+
+### Documentation
+
+- **`docs/upstream-gap-plan.md` 新設** — upstream 追従ギャップの全体監査と Phase A〜E の実装計画。
+
+### Notes
+
+- 総差分は +1701 / -15842 行。削除側の大半は upstream v1.15 の preamble 削減を 27 SKILL.md にまとめて反映した結果（SKILL.md 部分: +5813 / -3805）。新規ロジックは bin/ の 2 スクリプトと adapter の awk anchor 修正のみ。
+
 ## [1.0.1.0] - 2026-04-29
 
 ### Changed (docs)

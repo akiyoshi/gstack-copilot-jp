@@ -53,8 +53,10 @@ if [ -f "$LAST_CHECK" ]; then
   fi
 fi
 
-# 更新チェック実行 (Phase 3 で bin/gstack-update-check を実装予定。未実装時は静かにスキップ)
-if command -v gstack-update-check >/dev/null 2>&1; then
+# 更新チェック実行 (Phase A-5 で実装済み)
+if [ -x "$SCRIPT_DIR/gstack-update-check" ]; then
+  bash "$SCRIPT_DIR/gstack-update-check" 2>/dev/null || true
+elif command -v gstack-update-check >/dev/null 2>&1; then
   gstack-update-check 2>/dev/null || true
 fi
 echo "$NOW" > "$LAST_CHECK"

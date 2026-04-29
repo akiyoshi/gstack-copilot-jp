@@ -81,23 +81,26 @@ echo "Lines: $(wc -l < "$UPSTREAM_FILE")"
 
 # --- Layer 1: スキル固有部分の抽出 ---
 
-# アンカーパターン: "# <Title>" で始まるスキル固有セクションを検出
-# upstream の共有ボイラープレートは "## Preamble" ～ "## SETUP" の範囲
-# スキル固有部分はそれ以降の "# " (h1) で始まるセクション
+# アンカーパターン: スキル固有部分の h1 (h1 outside code blocks)
+# upstream の h1 は通常 `# /skill-name — Title` または `# Title` 形式。
+# `^# /` パターン (upstream の正式形式) を最優先、なければ最初の `^# ` outside code block。
 
 BODY=$(awk '
   BEGIN { found=0; in_code=0 }
   /^```/ { in_code = !in_code; if (found) print; next }
-  # h1 outside code blocks = skill body start
-  /^# [A-Z]/ && !in_code && !found {
+  # h1 outside code blocks. upstream の正式形式は `# /skill-name`、稀に大文字始まり。
+  /^# (\/|[A-Z])/ && !in_code && !found {
     found=1
   }
   found { print }
 ' "$UPSTREAM_FILE")
 
 if [ -z "$BODY" ]; then
-  echo "Warning: Could not extract skill body. Using full file." >&2
-  BODY=$(cat "$UPSTREAM_FILE")
+  echo "ERROR: Could not extract skill body from $UPSTREAM_FILE" >&2
+  echo "       (no h1 heading matching '^# (/|[A-Z])' found outside code blocks)" >&2
+  echo "Hint:  本家のスキル形式が変わった可能性。awk アンカーを更新するか、" >&2
+  echo "       手動で .github/skills/$SKILL_NAME/SKILL.md を編集してください。" >&2
+  exit 2
 fi
 
 BODY_LINES=$(echo "$BODY" | wc -l)
@@ -293,6 +296,14 @@ CONFIG_FLAGS=$(echo "$CONVERTED" | grep -n 'EXPLAIN_LEVEL\|QUESTION_TUNING\|_PRO
 if [ -n "$CONFIG_FLAGS" ]; then
   echo "⚠️  Preamble config flags:"
   echo "$CONFIG_FLAGS"
+  ERRORS=$((ERRORS + 1))
+fi
+
+# コードフェンス balance チェック (Phase A-3 で発見した extraction バグへの再発防止)
+FENCE_COUNT=$(echo "$CONVERTED" | grep -cE '^[`]{3}' || true)
+if [ "$((FENCE_COUNT % 2))" -ne 0 ]; then
+  echo "⚠️  コードフェンス不均衡: ${FENCE_COUNT} 個 (奇数)"
+  echo "    → 抽出が preamble 部分を巻き込んでいる可能性あり。"
   ERRORS=$((ERRORS + 1))
 fi
 

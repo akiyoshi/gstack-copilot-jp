@@ -14,17 +14,33 @@ TRACKING_JSON="$ROOT_DIR/upstream-tracking.json"
 MODE="${1:-check}"
 
 if [ ! -d "$UPSTREAM_DIR" ]; then
-  echo "Upstream not found. Cloning..."
+  echo "Upstream not found. Cloning (full history for reliable diffs)..."
   mkdir -p "$(dirname "$UPSTREAM_DIR")"
-  git clone --single-branch --depth 50 \
+  git clone --single-branch \
     https://github.com/garrytan/gstack.git "$UPSTREAM_DIR"
 fi
 
-# 更新
-if [ "$MODE" = "--update" ] || [ "$MODE" = "--sync" ] || [ ! -f "$LAST_CHECK_FILE" ]; then
+# 浅いクローン (--depth 50) で取得済みの古い repo を完全履歴へ昇格
+# 浅いクローン + 多コミット間隔の pull はサイレント失敗するため必須。
+if [ -f "$UPSTREAM_DIR/.git/shallow" ]; then
+  echo "Existing upstream is shallow — promoting to full history..."
+  if ! ( cd "$UPSTREAM_DIR" && git fetch --unshallow ); then
+    echo "ERROR: git fetch --unshallow failed for $UPSTREAM_DIR" >&2
+    echo "Hint: rm -rf $UPSTREAM_DIR && rerun this script" >&2
+    exit 1
+  fi
+fi
+
+# 更新（pull の失敗をサイレントにしない）
+# --sync は既存のローカル upstream 状態を使う（pull は --update で明示的に実施）
+if [ "$MODE" = "--update" ] || [ ! -f "$LAST_CHECK_FILE" ]; then
   echo "Pulling upstream..."
-  cd "$UPSTREAM_DIR" && git pull --ff-only 2>/dev/null
-  cd "$ROOT_DIR"
+  if ! ( cd "$UPSTREAM_DIR" && git pull --ff-only ); then
+    echo "ERROR: git pull --ff-only failed in $UPSTREAM_DIR" >&2
+    echo "Hint: ローカル変更がないか、ネットワーク状態を確認。" >&2
+    echo "      手動で復旧する場合: cd $UPSTREAM_DIR && git fetch && git reset --hard origin/main" >&2
+    exit 1
+  fi
 fi
 
 # 本家のバージョン・commit 取得
@@ -46,6 +62,19 @@ echo "━━━ upstream diff ━━━"
 echo "Upstream version: ${UPSTREAM_VERSION:-unknown}"
 echo "Upstream commit:  ${UPSTREAM_COMMIT:0:12}"
 echo "Pinned commit:    ${PINNED_COMMIT:0:12}"
+
+# pinned commit と HEAD のあいだに何コミットあるか（lag の可視化）
+LAG_COUNT=""
+if [ -n "$PINNED_COMMIT" ] && [ "$UPSTREAM_COMMIT" != "$PINNED_COMMIT" ]; then
+  LAG_COUNT=$(cd "$UPSTREAM_DIR" && git rev-list --count "$PINNED_COMMIT..HEAD" 2>/dev/null || echo "")
+  if [ -n "$LAG_COUNT" ] && [ "$LAG_COUNT" -gt 0 ]; then
+    echo "Lag:              $LAG_COUNT commits behind upstream"
+    if [ "$LAG_COUNT" -gt 50 ]; then
+      echo ""
+      echo "⚠️  WARNING: $LAG_COUNT commits behind. Frequent sync recommended." >&2
+    fi
+  fi
+fi
 
 if [ "$UPSTREAM_COMMIT" = "$PINNED_COMMIT" ]; then
   echo "Status: up to date ✅"
@@ -89,13 +118,16 @@ if [ "$MODE" = "--sync" ] && [ -n "$CHANGED_SKILLS" ]; then
   SKIP=0
 
   echo "$CHANGED_SKILLS" | while read -r skill; do
-    # diverged スキルはスキップ
+    # diverged / excluded / planned スキルはスキップ
+    # (planned: 取込予定だが未実装 — 詳細は upstream-tracking.json)
     SKILL_STATUS=$(python3 -c "import json; print(json.load(open('$TRACKING_JSON'))['skills'].get('$skill',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
-    if [ "$SKILL_STATUS" = "diverged" ] || [ "$SKILL_STATUS" = "excluded" ]; then
-      echo "⏭️  $skill (status: $SKILL_STATUS — スキップ)"
-      SKIP=$((SKIP + 1))
-      continue
-    fi
+    case "$SKILL_STATUS" in
+      diverged|excluded|planned)
+        echo "⏭️  $skill (status: $SKILL_STATUS — スキップ)"
+        SKIP=$((SKIP + 1))
+        continue
+        ;;
+    esac
 
     if [ -d ".github/skills/$skill" ]; then
       echo -n "🔄 $skill ... "

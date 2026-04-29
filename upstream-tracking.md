@@ -13,9 +13,20 @@
 
 | 項目 | 値 |
 |------|-----|
-| 本家バージョン | v1.12.1.0 (fix: remove vestigial plan-mode handshake) |
-| 最終検証日 | 2026-04-25 |
-| gstack-copilot-jp バージョン | 1.0.0-alpha.7 |
+| 本家バージョン | **v1.20.0.0** (e8893a18) — Browser-Skills runtime + /scrape + /skillify |
+| 本家 HEAD（最終監査時点） | v1.20.0.0 (2026-04-29 同期完了) |
+| 取込ラグ | 0 commits（Phase A-3 で 8 リリース分の SKILL.md を一括同期） |
+| 最終検証日 | 2026-04-29 |
+| gstack-copilot-jp バージョン | 1.0.1.0 |
+
+**Phase A-3 同期サマリ**:
+
+- 29 SKILL.md ファイル更新（+5813/-3805 行）
+- v1.13-v1.20 の方法論改善が反映: preamble 削減 (~25%)、AskUserQuestion 強化、`/health` 軸調整、`/ship` workspace-aware
+- 既知の制約: `gstack-review` (upstream `review/`) は upstream-diff の名前マッピング未対応で未同期 → Phase B-3 で個別取込予定
+- 新規スキル `landing-report`, `claude` (gstack-claude), `scrape`, `skillify` は `planned` ステータスのまま（Phase B/D で取込）
+
+**Phase A-1 修正**: `bin/upstream-diff.sh` の浅いクローン + サイレント `pull` 失敗を解消。完全履歴クローン化 + 失敗時 exit 1。lag コミット数の可視化を追加。詳細は [docs/upstream-gap-plan.md](docs/upstream-gap-plan.md) を参照。
 
 ## 本家の方向性
 
@@ -82,6 +93,10 @@ v1.4.0.0 以降、本家は**セキュリティ層**（ML Prompt Injection Defen
 | `/setup-gbrain` | ✓ | — | excluded | GBrain Sync インフラ。store_memory + session_store_sql で代替 |
 | `/codex` | ✓ | — | excluded | `/model` + `task` で代替 |
 | `/plan-tune` | ✓ | — | excluded | `store_memory` で代替 |
+| `/landing-report` | ✓ | — | **planned (v1.1)** | 並行 Conductor の VERSION 衝突ダッシュボード。Phase B-1 |
+| `/gstack-claude` | ✓ | — | **planned (v1.1)** | 非-Claude ホスト向け Outside Voice。Phase B-2 |
+| `/scrape` | ✓ | — | **planned (v1.2、判断保留)** | Browser-Skills runtime (v1.20.0.0)。Phase D |
+| `/skillify` | ✓ | — | **planned (v1.2、判断保留)** | $B プロトタイプの codify。Phase D |
 
 ## 追跡対象外（マルチホスト基盤）
 
@@ -132,6 +147,10 @@ v1.4.0.0 以降、本家は**セキュリティ層**（ML Prompt Injection Defen
 | `gstack-session-track` | `bin/gstack-session-track` | ✓ same |
 | `gstack-repo-mode` | — | 未実装（スキル内で直接検出） |
 | `gstack-codex-probe` | — | 不要（Copilot CLI は `/model` でモデル切替） |
+| `gstack-next-version` | — | **planned (Phase B-1)** — `/ship` workspace-aware 版番割当に必須 |
+| `gstack-platform-detect` | — | **planned (Phase A-4)** — エージェント検出（Bun 非依存版） |
+| `gstack-open-url` | — | **planned (Phase E)** — クロス OS URL オープナー（Darwin/Linux/MINGW） |
+| `gstack-update-check` (実装) | — | **planned (Phase A-5)** — 上記 Phase 3 を A-5 で実装 |
 
 ## JSONL スキーマ
 
@@ -167,3 +186,9 @@ v1.4.0.0 以降、本家は**セキュリティ層**（ML Prompt Injection Defen
 | Model Overlays / Opus 4.7 | v1.5.2.0 | — | 除外（/model でネイティブ切替） |
 | Plan Mode Handshake | v1.11.1.0-v1.12.1.0 | — | 除外（Copilot CLI ネイティブ plan mode） |
 | /health GBrain 次元 | v1.12.0.0 | — | 除外（GBrain 不使用） |
+| `/gstack-claude`（非-Claude 向け Outside Voice） | v1.13.0.0 | — | **planned**（Phase B-2、v1.1） |
+| Sidebar Terminal REPL（xterm.js + WebSocket PTY） | v1.14.0.0 | — | 除外（Claude Code サイドパネル固有） |
+| preamble 削減 + real-PTY E2E harness | v1.15.0.0 | — | **planned**（Phase B-3 で SKILL.md 追従、Phase C-4 で harness 翻案） |
+| Tunnel allowlist 26-command | v1.16.0.0 | — | 除外（pair-agent ngrok トンネル固有） |
+| /setup-gbrain federation source wireup | v1.17.0.0 | — | 除外（GBrain 不使用） |
+| Browser-Skills runtime（`$B skill`、/scrape、/skillify） | v1.20.0.0 | — | **planned**（Phase D、v1.2 判断保留） |

@@ -396,7 +396,7 @@ Use ask_user to confirm. If the user disagrees with a premise, revise understand
 ```bash
 ```
 
-Use ask_user (regardless of Outside Voice availability):
+Use ask_user (regardless of codex availability):
 
 > Want a second opinion from an independent AI perspective? It will review your problem statement, key answers, premises, and any landscape findings from this session without having seen this conversation — it gets a structured summary. Usually takes 2-5 minutes.
 > A) Yes, get a second opinion
@@ -404,7 +404,7 @@ Use ask_user (regardless of Outside Voice availability):
 
 If B: skip Phase 3.5 entirely. Remember that the second opinion did NOT run (affects design doc, founder signals, and Phase 4 below).
 
-**If A: Run the Outside Voice cold read.**
+**If A: Run the Codex cold read.**
 
 1. Assemble a structured context block from Phases 1-3:
    - Mode (Startup or Builder)
@@ -426,7 +426,7 @@ Then add the context block and mode-appropriate instructions:
 
 **Builder mode instructions:** "You are an independent technical advisor reading a transcript of a builder brainstorming session. [CONTEXT BLOCK HERE]. Your job: 1) What is the COOLEST version of this they haven't considered? 2) What's the ONE thing from their answers that reveals what excites them most? Quote it. 3) What existing open source project or tool gets them 50% of the way there — and what's the 50% they'd need to build? 4) If you had a weekend to build this, what would you build first? Be specific. Be direct. No preamble."
 
-3. Run the Outside Voice:
+3. Run Codex:
 
 ```bash
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
@@ -437,10 +437,10 @@ Use a 5-minute timeout (`timeout: 300000`). After the command completes, read st
 ```
 
 **Error handling:** All errors are non-blocking — second opinion is a quality enhancement, not a prerequisite.
-- **Timeout:** "Outside Voice timed out after 5 minutes." Fall back to Claude subagent.
-- **Empty response:** "Outside Voice returned no response." Fall back to Claude subagent.
+- **Timeout:** "Codex timed out after 5 minutes." Fall back to Claude subagent.
+- **Empty response:** "Codex returned no response." Fall back to Claude subagent.
 
-On any Outside Voice error, fall back to the Claude subagent below.
+On any Codex error, fall back to the Claude subagent below.
 Dispatch via the task tool. The subagent has fresh context — genuine independence.
 
 Subagent prompt: same mode-appropriate prompt as above (Startup or Builder variant).
@@ -451,11 +451,11 @@ If the subagent fails or times out: "Second opinion unavailable. Continuing to P
 
 4. **Presentation:**
 
-If Outside Voice ran:
+If Codex ran:
 ```
-SECOND OPINION (Outside Voice):
+SECOND OPINION (Codex):
 ════════════════════════════════════════════════════════════
-<full Outside Voice output, verbatim — do not truncate or summarize>
+<full codex output, verbatim — do not truncate or summarize>
 ════════════════════════════════════════════════════════════
 ```
 
@@ -472,10 +472,10 @@ SECOND OPINION (Claude subagent):
    - Where Claude disagrees and why
    - Whether the challenged premise changes Claude's recommendation
 
-6. **Premise revision check:** If Outside Voice challenged an agreed premise, use ask_user:
+6. **Premise revision check:** If Codex challenged an agreed premise, use ask_user:
 
-> Outside Voice challenged premise #{N}: "{premise text}". Their argument: "{reasoning}".
-> A) Revise this premise based on the Outside Voice's input
+> Codex challenged premise #{N}: "{premise text}". Their argument: "{reasoning}".
+> A) Revise this premise based on Codex's input
 > B) Keep the original premise — proceed to alternatives
 
 If A: revise the premise and note the revision. If B: proceed (and note that the user defended this premise with reasoning — this is a founder signal if they articulate WHY they disagree, not just dismiss).
@@ -508,7 +508,7 @@ Rules:
 - One must be the **"minimal viable"** (fewest files, smallest diff, ships fastest).
 - One must be the **"ideal architecture"** (best long-term trajectory, most elegant).
 - One can be **creative/lateral** (unexpected approach, different framing of the problem).
-- If the second opinion (Outside Voice or Claude subagent) proposed a prototype in Phase 3.5, consider using it as a starting point for the creative/lateral approach.
+- If the second opinion (Codex or Claude subagent) proposed a prototype in Phase 3.5, consider using it as a starting point for the creative/lateral approach.
 
 **RECOMMENDATION:** Choose [X] because [one-line reason].
 
@@ -648,15 +648,15 @@ After the wireframe is approved, offer outside design perspectives:
 ```bash
 ```
 
-If Outside Voice is available, use ask_user:
-> "Want outside design perspectives on the chosen approach? Outside Voice proposes a visual thesis, content plan, and interaction ideas. A Claude subagent proposes an alternative aesthetic direction."
+If Codex is available, use ask_user:
+> "Want outside design perspectives on the chosen approach? Codex proposes a visual thesis, content plan, and interaction ideas. A Claude subagent proposes an alternative aesthetic direction."
 >
 > A) Yes — get outside design voices
 > B) No — proceed without
 
 If user chooses A, launch both voices simultaneously:
 
-1. **Outside Voice** (via task tool, different model):
+1. **Codex** (via Bash, `model_reasoning_effort="medium"`):
 ```bash
 _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
 ```
@@ -664,7 +664,7 @@ _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo"
 2. **Claude subagent** (via task tool):
 "For this product approach, what design direction would you recommend? What aesthetic, typography, and interaction patterns fit? What would make this approach feel inevitable to the user? Be specific — font names, hex colors, spacing values."
 
-Present Outside Voice output under `OUTSIDE VOICE (design sketch):` and subagent output under `CLAUDE SUBAGENT (design direction):`.
+Present Codex output under `CODEX SAYS (design sketch):` and subagent output under `CLAUDE SUBAGENT (design direction):`.
 Error handling: all non-blocking. On failure, skip and continue.
 
 ---
@@ -681,7 +681,7 @@ Track which of these signals appeared during the session:
 - Has **domain expertise** — knows this space from the inside
 - Showed **taste** — cared about getting the details right
 - Showed **agency** — actually building, not just planning
-- **Defended premise with reasoning** against cross-model challenge (kept original premise when the Outside Voice disagreed AND articulated specific reasoning for why — dismissal without reasoning does not count)
+- **Defended premise with reasoning** against cross-model challenge (kept original premise when Codex disagreed AND articulated specific reasoning for why — dismissal without reasoning does not count)
 
 Count the signals. You'll use this count in Phase 6 to determine which tier of closing message to use.
 
@@ -767,7 +767,7 @@ Supersedes: {prior filename — omit this line if first design on this branch}
 {from Phase 3}
 
 ## Cross-Model Perspective
-{If second opinion ran in Phase 3.5 (Outside Voice or Claude subagent): independent cold read — steelman, key insight, challenged premise, prototype suggestion. Verbatim or close paraphrase. If second opinion did NOT run (skipped or unavailable): omit this section entirely — do not include it.}
+{If second opinion ran in Phase 3.5 (Codex or Claude subagent): independent cold read — steelman, key insight, challenged premise, prototype suggestion. Verbatim or close paraphrase. If second opinion did NOT run (skipped or unavailable): omit this section entirely — do not include it.}
 
 ## Approaches Considered
 ### Approach A: {name}
@@ -824,7 +824,7 @@ Supersedes: {prior filename — omit this line if first design on this branch}
 {from Phase 3}
 
 ## Cross-Model Perspective
-{If second opinion ran in Phase 3.5 (Outside Voice or Claude subagent): independent cold read — coolest version, key insight, existing tools, prototype suggestion. Verbatim or close paraphrase. If second opinion did NOT run (skipped or unavailable): omit this section entirely — do not include it.}
+{If second opinion ran in Phase 3.5 (Codex or Claude subagent): independent cold read — coolest version, key insight, existing tools, prototype suggestion. Verbatim or close paraphrase. If second opinion did NOT run (skipped or unavailable): omit this section entirely — do not include it.}
 
 ## Approaches Considered
 ### Approach A: {name}
@@ -1209,7 +1209,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
+`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
