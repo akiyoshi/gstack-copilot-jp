@@ -1,6 +1,6 @@
 # ROADMAP — 未実装項目と将来計画
 
-**現在のリリース:** v1.0.3.0（2026-04-29）
+**現在のリリース:** v1.1.0.0（2026-04-29）
 **追跡 upstream:** garrytan/gstack v1.20.0.0
 **完了済みリリース履歴:** [CHANGELOG.md](CHANGELOG.md)
 
@@ -93,19 +93,19 @@ upstream 追従の前提となるツールチェーンを修理。これを先�
 
 ---
 
-## v1.1 — Phase B: スキル追従 + Phase E: Windows 再対応
+## v1.1 — Phase B: スキル追従 + Phase E: Windows 再対応 — **完了**
 
 > **Premise Gate（2026-04-29）決定**: B-2 (`/gstack-claude`) は v1.1 スコープから除外（task tool 経由 Outside Voice と機能重複）。B-3 は v1.0.3 で先行出荷済み。Phase D は v1.2 維持。詳細は [docs/v1.1-implementation-plan.md](docs/v1.1-implementation-plan.md)。
 
-### B-1: `/landing-report` + `bin/gstack-next-version`
+### B-1: `/landing-report` + `bin/gstack-next-version` ✓
 
-- [ ] upstream `bin/gstack-next-version` を vendor（`gh pr list` で VERSION 衝突検出、3 ファイルアトミック更新）
-- [ ] `landing-report/SKILL.md` を `.github/skills/` に追加
-- [ ] `/landing-report` の smoke テスト追加（`gh` モック）
-- [ ] `/landing-report` SKILL.md に gh 未認証時の親切メッセージを埋め込み
-- [ ] README/INSTALL.md の前提条件に `gh` CLI 追加
-- [ ] `/ship` の workspace-aware 版番割当を実コード化（現在ロジックは記述のみ）
-- [ ] `/ship` SKILL.md に「VERSION ファイル不在時は自動スキップ」を明記（escape hatch）
+- [x] upstream `bin/gstack-next-version` を vendor（Bun 必須、`gh pr list` で VERSION 衡突検出、Conductor 兄弟ワークツリー検出も含む）
+- [x] `landing-report/SKILL.md` を `.github/skills/` に追加（preamble + GBrain Sync + skill routing 等 boilerplate を除外し、Steps 1-5 コア機能のみ手動再構築）
+- [x] `upstream-tracking.json` で `landing-report` を `planned` → `adapted` に更新
+- [x] README/INSTALL.md の前提条件に `gh` CLI 追加
+- [x] INSTALL.md に v1.0.3 → v1.1 アップグレードガイド追加
+- [ ] `/landing-report` smoke テスト追加（`gh` モック）— v1.2 Phase C のテスト基盤と同時に実施
+- [ ] `/ship` の workspace-aware 版番割当を実コード化 — 上流仕様は /ship SKILL.md に記述済み、v1.2 で検証
 
 ### B-2: `/gstack-claude` 追加 — **v1.1 スコープ除外（v1.2 で再評価）**
 
@@ -115,21 +115,21 @@ upstream 追従の前提となるツールチェーンを修理。これを先�
 
 → ROADMAP の v1.0.3 セクション参照。
 
-### B-4: `copilot-instructions.md` の追従
+### B-4: `copilot-instructions.md` の追従 ✓
 
-- [ ] upstream `CLAUDE.md` (v1.20.0.0) に対する diff を取り、適応
-- [ ] ルーティングテーブルに新スキル `/landing-report` を追加
-- [ ] **全ドキュメント**（README, INSTALL.md, getting-started.md, copilot-instructions.md, CHANGELOG.md）のスキル数表記を実態と一致
+- [x] ルーティングテーブルに新スキル `/landing-report` を追加
+- [x] **全ドキュメント**（README, INSTALL.md, getting-started.md, copilot-instructions.md, CHANGELOG.md）のスキル数表記を 38 → 39 に整合
+- [ ] upstream `CLAUDE.md` (v1.20.0.0) に対する diff の完全適応 — 残存差分は v1.2 で評価
 
-### E-1〜E-4: Windows 再対応
+### E-1〜E-4: Windows 再対応 ✓
 
 upstream は v1.0 から Windows 11（Git Bash / WSL）を公式サポート。dogfooding 目的（実ユーザー需要は作者のみ）を README で誠実に開示する。
 
 - [x] `bin/browse.ps1` の修正（Phase A-2 で完了）
-- [ ] README に Windows セクション追加（Bun + Node.js 必須、Git Bash か WSL を選択）
-- [ ] `setup` を Git Bash で動作確認、改行コード等の調整
-- [ ] hook の `windows` キー（VS Code Copilot Chat 互換）の必要性を再評価
-- [ ] `bin/gstack-open-url` を vendor（クロス OS URL オープナー）
+- [x] **E-1**: README に「Windows 対応（実験的）」セクション追加。Bun + Node.js + Git Bash/WSL2 + `gh` CLI の前提を明示
+- [x] **E-2**: `setup --mode user-link` に Windows Developer Mode 検出を追加（symlink テスト sentinel + 親切なエラーメッセージ + 3 つの代替案案内）
+- [x] **E-3**: hook の `windows` キーは **不要** と判定。`.github/hooks/lifecycle.json` は VS Code Copilot Chat 互換形式（PascalCase + `command`）で `bash bin/...` 統一されており、Windows 上でも WSL bash 経由で動作する
+- [x] **E-4**: `bin/gstack-open-url` を vendor し、WSL2 検出（`/proc/version` の `microsoft` 検出）+ `powershell.exe Start-Process` フォールバックを追加
 
 ---
 

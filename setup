@@ -83,6 +83,28 @@ do_user_link() {
     rm -rf "$link_dir"
   fi
   mkdir -p "$(dirname "$link_dir")"
+
+  # Windows + Git Bash でシンボリックリンクを作る場合 Developer Mode が必要。
+  # 失敗を sentinel で先に検出し、親切なメッセージを出す。
+  # (Linux/macOS/WSL2 では常に成功する)
+  if [ "$(uname -o 2>/dev/null)" = "Msys" ] || [ "$(uname -o 2>/dev/null)" = "Cygwin" ]; then
+    local sentinel="$HOME/.gstack-symlink-test-$$"
+    if ! ln -s /tmp "$sentinel" 2>/dev/null; then
+      echo "" >&2
+      echo "ERROR: Windows でシンボリックリンクを作成できません。" >&2
+      echo "  原因: Developer Mode が無効、または管理者権限がありません。" >&2
+      echo "" >&2
+      echo "  対策 (どちらか):" >&2
+      echo "  1. Windows の開発者モードを有効化:" >&2
+      echo "     設定 → プライバシーとセキュリティ → 開発者向け → 開発者モード ON" >&2
+      echo "  2. Git Bash を「管理者として実行」で再起動して再試行" >&2
+      echo "  3. 方式 A (VS Code Plugin From Source) に切替 (推奨)" >&2
+      echo "     https://github.com/akiyoshi/gstack-copilot-jp の INSTALL.md 参照" >&2
+      exit 1
+    fi
+    rm -f "$sentinel"
+  fi
+
   ln -s "$SCRIPT_DIR" "$link_dir"
   echo "✓ Symlink: $link_dir → $SCRIPT_DIR"
 

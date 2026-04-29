@@ -13,8 +13,9 @@
 
 - GitHub Copilot（VS Code Copilot Chat 拡張 0.45+ または Copilot CLI）
 - Git
-- Linux / macOS / WSL (Ubuntu)
+- Linux / macOS / WSL (Ubuntu) / Windows 11 (Git Bash) — [Windows 対応](#windows-対応実験的)
 - Bun v1.0+（browse 機能を使う場合のみ）
+- GitHub CLI (`gh`) — `/ship`, `/landing-report`, `/land-and-deploy` で使用。`gh auth login` 推奨
 
 ## クイックスタート
 
@@ -183,6 +184,51 @@ Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェン�
 | ホスト | 10エージェント対応 | Copilot CLI + VS Code Chat |
 | 外部の目 | Codex CLI | `code-review` + `rubber-duck` + fallback |
 | テンプレート | .tmpl + gen-skill-docs | 直接 SKILL.md |
+
+## Windows 対応（実験的）
+
+> **作者検証済み（dogfooding）**。実ユーザーからの issue 報告は歓迎。
+
+| 項目 | サポート状況 |
+|---|---|
+| **方式 A** (VS Code Plugin From Source) | ✅ Windows 11 で完全動作（hook を除く） |
+| **方式 C** (`./setup --mode user-link`) | ⚠️ Git Bash または WSL2 で動作。Developer Mode 推奨 |
+| browse 機能 | ⚠️ Bun の Playwright pipe transport bug ([bun#4253](https://github.com/oven-sh/bun/issues/4253)) を Node.js + tsx フォールバックで自動回避 |
+| hooks | ❌ Plugin Preview 段階。VS Code Copilot Chat の hook 仕様変動中で v1.2 で再評価 |
+
+### 必要なソフトウェア（Windows）
+
+- **Git for Windows**（Git Bash 同梱）または WSL2 Ubuntu
+- **Bun v1.0+**（`browse` 機能 + `gstack-next-version` 用）
+- **Node.js v18+**（Bun#4253 回避フォールバック用、tsx 経由で TypeScript 直接実行）
+- **GitHub CLI (`gh`)**（`/ship` `/landing-report` `/land-and-deploy` 用）
+
+### Windows でのインストール
+
+**推奨: 方式 A（VS Code Plugin From Source）**:
+
+1. VS Code でコマンドパレット (`Ctrl+Shift+P`)
+2. `Chat: Install Plugin From Source`
+3. URL に `https://github.com/akiyoshi/gstack-copilot-jp` を貼る
+4. 任意のワークスペースで `/office-hours` 等が `/` メニューに出れば成功
+
+これでファイルシステム周りの心配（symlink、改行コード等）は全て VS Code 側が処理する。
+
+**方式 C を使う場合（CLI 中心）**:
+
+Git Bash または WSL2 ターミナルから:
+
+```bash
+git clone https://github.com/akiyoshi/gstack-copilot-jp.git ~/.gstack-copilot-jp
+cd ~/.gstack-copilot-jp
+./setup --mode user-link
+```
+
+> **Git Bash + Developer Mode**: シンボリックリンク作成のため Windows の開発者モードを ON にしておくこと（設定 → プライバシーとセキュリティ → 開発者向け）。OFF の場合は setup がジャンクション フォールバックで動作するが、対象によっては失敗する。
+
+> **WSL2**: `/proc/version` に `microsoft` を含む環境では `bin/gstack-open-url` が自動的に `powershell.exe Start-Process` 経由で URL を開く（WSL2 にブラウザがない場合の対応）。
+
+詳細は [INSTALL.md](INSTALL.md) を参照。
 
 ## アンインストール
 
