@@ -1,6 +1,6 @@
 # Upstream 追従ギャップ — 実装計画 (2026-04-29)
 
-本ドキュメントは upstream `garrytan/gstack` v1.20.0.0 と現状 `gstack-copilot-jp` v1.0.1.0 の差分監査と、追随性を高める実装計画。
+本ドキュメントは upstream `garrytan/gstack` v1.20.0.0 と現状 `gstack-copilot-jp` v1.0.3.0 の差分監査と、追随性を高める実装計画。
 
 ## 出発点の認識ずれ
 
