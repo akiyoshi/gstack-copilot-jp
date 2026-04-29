@@ -114,18 +114,18 @@ describe('ドキュメント数値整合性', () => {
     const skillsDir = join(ROOT, '.github', 'skills');
     const skillCount = readdirSync(skillsDir, { withFileTypes: true })
       .filter(d => d.isDirectory() && d.name !== 'bin').length;
-    // TODO.md の "| N スキル全て" パターンを抽出
-    const todoContent = readFileSync(join(ROOT, 'TODO.md'), 'utf-8');
-    const match = todoContent.match(/(\d+)スキル全て/);
+    // CHANGELOG.md の "**N スキル**" パターンを抽出
+    const changelogContent = readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf-8');
+    const match = changelogContent.match(/\*\*(\d+)スキル\*\*/);
     expect(match).not.toBeNull();
     expect(parseInt(match[1])).toBe(skillCount);
   });
 
   it('バージョンがVERSIONファイルと一致する', () => {
     const version = readFileSync(join(ROOT, 'VERSION'), 'utf-8').trim();
-    // TODO.md に現在のバージョンが含まれる
-    const todoContent = readFileSync(join(ROOT, 'TODO.md'), 'utf-8');
-    expect(todoContent).toContain(version);
+    // ROADMAP.md に現在のバージョンが含まれる
+    const roadmapContent = readFileSync(join(ROOT, 'ROADMAP.md'), 'utf-8');
+    expect(roadmapContent).toContain(version);
   });
 });
 
