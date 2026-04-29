@@ -304,3 +304,55 @@ Git Bash または WSL2 から実行すること。PowerShell から bash スク
 # Git Bash の例:
 bash bin/upstream-diff.sh
 ```
+
+
+---
+
+
+## トラブルシュート
+
+### `/review` などの組み込みスラッシュコマンドが反応しない
+
+VS Code Copilot Chat には `/explain` `/review` `/tests` `/fix` `/new` `/help` などの **組み込みスラッシュコマンド** が同梱されている。これらと **同名のカスタムスキル** を作ると built-in が静かに上書きされてしまう。
+
+- gstack-copilot-jp は `review` → `gstack-review`、`upgrade` → `gstack-upgrade` のように **prefix を付けて回避** している
+- カスタムスキルを追加する場合、`test/reserved-names.js` の禁止リストに該当しない名前を使うこと
+- `bin/gstack-sync-user-skills` および quality-gate テストが衝突を **fail-fast で拒否** する
+
+`*-review` 等の **substring 衝突** (例: `gstack-review`, `design-review`) は技術的衝突ではないが picker fuzzy-match で組み込みコマンドが埋もれる原因になる。`/review` を確実に呼びたいときは picker で正確に選択するか、下のキャッシュ削除を試す。
+
+### コマンド embedding キャッシュが古い
+
+Copilot Chat は `commandEmbeddings.json` にコマンド一覧を埋め込みキャッシュする。スキルを大量に追加・削除した直後、picker の挙動が古いことがある。削除後 VS Code を再起動すると起動時に再生成される。
+
+Windows (PowerShell):
+
+```powershell
+Remove-Item "$env:APPDATA\Code\User\globalStorage\github.copilot-chat\commandEmbeddings.json"
+```
+
+macOS:
+
+```bash
+rm "$HOME/Library/Application Support/Code/User/globalStorage/github.copilot-chat/commandEmbeddings.json"
+```
+
+Linux:
+
+```bash
+rm "$HOME/.config/Code/User/globalStorage/github.copilot-chat/commandEmbeddings.json"
+```
+
+### `~/.copilot/skills/` の link が壊れた / スキルが認識されない
+
+スキルのリネーム・削除後に dangling symlink/junction が残ると VS Code がスキルを発見できない。同期ツールで一括復旧:
+
+```bash
+# bash (macOS / Linux / WSL / Git Bash)
+bin/gstack-sync-user-skills
+
+# PowerShell (Windows native, Developer Mode 不要)
+pwsh -File bin/gstack-sync-user-skills.ps1
+```
+
+dangling link を自動削除し、不足しているスキルにリンクを貼り直す。予約名スキル（built-in 衝突）があると exit code 2 で fail-fast する。

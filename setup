@@ -109,13 +109,57 @@ do_user_link() {
   echo "✓ Symlink: $link_dir → $SCRIPT_DIR"
 
   install_playwright
+  sync_user_skills
   write_manifest
   echo ""
   echo "Done! Skills are available in all Copilot CLI sessions."
 }
 
+sync_user_skills() {
+  # 各スキル個別の link を ~/.copilot/skills/ にも貼る。
+  # repo root link だけだと VS Code Copilot Chat / Copilot CLI が
+  # サブディレクトリ単位で skill を発見できないため。
+  if [ -x "$SCRIPT_DIR/bin/gstack-sync-user-skills" ]; then
+    echo "Syncing per-skill user-scope links..."
+    "$SCRIPT_DIR/bin/gstack-sync-user-skills" --quiet || \
+      echo "  (warning: sync failed — run 'bin/gstack-sync-user-skills' manually)" >&2
+  fi
+}
+
 do_uninstall() {
   echo "=== gstack-copilot-jp uninstall ==="
+
+  # 削除順序: per-skill link → repo root link の順 (重要)。
+  # repo root link を先に消すと per-skill link が dangling になり、
+  # `bin/gstack-sync-user-skills` の判定が混乱する可能性がある。
+  # 先に個別 link を全て解除してから root link を片付ける。
+
+  # 個別スキル link 群を削除 (junctions on Windows, symlinks elsewhere)
+  local user_skills="$HOME/.copilot/skills"
+  if [ -d "$user_skills" ]; then
+    local removed=0
+    for d in "$SCRIPT_DIR"/.github/skills/*/; do
+      [ -d "$d" ] || continue
+      local name
+      name=$(basename "$d")
+      [ "$name" = "bin" ] && continue
+      local link="$user_skills/$name"
+      # symlink (POSIX) を消す
+      if [ -L "$link" ]; then
+        rm -f "$link"
+        removed=$((removed + 1))
+        continue
+      fi
+      # Windows junction: -L で検出されないことがあるので reparse point を確認
+      if [ -d "$link" ] && command -v fsutil >/dev/null 2>&1; then
+        if fsutil reparsepoint query "$(cygpath -w "$link" 2>/dev/null || echo "$link")" >/dev/null 2>&1; then
+          cmd //c rmdir "$(cygpath -w "$link" 2>/dev/null || echo "$link")" >/dev/null 2>&1 || rm -rf "$link"
+          removed=$((removed + 1))
+        fi
+      fi
+    done
+    [ "$removed" -gt 0 ] && echo "✓ Removed $removed per-skill user-scope link(s)"
+  fi
 
   # シンボリックリンク削除
   local link_dir="$HOME/.copilot/skills/gstack-copilot-jp"

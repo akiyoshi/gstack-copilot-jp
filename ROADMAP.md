@@ -1,7 +1,7 @@
 # ROADMAP — 未実装項目と将来計画
 
-**現在のリリース:** v1.1.1.0（2026-04-29）
-**次のリリース:** v1.2.0.0 — Outside Voice 刷新（Codex CLI 依存撤廃）
+**現在のリリース:** v1.2.0.0（2026-04-29）
+**次のリリース:** v1.2.1.0 — user-skills sync 統合
 **追跡 upstream:** garrytan/gstack v1.20.0.0
 **完了済みリリース履歴:** [CHANGELOG.md](CHANGELOG.md)
 
@@ -22,20 +22,39 @@ SemVer に準拠（上流 gstack の 4 桁形式 `MAJOR.MINOR.PATCH.BUILD` に�
 
 ## 進行中
 
-### v1.2.0.0 — Outside Voice 刷新（Codex CLI 依存撤廃）
+### v1.2.1.0 — user-skills sync 統合
 
-設計判断（マルチホスト + マルチモデル）と SKILL.md 表面の乖離を解消する。
-詳細は [docs/v1.2-outside-voice-redesign.md](docs/v1.2-outside-voice-redesign.md) 参照。
+`~/.copilot/skills/` への per-skill リンク管理を `setup` に統合。VS Code Copilot
+Chat と Copilot CLI からスキルが認識されるよう保証し、VS Code 組み込みコマンド
+名（`/review` `/explain` 等）との衝突を fail-fast で検出する。
 
 **スコープ**:
-- 17 スキル × 280 箇所の `Codex` 言及を `Outside Voice` / 具体モデル名に刷新
-- autoplan の `command -v codex` ガード撤去（既存の `gstack-codex-probe` シム経由に統一）
-- `gstack-codex-probe` → `gstack-outside-voice` rename + thin wrapper 残置
-- 契約テストで `Codex` 文字列の再混入を fail-fast 検出
-- adapter 翻案ルール追加（本家 sync で再混入しない）
-- DESIGN.md / README に「マルチモデル Outside Voice」明記
+- `bin/gstack-sync-user-skills`（bash 248 行） + `.ps1`（PowerShell 187 行、Windows native）
+- `test/reserved-names.js` を single source of truth として 14 個の VS Code 予約名を管理
+- `setup` の `do_user_link` / `do_uninstall` に sync 統合（per-skill link → repo root link の順で削除）
+- `test/quality-gate.test.js` に 3 契約追加（重複 frontmatter 検出 / 予約名衝突検出 / dir-name 一致）
+- v1.2.1 review で発見された 2 契約追加（name regex 統一 / bash・ps1・JS の予約名リスト同期）
+- `browse/SKILL.md` の重複フロントマターブロック解消（v1.1.2 で残った事故の根因対応）
+- `INSTALL.md` トラブルシュートセクション追加（コマンド embeddings キャッシュ削除手順、dangling link 復旧）
 
-**前提**: B-2 (`/gstack-claude`) の取込判断は本リリースの Outside Voice 設計確定後に再評価する。
+**前提**: v1.2.0.0（Outside Voice 刷新）が landed 済み。
+
+---
+
+## 完了済み
+
+### v1.2.0.0 — Outside Voice 刷新（Codex CLI 依存撤廃）— **完了** ([PR #18](https://github.com/akiyoshi/gstack-copilot-jp/pull/18))
+
+設計判断（マルチホスト + マルチモデル）と SKILL.md 表面の乖離を解消した。
+詳細は [docs/v1.2-outside-voice-redesign.md](docs/v1.2-outside-voice-redesign.md) 参照。
+
+- [x] 17 スキルから `Codex` 言及を `Outside Voice` 表記へ刷新（互換シム名は保持）
+- [x] autoplan の `command -v codex` ガード撤去 → `gstack-codex-probe` シム経由に統一
+- [x] 契約テストで `Codex` 文字列再混入を fail-fast 検出（`test/skill-contracts.test.js`）
+- [x] adapter 翻案ルール追加（本家 sync で再混入しない、`bin/adapt-upstream-skill.sh` Layer 2）
+- [x] DESIGN.md §6.5「マルチモデル Outside Voice」追加、README + ROADMAP 整合
+- [x] `bin/decodex-skills.sh` 新規（一括置換ツール、互換シム名 protect）
+- [ ] `gstack-codex-probe` → `gstack-outside-voice` rename — **v1.4 に繰り延べ**
 
 ---
 

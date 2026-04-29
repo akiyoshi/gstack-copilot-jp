@@ -1,8 +1,8 @@
 ---
 name: careful
 version: 0.1.0
-description: "安全ガードレール。破壊的コマンドの実行前に警告。Use when: 慎重にやって、be careful、安全モード、destructive command protection。rm -rf, DROP TABLE, force-push等の前に確認を挟む。"
-argument-hint: "レビュー対象のプランまたは機能の説明"
+description: "安全ガードレール。破壊的コマンドの実行前に警告。Use when: 慎重にやって、be careful、安全モード、destructive command protection。rm -rf, DROP TABLE, force-push等の前に確認を挟む。"
+argument-hint: "安全に扱う対象 (オプション)"
 triggers:
   - be careful
   - warn before destructive
@@ -10,24 +10,6 @@ triggers:
 allowed-tools:
   - bash
   - view
----
-
----
-name: careful
-version: 0.1.0
-description: |
-  Safety guardrails for destructive commands. Warns before rm -rf, DROP TABLE,
-  force-push, git reset --hard, kubectl delete, and similar destructive operations.
-  User can override each warning. Use when touching prod, debugging live systems,
-  or working in a shared environment. Use when asked to "be careful", "safety mode",
-  "prod mode", or "careful mode". (gstack)
-triggers:
-  - be careful
-  - warn before destructive
-  - safety mode
-allowed-tools:
-  - Bash
-  - Read
 hooks:
   PreToolUse:
     - matcher: "Bash"

@@ -1,8 +1,8 @@
 ---
 name: gstack-upgrade
 version: 1.1.0
-description: "gstack-copilot-jpの自己アップデート。Use when: アップグレード、更新、upgrade、update gstack。最新版への更新を実行。"
-argument-hint: "レビュー対象のプランまたは機能の説明"
+description: "gstack-copilot-jpの自己アップデート。Use when: アップグレード、更新、upgrade、update gstack。最新版への更新を実行。"
+argument-hint: "アップグレード操作（オプション）"
 triggers:
   - upgrade gstack
   - update gstack version
@@ -12,25 +12,6 @@ allowed-tools:
   - bash
   - create
   - view
----
-
----
-name: gstack-upgrade
-version: 1.1.0
-description: |
-  Upgrade gstack to the latest version. Detects global vs vendored install,
-  runs the upgrade, and shows what's new. Use when asked to "upgrade gstack",
-  "update gstack", or "get latest version".
-  Voice triggers (speech-to-text aliases): "upgrade the tools", "update the tools", "gee stack upgrade", "g stack upgrade".
-triggers:
-  - upgrade gstack
-  - update gstack version
-  - get latest gstack
-allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - ask_user
 ---
 
 # /gstack-upgrade
