@@ -250,10 +250,9 @@
       "reason": "store_memory で代替"
     },
     "landing-report": {
+      "reason": "v1.1 で取込。upstream の preamble + GBrain Sync + skill routing 等の boilerplate を除外し、Steps 1-5 のコア機能のみを保持。Conductor 兄弟ワークツリーは gstack-copilot-jp では空のまま動作。",
       "upstream": "landing-report/SKILL.md",
-      "status": "planned",
-      "target_phase": "v1.1 (Phase B-1)",
-      "reason": "並行 Conductor ワークスペースの VERSION 衝突検出ダッシュボード。bin/gstack-next-version 移植が前提"
+      "status": "adapted"
     },
     "claude": {
       "upstream": "claude/SKILL.md",

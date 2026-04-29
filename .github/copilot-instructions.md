@@ -43,6 +43,7 @@ GitHub Copilot（CLI + VS Code Chat）+ 日本語のAIソフトウェアファ�
 | モデル比較、どのモデルがいい | `/benchmark-models` |
 | コード品質ダッシュボード | `/health` |
 | リリース、PR作成 | `/ship` |
+| VERSIONキュー表示、並行PRのVERSION衡突検出 | `/landing-report` |
 | マージ＆デプロイ | `/land-and-deploy` |
 | デプロイ後の監視 | `/canary` |
 | 週次振り返り | `/retro` |
@@ -97,7 +98,7 @@ gstack-copilot-jp/
 │   ├── copilot-instructions.md  # Project instructions (this file)
 │   ├── hooks/
 │   │   └── lifecycle.json       # Hook definitions (PascalCase events)
-│   └── skills/          # 38 skills + bin/
+│   └── skills/          # 39 skills + bin/
 │       ├── autoplan/    # /autoplan (auto-review pipeline: CEO → design → eng → DX)
 │       ├── ship/        # /ship (release + PR creation)
 │       ├── browse/      # /browse (headless browser QA)

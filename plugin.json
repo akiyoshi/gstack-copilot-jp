@@ -1,6 +1,6 @@
 {
   "name": "gstack-copilot-jp",
-  "version": "1.0.3.0",
+  "version": "1.1.0.0",
   "description": "日本語のGitHub Copilotユーザーのための、AIソフトウェアファクトリー",
   "author": {
     "name": "akiyoshi"
@@ -8,7 +8,12 @@
   "license": "MIT",
   "homepage": "https://github.com/akiyoshi/gstack-copilot-jp",
   "repository": "https://github.com/akiyoshi/gstack-copilot-jp",
-  "keywords": ["copilot", "japanese", "ai-factory", "skills"],
+  "keywords": [
+    "copilot",
+    "japanese",
+    "ai-factory",
+    "skills"
+  ],
   "skills": ".github/skills/",
   "agents": ".github/agents/",
   "hooks": ".github/hooks/lifecycle.json"

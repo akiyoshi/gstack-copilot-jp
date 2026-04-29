@@ -121,6 +121,8 @@ describe('hookシステム: スキルの「次のスキル」推奨', () => {
     'setup-browser-cookies', 'setup-deploy', 'gstack-upgrade', 'benchmark',
     'benchmark-models', 'document-release', 'investigate', 'learn',
     'gstack-review', 'ship', 'make-pdf',
+    // v1.1: read-only ダッシュボード — フローを起動するワークフローではないため exempt
+    'landing-report',
   ];
 
   const processSkills = skillDirs.filter(s => !exemptSkills.includes(s));

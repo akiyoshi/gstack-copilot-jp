@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# gstack-open-url — cross-platform URL opener
+#
+# gstack-copilot-jp v1.1: WSL2 検出を追加（Windows ホスト上の WSL2 から
+# 実行された場合は xdg-open ではなく PowerShell start を使う）。
+#
+# Usage: gstack-open-url <url>
+set -euo pipefail
+
+URL=${1:?Usage: gstack-open-url <url>}
+
+# WSL2 検出: /proc/version に "microsoft" が含まれる場合 WSL 配下
+is_wsl=0
+if [ -r /proc/version ] && grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
+  is_wsl=1
+fi
+
+case "$(uname -s)" in
+  Darwin)  open "$URL" ;;
+  Linux)
+    if [ "$is_wsl" = "1" ] && command -v powershell.exe >/dev/null 2>&1; then
+      # WSL2 環境ではブラウザが無いことがあるため Windows 側で開く
+      powershell.exe -NoProfile -Command "Start-Process '$URL'" 2>/dev/null \
+        || xdg-open "$URL" 2>/dev/null \
+        || echo "$URL"
+    else
+      xdg-open "$URL" 2>/dev/null || echo "$URL"
+    fi
+    ;;
+  MINGW*|MSYS*|CYGWIN*) start "" "$URL" ;;
+  *)       echo "$URL" ;;
+esac

@@ -55,7 +55,7 @@ All notable changes to this project will be documented in this file.
 
 gstack-copilot-jp の最初の安定版リリース。日本語の GitHub Copilot ユーザーが、gstack の方法論をそのまま使える。
 
-- **38スキル** — `/office-hours` から `/ship` まで、アイディア→出荷の全工程をカバー
+- **39スキル** — `/office-hours` から `/ship` まで、アイディア→出荷の全工程をカバー
 - **5サブエージェント** — architect, security, testing, design-critic, dx-tester が専門レビューを担当
 - **ヘッドレスブラウザ** — `/browse` でリアルなクリック、スクリーンショット、QAテスト
 - **デュアルボイス** — Claude + GPT の独立レビューで死角を潰す `/autoplan`

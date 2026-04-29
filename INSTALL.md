@@ -190,6 +190,29 @@ rm skills agents          # WSL/Linux/macOS
 
 ## アップグレード
 
+### v1.0.3.0 → v1.1.0.0
+
+**含まれる変更**:
+- 新スキル `/landing-report` 追加（並行 PR の VERSION 衝突検出ダッシュボード）
+- 新コマンド `bin/gstack-next-version` 追加（VERSION スロット自動割当ユーティリティ、`/ship` の workspace-aware 機能を有効化）
+- 新コマンド `bin/gstack-open-url` 追加（クロス OS URL オープナー、WSL2 検出対応）
+- Windows 11 公式サポート再開（dogfooding 段階、実験的）
+- README に Windows セクション追加、`gh` CLI を前提条件に追加
+- `setup` の Developer Mode 検出と親切エラーメッセージ
+- スキル数 38 → 39
+
+**互換性**: 全て追加的な変更。既存スキル・コマンドは挙動変更なし。
+
+**方式 A（Plugin From Source）**: 自動更新（24h）または `Extensions: Check for Extension Updates`。
+
+**方式 B / C**: `git pull origin main`。新機能を使うには `gh` CLI がインストール・認証済みであることが推奨。
+
+```bash
+# 確認
+gh auth status   # 既に認証済みなら OK
+gh auth login    # 未認証ならログイン
+```
+
 ### v1.0.2.0 → v1.0.3.0
 
 **含まれる変更**: バージョン乖離修正（plugin.json）、`bin/upstream-diff.sh` 堅牢化、`/setup-deploy` `/unfreeze` ほか 13 スキルのフロントマター修正、契約テスト追加、Python code injection の修正（`--sync` 内）。
