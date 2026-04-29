@@ -477,8 +477,10 @@ compliments. Just the problems.
 
 THE PLAN:
 <plan content>"
-Dispatch via the task tool with `model` set to the Outside Voice model.
-Use the same review prompt but from an independent model.
+```bash
+TMPERR_PV=$(mktemp /tmp/codex-planreview-XXXXXXXX)
+_REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+```
 
 Use a 5-minute timeout (`timeout: 300000`). After the command completes, read stderr:
 ```bash
@@ -488,17 +490,17 @@ cat "$TMPERR_PV"
 Present the full output verbatim:
 
 ```
-OUTSIDE VOICE (plan review — outside voice):
+CODEX SAYS (plan review — outside voice):
 ════════════════════════════════════════════════════════════
-<full Outside Voice output, verbatim — do not truncate or summarize>
+<full codex output, verbatim — do not truncate or summarize>
 ════════════════════════════════════════════════════════════
 ```
 
 **Error handling:** All errors are non-blocking — the outside voice is informational.
-- Timeout: "Outside Voice timed out after 5 minutes."
-- Empty response: "Outside Voice returned no response."
+- Timeout: "Codex timed out after 5 minutes."
+- Empty response: "Codex returned no response."
 
-On any Outside Voice error, fall back to the Claude adversarial subagent.
+On any Codex error, fall back to the Claude adversarial subagent.
 Dispatch via the task tool. The subagent has fresh context — genuine independence.
 
 Subagent prompt: same plan review prompt as above.
@@ -549,9 +551,9 @@ If no tension points exist, note: "No cross-model tension — both reviewers agr
 ```
 
 Substitute: STATUS = "clean" if no findings, "issues_found" if findings exist.
-SOURCE = "outside-voice" if Outside Voice ran, "claude" if subagent ran.
+SOURCE = "codex" if Codex ran, "claude" if subagent ran.
 
-
+**Cleanup:** Run `rm -f "$TMPERR_PV"` after processing (if Codex was used).
 
 ---
 
@@ -571,7 +573,8 @@ Follow the ask_user format from the Preamble above. Additional rules for plan re
 * For each option, specify in one line: effort (human: ~X / CC: ~Y), risk, and maintenance burden. If the complete option is only marginally more effort than the shortcut with CC, recommend the complete option.
 * **Map the reasoning to my engineering preferences above.** One sentence connecting your recommendation to a specific preference (DRY, explicit > clever, minimal diff, etc.).
 * Label with issue NUMBER + option LETTER (e.g., "3A", "3B").
-* **Escape hatch:** If a section has no issues, say so and move on. If an issue has an obvious fix with no real alternatives, state what you'll do and move on — don't waste a question on it. Only use ask_user when there is a genuine decision with meaningful tradeoffs.
+* **Coverage vs kind:** for every per-issue ask_user you raise in this review, decide whether the options differ in coverage or in kind. If coverage (e.g., more tests vs fewer, complete error handling vs happy-path-only, full edge-case coverage vs shortcut), include `Completeness: N/10` on each option. If kind (e.g., architectural choice between two different systems, posture-over-posture, A/B/C where each is a different kind of thing), skip the score and add one line: `Note: options differ in kind, not coverage — no completeness score.` Do NOT fabricate scores on kind-differentiated questions — filler scores are worse than no score.
+* **Escape hatch (tightened):** If a section has zero findings, state "No issues, moving on" and proceed. If it has findings, use ask_user for each — a finding with an "obvious fix" is still a finding and still needs user approval before any change lands in the plan. Only skip ask_user when the decision is genuinely trivial (e.g., a typo fix) AND there are no meaningful alternatives. When in doubt, ask.
 
 ## Required outputs
 
@@ -644,7 +647,7 @@ At the end of the review, fill in and display this summary so the user can see a
 - What already exists: written
 - plan.md updates: ___ items proposed to user
 - Failure modes: ___ critical gaps flagged
-- Outside voice: ran (outside voice/claude) / skipped
+- Outside voice: ran (codex/claude) / skipped
 - Parallelization: ___ lanes, ___ parallel / ___ sequential
 - Lake Score: X/Y recommendations chose complete option
 
@@ -713,13 +716,13 @@ Display:
 **Review tiers:**
 - **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
 - **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
-- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Outside Voice adversarial challenge. Large diffs (200+ lines) additionally get Outside Voice structured review with P1 gate. No configuration needed.
-- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Outside Voice is unavailable. Never gates shipping.
+- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Codex adversarial challenge. Large diffs (200+ lines) additionally get Codex structured review with P1 gate. No configuration needed.
+- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Claude subagent if Codex is unavailable. Never gates shipping.
 
 **Verdict logic:**
 - **CLEARED**: Eng Review has >= 1 entry within 7 days from either \`review\` or \`plan-eng-review\` with status "clean" (or \`skip_eng_review\` is \`true\`)
 - **NOT CLEARED**: Eng Review missing, stale (>7 days), or has open issues
-- CEO, Design, and Outside Voice reviews are shown for context but never block shipping
+- CEO, Design, and Codex reviews are shown for context but never block shipping
 - If \`skip_eng_review\` config is \`true\`, Eng Review shows "SKIPPED (global)" and verdict is CLEARED
 
 **Staleness detection:** After displaying the dashboard, check if any existing reviews may be stale:
@@ -777,8 +780,8 @@ Produce this markdown table:
 
 Below the table, add these lines (omit any that are empty/not applicable):
 
-- **OUTSIDE VOICE:** (only if outside voice review ran) — one-line summary of outside voice fixes
-- **CROSS-MODEL:** (only if both Claude and the Outside Voice reviews exist) — overlap analysis
+- **CODEX:** (only if codex-review ran) — one-line summary of codex fixes
+- **CROSS-MODEL:** (only if both Claude and Codex reviews exist) — overlap analysis
 - **UNRESOLVED:** total unresolved decisions across all reviews
 - **VERDICT:** list reviews that are CLEAR (e.g., "CEO + ENG CLEARED — ready to implement").
   If Eng Review is not CLEAR and not skipped globally, append "eng review required".
@@ -813,7 +816,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and the Outside Voice agree).
+`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.

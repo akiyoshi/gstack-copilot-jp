@@ -1,11 +1,15 @@
 {
-  "upstream_version": "v1.12.1.0",
+  "upstream_version": "1.20.0.0",
+  "upstream_latest_known": "v1.20.0.0",
+  "upstream_latest_audit_date": "2026-04-29",
+  "upstream_lag_versions": 0,
+  "upstream_lag_note": "Phase A-3 完了。commit/version を v1.20.0.0 (e8893a18) に同期済み。",
   "upstream_repo": "garrytan/gstack",
-  "upstream_commit": "aeea57f96a3f73e13b732f036dca5ed7ed7f7bdf",
+  "upstream_commit": "e8893a18b18e32ebd63a21f6915337868249ebe1",
   "snapshot_path": null,
   "snapshot_note": "スナップショットは保持しない。upstream_commit で参照",
-  "audited_at": "2026-04-25",
-  "local_version": "1.0.0-alpha.6",
+  "audited_at": "2026-04-29",
+  "local_version": "1.0.1.0",
   "skills": {
     "office-hours": {
       "upstream": "office-hours/SKILL.md",
@@ -244,6 +248,30 @@
       "upstream": "plan-tune/SKILL.md",
       "status": "excluded",
       "reason": "store_memory で代替"
+    },
+    "landing-report": {
+      "upstream": "landing-report/SKILL.md",
+      "status": "planned",
+      "target_phase": "v1.1 (Phase B-1)",
+      "reason": "並行 Conductor ワークスペースの VERSION 衝突検出ダッシュボード。bin/gstack-next-version 移植が前提"
+    },
+    "claude": {
+      "upstream": "claude/SKILL.md",
+      "status": "planned",
+      "target_phase": "v1.1 (Phase B-2)",
+      "reason": "非-Claude ホスト向け Outside Voice。Copilot CLI から claude -p で review/challenge/consult"
+    },
+    "scrape": {
+      "upstream": "scrape/SKILL.md",
+      "status": "planned",
+      "target_phase": "v1.2 (Phase D、判断保留)",
+      "reason": "Browser-Skills runtime (v1.20.0.0)。$B skill サブコマンドと三層ストレージが前提"
+    },
+    "skillify": {
+      "upstream": "skillify/SKILL.md",
+      "status": "planned",
+      "target_phase": "v1.2 (Phase D、判断保留)",
+      "reason": "$B プロトタイプを再利用可能スキルへ codify。/scrape とセット"
     }
   }
 }
