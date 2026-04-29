@@ -140,7 +140,6 @@ CONVERTED=$(echo "$BODY" \
   | sed 's|~/.claude/skills/gstack/|.github/skills/|g' \
   | sed 's|~/.claude/|.github/|g' \
   | sed 's/CLAUDE\.md/copilot-instructions.md/g' \
-  | sed 's/TODOS\.md/plan.md/g' \
   \
   | sed 's|\.github/skills/review/|.github/skills/gstack-review/|g' \
   | sed 's|/review\b|/gstack-review|g' \

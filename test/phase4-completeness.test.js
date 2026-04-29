@@ -127,9 +127,9 @@ describe('VERSION for v1.0', () => {
     expect(version).toMatch(/^\d+\.\d+\.\d+(\.\d+)?(-[a-zA-Z0-9.-]+)?$/);
   });
 
-  it('ROADMAP.md references matching version', () => {
+  it('TODOS.md references matching version', () => {
     const version = readFileSync(join(ROOT, 'VERSION'), 'utf-8').trim();
-    const roadmap = readFileSync(join(ROOT, 'ROADMAP.md'), 'utf-8');
+    const roadmap = readFileSync(join(ROOT, 'TODOS.md'), 'utf-8');
     expect(roadmap).toContain(version);
   });
 });

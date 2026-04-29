@@ -23,7 +23,7 @@ gstack-copilot-jp/
 ├── INSTALL.md                    # 3 方式のインストール手順
 ├── DESIGN.md                     # 設計判断の記録（なぜこの形か）
 ├── ETHOS.md                      # 3 つの原則
-├── ROADMAP.md                    # 未実装項目・将来計画
+├── TODOS.md                      # 未実装項目・将来計画
 ├── CHANGELOG.md                  # リリース履歴
 ├── BROWSER.md                    # `/browse` 技術詳細
 ├── upstream-tracking.md          # 本家 gstack との互換性台帳

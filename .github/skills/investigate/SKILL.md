@@ -120,7 +120,7 @@ Check if this bug matches a known pattern:
 | Stale cache | Shows old data, fixes on cache clear | Redis, CDN, browser cache, Turbo |
 
 Also check:
-- `plan.md` for related known issues
+- `TODOS.md` for related known issues
 - `git log` for prior fixes in the same area — **recurring bugs in the same files are an architectural smell**, not a coincidence
 
 **External pattern search:** If the bug doesn't match a known pattern above, web_search for:
@@ -195,7 +195,7 @@ Root cause:      [what was actually wrong]
 Fix:             [what was changed, with file:line references]
 Evidence:        [test output, reproduction attempt showing fix works]
 Regression test: [file:line of the new test]
-Related:         [plan.md items, prior bugs in same area, architectural notes]
+Related:         [TODOS.md items, prior bugs in same area, architectural notes]
 Status:          DONE | DONE_WITH_CONCERNS | BLOCKED
 ════════════════════════════════════════
 ```

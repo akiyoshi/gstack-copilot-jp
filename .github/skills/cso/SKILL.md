@@ -582,7 +582,7 @@ Match findings across reports using the `fingerprint` field (sha256 of category 
    - A) Fix now — [specific code change, effort estimate]
    - B) Mitigate — [workaround that reduces risk]
    - C) Accept risk — [document why, set review date]
-   - D) Defer to plan.md with security label
+   - D) Defer to TODOS.md with security label
 
 ### Phase 14: Save Report
 
