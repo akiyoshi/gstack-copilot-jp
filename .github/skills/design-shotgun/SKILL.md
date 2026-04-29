@@ -8,7 +8,6 @@ triggers:
   - show me design options
   - visual design brainstorm
 allowed-tools:
-  - --
   - ask_user
   - bash
   - glob

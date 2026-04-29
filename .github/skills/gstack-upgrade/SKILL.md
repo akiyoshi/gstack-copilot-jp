@@ -8,7 +8,6 @@ triggers:
   - update gstack version
   - get latest gstack
 allowed-tools:
-  - --
   - ask_user
   - bash
   - create

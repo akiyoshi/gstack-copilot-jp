@@ -136,6 +136,23 @@ describe('VERSION ファイル', () => {
   });
 });
 
+describe('バージョン3ファイル一致 (VERSION / package.json / plugin.json)', () => {
+  // v1.0.3 で追加: VERSION, package.json, plugin.json の version が乖離する
+  // バグ（v1.0.2 で発覚: VERSION=1.0.2.0 vs plugin.json=1.0.0）の再発防止。
+  // /ship・/landing-report・gstack-next-version の前提として 3 ファイル整合を契約化。
+  const version = readFileSync(join(ROOT, 'VERSION'), 'utf-8').trim();
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
+  const plugin = JSON.parse(readFileSync(join(ROOT, 'plugin.json'), 'utf-8'));
+
+  it('package.json の version が VERSION と一致する', () => {
+    expect(pkg.version).toBe(version);
+  });
+
+  it('plugin.json の version が VERSION と一致する', () => {
+    expect(plugin.version).toBe(version);
+  });
+});
+
 describe('VS Code 資産が削除済み', () => {
   it('.github/instructions/ が存在しない（copilot-instructions.md に統合済み）', () => {
     expect(existsSync(join(ROOT, '.github', 'instructions'))).toBe(false);

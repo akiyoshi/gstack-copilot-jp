@@ -8,7 +8,6 @@ triggers:
   - what have we learned
   - manage project learnings
 allowed-tools:
-  - --
   - ask_user
   - bash
   - create

@@ -1,14 +1,13 @@
 ---
 name: setup-deploy
 version: 1.0.0
-description: "デプロイ環境の設定。Use when: デプロイ設定、deploy configuration、/land-and-deploy の初期設定。プラットフォーム自動検出。"
-argument-hint: "デプロイ先のプラットフォーム（Vercel, Railway, AWS等）"
+description: "デプロイ環境の設定。Use when: デプロイ設定、deploy configuration、/land-and-deploy の初期設定。プラットフォーム自動検出。"
+argument-hint: "デプロイ先のプラットフォーム（Vercel, Railway, AWS等）"
 triggers:
   - configure deploy
   - setup deployment
   - set deploy platform
 allowed-tools:
-  - --
   - ask_user
   - bash
   - create

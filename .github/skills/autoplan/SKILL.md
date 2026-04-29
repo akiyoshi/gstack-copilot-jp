@@ -8,7 +8,6 @@ triggers:
   - automatic review pipeline
   - auto plan review
 allowed-tools:
-  - --
   - ask_user
   - bash
   - create

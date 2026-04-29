@@ -1,6 +1,6 @@
 {
   "name": "gstack-copilot-jp",
-  "version": "1.0.0",
+  "version": "1.0.3.0",
   "description": "日本語のGitHub Copilotユーザーのための、AIソフトウェアファクトリー",
   "author": {
     "name": "akiyoshi"

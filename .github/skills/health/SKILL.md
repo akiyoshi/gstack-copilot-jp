@@ -8,7 +8,6 @@ triggers:
   - quality dashboard
   - how healthy is codebase
 allowed-tools:
-  - --
   - ask_user
   - bash
   - create
