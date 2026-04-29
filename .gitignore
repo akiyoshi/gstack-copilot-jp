@@ -5,3 +5,4 @@ browse/dist/
 .gstack/
 browse/node_modules/
 land-deploy-confirmed
+.context/
