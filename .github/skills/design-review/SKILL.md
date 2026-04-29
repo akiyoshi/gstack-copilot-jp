@@ -1137,12 +1137,12 @@ Write a one-line summary to `~/.gstack/projects/{slug}/{user}-{branch}-design-au
 
 ---
 
-## Phase 11: plan.md Update
+## Phase 11: TODOS.md Update
 
-If the repo has a `plan.md`:
+If the repo has a `TODOS.md`:
 
 1. **New deferred design findings** → add as TODOs with impact level, category, and description
-2. **Fixed findings that were in plan.md** → annotate with "Fixed by /design-review on {branch}, {date}"
+2. **Fixed findings that were in TODOS.md** → annotate with "Fixed by /design-review on {branch}, {date}"
 
 ---
 

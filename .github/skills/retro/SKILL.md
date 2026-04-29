@@ -133,8 +133,8 @@ git shortlog origin/<default> --since="<window>" -sn --no-merges
 # 8. Greptile triage history (if available)
 cat ~/.gstack/greptile-history.md 2>/dev/null || true
 
-# 9. plan.md backlog (if available)
-cat plan.md 2>/dev/null || true
+# 9. TODOS.md backlog (if available)
+cat TODOS.md 2>/dev/null || true
 
 # 10. Test file count
 find . -name '*.test.*' -o -name '*.spec.*' -o -name '*_test.*' -o -name '*_spec.*' 2>/dev/null | grep -v node_modules | wc -l
@@ -191,19 +191,19 @@ Sort by commits descending. The current user (from `git config user.name`) alway
 
 **Greptile signal (if history exists):** Read `~/.gstack/greptile-history.md` (fetched in Step 1, command 8). Filter entries within the retro time window by date. Count entries by type: `fix`, `fp`, `already-fixed`. Compute signal ratio: `(fix + already-fixed) / (fix + already-fixed + fp)`. If no entries exist in the window or the file doesn't exist, skip the Greptile metric row. Skip unparseable lines silently.
 
-**Backlog Health (if plan.md exists):** Read `plan.md` (fetched in Step 1, command 9). Compute:
+**Backlog Health (if TODOS.md exists):** Read `TODOS.md` (fetched in Step 1, command 9). Compute:
 - Total open TODOs (exclude items in `## Completed` section)
 - P0/P1 count (critical/urgent items)
 - P2 count (important items)
 - Items completed this period (items in Completed section with dates within the retro window)
-- Items added this period (cross-reference git log for commits that modified plan.md within the window)
+- Items added this period (cross-reference git log for commits that modified TODOS.md within the window)
 
 Include in the metrics table:
 ```
 | Backlog Health | N open (X P0/P1, Y P2) · Z completed this period |
 ```
 
-If plan.md doesn't exist, skip the Backlog Health row.
+If TODOS.md doesn't exist, skip the Backlog Health row.
 ```
 | Skill Usage | /ship(12) /qa(8) /gstack-review(5) · 3 safety hook fires |
 ```
@@ -443,7 +443,7 @@ Use the create tool to save the JSON file with this schema:
 }
 ```
 
-**Note:** Only include the `greptile` field if `~/.gstack/greptile-history.md` exists and has entries within the time window. Only include the `backlog` field if `plan.md` exists. Only include the `test_health` field if test files were found (command 10 returns > 0). If any has no data, omit the field entirely.
+**Note:** Only include the `greptile` field if `~/.gstack/greptile-history.md` exists and has entries within the time window. Only include the `backlog` field if `TODOS.md` exists. Only include the `test_health` field if test files were found (command 10 returns > 0). If any has no data, omit the field entirely.
 
 Include test health data in the JSON when test files exist:
 ```json
@@ -455,7 +455,7 @@ Include test health data in the JSON when test files exist:
   }
 ```
 
-Include backlog data in the JSON when plan.md exists:
+Include backlog data in the JSON when TODOS.md exists:
 ```json
   "backlog": {
     "total_open": 28,

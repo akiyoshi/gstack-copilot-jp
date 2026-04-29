@@ -34,8 +34,8 @@ You are running the `/ship` workflow. This is a **non-interactive, fully automat
 - AI-assessed coverage below minimum threshold (hard gate with user override — see Step 7)
 - Plan items NOT DONE with no user override (see Step 8)
 - Plan verification failures (see Step 8.1)
-- plan.md missing and user wants to create one (ask — see Step 14)
-- plan.md disorganized and user wants to reorganize (ask — see Step 14)
+- TODOS.md missing and user wants to create one (ask — see Step 14)
+- TODOS.md disorganized and user wants to reorganize (ask — see Step 14)
 
 **Never stop for:**
 - Uncommitted changes (always include them)
@@ -43,7 +43,7 @@ You are running the `/ship` workflow. This is a **non-interactive, fully automat
 - CHANGELOG content (auto-generate from diff)
 - Commit message approval (auto-commit)
 - Multi-file changesets (auto-split into bisectable commits)
-- plan.md completed-item detection (auto-mark)
+- TODOS.md completed-item detection (auto-mark)
 - Auto-fixable review findings (dead code, N+1, stale comments — fixed automatically)
 - Test coverage gaps within target threshold (auto-generate and commit, or flag in PR body)
 
@@ -152,7 +152,7 @@ service with existing deployment — verify that a distribution pipeline exists.
    - "This PR adds a new binary/tool but there's no CI/CD pipeline to build and publish it.
      Users won't be able to download the artifact after merge."
    - A) Add a release workflow now (CI/CD release pipeline — GitHub Actions or GitLab CI depending on platform)
-   - B) Defer — add to plan.md
+   - B) Defer — add to TODOS.md
    - C) Not needed — this is internal/web-only, existing deployment covers it
 
 4. **If release pipeline exists:** Continue silently.
@@ -411,7 +411,7 @@ Use ask_user:
 - Continue with the workflow.
 
 **If "Add as P0 TODO":**
-- If `plan.md` does not exist, create it with the standard header and add the entry.
+- If `TODOS.md` does not exist, create it with the standard header and add the entry.
 - Entry should include: title, the error output, which branch it was noticed on, and priority P0.
 - Continue with the workflow — treat the pre-existing failure as non-blocking.
 
@@ -1002,9 +1002,9 @@ smarter on their codebase over time.
 
 Before reviewing code quality, check: **did they build what was requested — nothing more, nothing less?**
 
-1. Read `plan.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
+1. Read `TODOS.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
    Read commit messages (`git log origin/<base>..HEAD --oneline`).
-   **If no PR exists:** rely on commit messages and plan.md for stated intent — this is the common case since /gstack-review runs before /ship creates the PR.
+   **If no PR exists:** rely on commit messages and TODOS.md for stated intent — this is the common case since /gstack-review runs before /ship creates the PR.
 2. Identify the **stated intent** — what was this branch supposed to accomplish?
 3. Run `git diff origin/<base>...HEAD --stat` and compare the files changed against the stated intent.
 
@@ -1016,7 +1016,7 @@ Before reviewing code quality, check: **did they build what was requested — no
    - "While I was in there..." changes that expand blast radius
 
    **MISSING REQUIREMENTS detection:**
-   - Requirements from plan.md/PR description not addressed in the diff
+   - Requirements from TODOS.md/PR description not addressed in the diff
    - Test coverage gaps for stated requirements
    - Partial implementations (started but not finished)
 
@@ -1750,7 +1750,7 @@ echo "Drift repaired: package.json synced to $REPAIR_VERSION. No version bump pe
    - Write concise, descriptive bullet points
    - Insert after the file header (line 5), dated today
    - Format: `## [X.Y.Z.W] - YYYY-MM-DD`
-   - **Voice:** Lead with what the user can now **do** that they couldn't before. Use plain language, not implementation details. Never mention plan.md, internal tracking, or contributor-facing details.
+   - **Voice:** Lead with what the user can now **do** that they couldn't before. Use plain language, not implementation details. Never mention TODOS.md, internal tracking, or contributor-facing details.
 
 6. **Cross-check:** Compare your CHANGELOG entry against the commit list from step 2.
    Every commit must map to at least one bullet point. If any commit is unrepresented,
@@ -1761,26 +1761,26 @@ echo "Drift repaired: package.json synced to $REPAIR_VERSION. No version bump pe
 
 ---
 
-## Step 14: plan.md (auto-update)
+## Step 14: TODOS.md (auto-update)
 
-Cross-reference the project's plan.md against the changes being shipped. Mark completed items automatically; prompt only if the file is missing or disorganized.
-**1. Check if plan.md exists** in the repository root.
+Cross-reference the project's TODOS.md against the changes being shipped. Mark completed items automatically; prompt only if the file is missing or disorganized.
+**1. Check if TODOS.md exists** in the repository root.
 
-**If plan.md does not exist:** Use ask_user:
-- Message: "GStack recommends maintaining a plan.md organized by skill/component, then priority (P0 at top through P4, then Completed at bottom). See TODOS-format.md for the full format. Would you like to create one?"
+**If TODOS.md does not exist:** Use ask_user:
+- Message: "GStack recommends maintaining a TODOS.md organized by skill/component, then priority (P0 at top through P4, then Completed at bottom). See TODOS-format.md for the full format. Would you like to create one?"
 - Options: A) Create it now, B) Skip for now
-- If A: Create `plan.md` with a skeleton (# TODOS heading + ## Completed section). Continue to step 3.
+- If A: Create `TODOS.md` with a skeleton (# TODOS heading + ## Completed section). Continue to step 3.
 - If B: Skip the rest of Step 14. Continue to Step 15.
 
 **2. Check structure and organization:**
 
-Read plan.md and verify it follows the recommended structure:
+Read TODOS.md and verify it follows the recommended structure:
 - Items grouped under `## <Skill/Component>` headings
 - Each item has `**Priority:**` field with P0-P4 value
 - A `## Completed` section at the bottom
 
 **If disorganized** (missing priority fields, no component groupings, no Completed section): Use ask_user:
-- Message: "plan.md doesn't follow the recommended structure (skill/component groupings, P0-P4 priority, Completed section). Would you like to reorganize it?"
+- Message: "TODOS.md doesn't follow the recommended structure (skill/component groupings, P0-P4 priority, Completed section). Would you like to reorganize it?"
 - Options: A) Reorganize now (recommended), B) Leave as-is
 - If A: Reorganize in-place following TODOS-format.md. Preserve all content — only restructure, never delete items.
 - If B: Continue to step 3 without restructuring.
@@ -1803,11 +1803,11 @@ For each TODO item, check if the changes in this PR complete it by:
 **4. Move completed items** to the `## Completed` section at the bottom. Append: `**Completed:** vX.Y.Z (YYYY-MM-DD)`
 
 **5. Output summary:**
-- `plan.md: N items marked complete (item1, item2, ...). M items remaining.`
-- Or: `plan.md: No completed items detected. M items remaining.`
-- Or: `plan.md: Created.` / `plan.md: Reorganized.`
+- `TODOS.md: N items marked complete (item1, item2, ...). M items remaining.`
+- Or: `TODOS.md: No completed items detected. M items remaining.`
+- Or: `TODOS.md: Created.` / `TODOS.md: Reorganized.`
 
-**6. Defensive:** If plan.md cannot be written (permission error, disk full), warn the user and continue. Never stop the ship workflow for a TODOS failure.
+**6. Defensive:** If TODOS.md cannot be written (permission error, disk full), warn the user and continue. Never stop the ship workflow for a TODOS failure.
 
 Save this summary — it goes into the PR body in Step 19.
 
@@ -1889,7 +1889,7 @@ user via ask_user rather than destroying non-WIP commits.
    - **Infrastructure:** migrations, config changes, route additions
    - **Models & services:** new models, services, concerns (with their tests)
    - **Controllers & views:** controllers, views, JS/React components (with their tests)
-   - **VERSION + CHANGELOG + plan.md:** always in the final commit
+   - **VERSION + CHANGELOG + TODOS.md:** always in the final commit
 
 3. **Rules for splitting:**
    - A model and its test file go in the same commit
@@ -2056,8 +2056,8 @@ you missed it.>
 ## TODOS
 <If items marked complete: bullet list of completed items with version>
 <If no items completed: "No TODO items completed in this PR.">
-<If plan.md created or reorganized: note that>
-<If plan.md doesn't exist and user skipped: omit this section>
+<If TODOS.md created or reorganized: note that>
+<If TODOS.md doesn't exist and user skipped: omit this section>
 
 ## Documentation
 <Embed the `documentation_section` string returned by Step 18's subagent here, verbatim.>
@@ -2130,7 +2130,7 @@ This step is automatic — never skip it, never ask for confirmation.
 - **Always use the 4-digit version format** from the VERSION file.
 - **Date format in CHANGELOG:** `YYYY-MM-DD`
 - **Split commits for bisectability** — each commit = one logical change.
-- **plan.md completion detection must be conservative.** Only mark items as completed when the diff clearly shows the work is done.
+- **TODOS.md completion detection must be conservative.** Only mark items as completed when the diff clearly shows the work is done.
 - **Use Greptile reply templates from greptile-triage.md.** Every reply includes evidence (inline diff, code references, re-rank suggestion). Never post vague replies.
 - **Never push without fresh verification evidence.** If code changed after Step 5 tests, re-run before pushing.
 - **Step 7 generates coverage tests.** They must pass before committing. Never commit failing tests.

@@ -351,7 +351,7 @@ This is the **primary mode** for developers verifying their work. When the user 
 
 5. **Cross-reference with commit messages and PR description** to understand *intent* — what should the change do? Verify it actually does that.
 
-6. **Check plan.md** (if it exists) for known bugs or issues related to the changed files. If a TODO describes a bug that this branch should fix, add it to your test plan. If you find a new bug during QA that isn't in plan.md, note it in the report.
+6. **Check TODOS.md** (if it exists) for known bugs or issues related to the changed files. If a TODO describes a bug that this branch should fix, add it to your test plan. If you find a new bug during QA that isn't in TODOS.md, note it in the report.
 
 7. **Report findings** scoped to the branch changes:
    - "Changes tested: N pages/routes affected by this branch"
@@ -787,12 +787,12 @@ Write to `~/.gstack/projects/{slug}/{user}-{branch}-test-outcome-{datetime}.md`
 
 ---
 
-## Phase 11: plan.md Update
+## Phase 11: TODOS.md Update
 
-If the repo has a `plan.md`:
+If the repo has a `TODOS.md`:
 
 1. **New deferred bugs** → add as TODOs with severity, category, and repro steps
-2. **Fixed bugs that were in plan.md** → annotate with "Fixed by /qa on {branch}, {date}"
+2. **Fixed bugs that were in TODOS.md** → annotate with "Fixed by /qa on {branch}, {date}"
 
 ---
 

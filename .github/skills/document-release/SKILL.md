@@ -199,12 +199,12 @@ After auditing each file individually, do a cross-doc consistency pass:
 
 ---
 
-## Step 7: plan.md Cleanup
+## Step 7: TODOS.md Cleanup
 
 This is a second pass that complements `/ship`'s Step 5.5. Read `review/TODOS-format.md` (if
 available) for the canonical TODO item format.
 
-If plan.md does not exist, skip this step.
+If TODOS.md does not exist, skip this step.
 
 1. **Completed items not yet marked:** Cross-reference the diff against open TODO items. If a
    TODO is clearly completed by the changes in this branch, move it to the Completed section
@@ -217,7 +217,7 @@ If plan.md does not exist, skip this step.
 
 3. **New deferred work:** Check the diff for `TODO`, `FIXME`, `HACK`, and `XXX` comments. For
    each one that represents meaningful deferred work (not a trivial inline note), use
-   ask_user to ask whether it should be captured in plan.md.
+   ask_user to ask whether it should be captured in TODOS.md.
 
 ---
 
@@ -343,7 +343,7 @@ Documentation health:
   ARCHITECTURE.md [status] ([details])
   CONTRIBUTING.md [status] ([details])
   CHANGELOG.md    [status] ([details])
-  plan.md        [status] ([details])
+  TODOS.md        [status] ([details])
   VERSION         [status] ([details])
 ```
 

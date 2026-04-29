@@ -880,7 +880,7 @@ Options:
 - A) Accept the outside voice's recommendation (I'll apply this change)
 - B) Keep the current approach (reject the outside voice)
 - C) Investigate further before deciding
-- D) Add to plan.md for later
+- D) Add to TODOS.md for later
 
 Wait for the user's response. Do NOT default to accepting because you agree with the
 outside voice. If the user chooses B, the current approach stands — do not re-argue.
@@ -951,7 +951,7 @@ DX improvements considered and explicitly deferred, with one-line rationale each
 ### "What already exists" section
 Existing docs, examples, error handling, and DX patterns that the plan should reuse.
 
-### plan.md updates
+### TODOS.md updates
 After all review passes are complete, present each potential TODO as its own individual
 ask_user. Never batch. For DX debt: missing error messages, unspecified upgrade
 paths, documentation gaps, missing SDK languages. Each TODO gets:
@@ -962,7 +962,7 @@ paths, documentation gaps, missing SDK languages. Each TODO gets:
 * **Context:** Enough detail for someone to pick this up in 3 months
 * **Depends on / blocked by:** Prerequisites
 
-Options: **A)** Add to plan.md **B)** Skip **C)** Build it now
+Options: **A)** Add to TODOS.md **B)** Skip **C)** Build it now
 
 ### DX Scorecard
 

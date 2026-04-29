@@ -38,9 +38,9 @@ You are running the `/gstack-review` workflow. Analyze the current branch's diff
 
 Before reviewing code quality, check: **did they build what was requested — nothing more, nothing less?**
 
-1. Read `plan.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
+1. Read `TODOS.md` (if it exists). Read PR description (`gh pr view --json body --jq .body 2>/dev/null || true`).
    Read commit messages (`git log origin/<base>..HEAD --oneline`).
-   **If no PR exists:** rely on commit messages and plan.md for stated intent — this is the common case since /gstack-review runs before /ship creates the PR.
+   **If no PR exists:** rely on commit messages and TODOS.md for stated intent — this is the common case since /gstack-review runs before /ship creates the PR.
 2. Identify the **stated intent** — what was this branch supposed to accomplish?
 3. Run `git diff origin/<base>...HEAD --stat` and compare the files changed against the stated intent.
 
@@ -52,7 +52,7 @@ Before reviewing code quality, check: **did they build what was requested — no
    - "While I was in there..." changes that expand blast radius
 
    **MISSING REQUIREMENTS detection:**
-   - Requirements from plan.md/PR description not addressed in the diff
+   - Requirements from TODOS.md/PR description not addressed in the diff
    - Test coverage gaps for stated requirements
    - Partial implementations (started but not finished)
 
@@ -172,7 +172,7 @@ When no plan file is detected, use these secondary intent sources:
    - Commits with actionable verbs ("add", "implement", "fix", "create", "remove", "update") are intent signals
    - Skip noise: "WIP", "tmp", "squash", "merge", "chore", "typo", "fixup"
    - Extract the intent behind the commit, not the literal message
-2. **plan.md:** If it exists, check for items related to this branch or recent dates
+2. **TODOS.md:** If it exists, check for items related to this branch or recent dates
 3. **PR description:** Run `gh pr view --json body -q .body 2>/dev/null` for intent context
 
 **With fallback sources:** Apply the same Cross-Reference classification (DONE/PARTIAL/NOT DONE/CHANGED) using best-effort matching. Note that fallback-sourced items are lower confidence than plan-file items.
@@ -199,7 +199,7 @@ IMPACT: {HIGH|MEDIUM|LOW} — {what breaks or degrades if this stays undelivered
 
 ### Learnings Logging (plan-file discrepancies only)
 
-**Only for discrepancies sourced from plan files** (not commit messages or plan.md), log a learning so future sessions know this pattern occurred:
+**Only for discrepancies sourced from plan files** (not commit messages or TODOS.md), log a learning so future sessions know this pattern occurred:
 
 ```bash
 .github/skills/bin/gstack-learnings-log '{
@@ -214,7 +214,7 @@ IMPACT: {HIGH|MEDIUM|LOW} — {what breaks or degrades if this stays undelivered
 
 Replace KEBAB_SUMMARY with a kebab-case summary of the gap, and fill in the actual values.
 
-**Do NOT log learnings from commit-message-derived or plan.md-derived discrepancies.** These are informational in the review output but too noisy for durable memory.
+**Do NOT log learnings from commit-message-derived or TODOS.md-derived discrepancies.** These are informational in the review output but too noisy for durable memory.
 
 ### Integration with Scope Drift Detection
 
@@ -240,7 +240,7 @@ Plan items: N DONE, M PARTIAL, K NOT DONE
 [If scope creep: list each out-of-scope change not in the plan]
 ```
 
-**No plan file found:** Use commit messages and plan.md as fallback sources (see above). If no intent sources at all, skip with: "No intent sources detected — skipping completion audit."
+**No plan file found:** Use commit messages and TODOS.md as fallback sources (see above). If no intent sources at all, skip with: "No intent sources detected — skipping completion audit."
 
 ## Step 2: Read the checklist
 **If the file cannot be read, STOP and report the error.** Do not proceed without the checklist.
@@ -682,13 +682,13 @@ Before replying to any comment, run the **Escalation Detection** algorithm from 
 
 ## Step 5.5: TODOS cross-reference
 
-Read `plan.md` in the repository root (if it exists). Cross-reference the PR against open TODOs:
+Read `TODOS.md` in the repository root (if it exists). Cross-reference the PR against open TODOs:
 
 - **Does this PR close any open TODOs?** If yes, note which items in your output: "This PR addresses TODO: <title>"
 - **Does this PR create work that should become a TODO?** If yes, flag it as an informational finding.
 - **Are there related TODOs that provide context for this review?** If yes, reference them when discussing related findings.
 
-If plan.md doesn't exist, skip this step silently.
+If TODOS.md doesn't exist, skip this step silently.
 
 ---
 

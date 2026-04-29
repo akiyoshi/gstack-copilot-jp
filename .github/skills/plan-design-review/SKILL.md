@@ -191,7 +191,7 @@ Then read:
 - The plan file (current plan or branch diff)
 - copilot-instructions.md — project conventions
 - DESIGN.md — if it exists, ALL design decisions calibrate against it
-- plan.md — any design-related TODOs this plan touches
+- TODOS.md — any design-related TODOs this plan touches
 
 Map:
 * What is the UI scope of this plan? (pages, components, interactions)
@@ -745,7 +745,7 @@ Design decisions considered and explicitly deferred, with one-line rationale eac
 ### "What already exists" section
 Existing DESIGN.md, UI patterns, and components that the plan should reuse.
 
-### plan.md updates
+### TODOS.md updates
 After all review passes are complete, present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step.
 
 For design debt: missing a11y, unresolved responsive behavior, deferred empty states. Each TODO gets:
@@ -756,7 +756,7 @@ For design debt: missing a11y, unresolved responsive behavior, deferred empty st
 * **Context:** Enough detail that someone picking this up in 3 months understands the motivation.
 * **Depends on / blocked by:** Any prerequisites.
 
-Then present options: **A)** Add to plan.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
+Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
 
 ### Completion Summary
 ```
@@ -775,7 +775,7 @@ Then present options: **A)** Add to plan.md **B)** Skip — not valuable enough 
   +--------------------------------------------------------------------+
   | NOT in scope         | written (___ items)                         |
   | What already exists  | written                                     |
-  | plan.md updates     | ___ items proposed                          |
+  | TODOS.md updates     | ___ items proposed                          |
   | Approved Mockups     | ___ generated, ___ approved                  |
   | Decisions made       | ___ added to plan                           |
   | Decisions deferred   | ___ (listed below)                          |
