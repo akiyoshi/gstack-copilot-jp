@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# bin/gstack-update-check — gstack-copilot-jp の本家追従ラグを通知
+#
+# sessionStart hook から呼ばれる。24h に 1 回だけ実際にチェックし、
+# それ以外はキャッシュから読み出し。失敗はサイレント (hook を遮らない)。
+#
+# 出力:
+#   - 取込ラグなし → 何も出さない
+#   - 1-9 commits 遅れ → 1 行通知
+#   - 10+ commits 遅れ → 強い通知 ("/gstack-upgrade を検討してください")
+#
+# 使い方:
+#   gstack-update-check          # 24h キャッシュを使う
+#   gstack-update-check --force  # キャッシュ無視で即チェック
+#   gstack-update-check --json   # JSON 出力 (lag, last_checked, severity)
+set -euo pipefail
+
+GSTACK_DIR="${HOME}/.gstack"
+UPSTREAM_DIR="${GSTACK_DIR}/repos/gstack"
+CACHE_FILE="${GSTACK_DIR}/upstream-update-check.json"
+LAST_FETCH_FILE="${GSTACK_DIR}/upstream-last-fetch"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+TRACKING_JSON="${ROOT_DIR}/upstream-tracking.json"
+
+FORCE=0
+JSON_MODE=0
+for arg in "$@"; do
+  case "$arg" in
+    --force) FORCE=1 ;;
+    --json) JSON_MODE=1 ;;
+    -h|--help)
+      echo "Usage: $(basename "$0") [--force] [--json]"
+      exit 0
+      ;;
+  esac
+done
+
+emit() {
+  local lag="$1"
+  local severity="$2"
+  local last_checked="$3"
+  if [ "$JSON_MODE" -eq 1 ]; then
+    printf '{"lag":%d,"severity":"%s","last_checked":"%s"}\n' "$lag" "$severity" "$last_checked"
+    return
+  fi
+  case "$severity" in
+    none) ;;  # 出力なし
+    info)
+      echo "ℹ️  gstack 本家から ${lag} commits 遅れています。bin/upstream-diff.sh で確認できます。"
+      ;;
+    warn)
+      echo "⚠️  gstack 本家から ${lag} commits 遅れています。"
+      echo "    /gstack-upgrade で追従するか、bin/upstream-diff.sh --sync を実行してください。"
+      ;;
+  esac
+}
+
+severity_for_lag() {
+  local lag="$1"
+  if [ "$lag" -le 0 ]; then echo "none"
+  elif [ "$lag" -lt 10 ]; then echo "info"
+  else echo "warn"; fi
+}
+
+# キャッシュが新鮮ならそれを使う (24h)
+if [ "$FORCE" -eq 0 ] && [ -f "$CACHE_FILE" ]; then
+  CACHED_AT=$(stat -c %Y "$CACHE_FILE" 2>/dev/null || stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0)
+  NOW=$(date +%s)
+  AGE=$((NOW - CACHED_AT))
+  if [ "$AGE" -lt 86400 ]; then
+    LAG=$(grep -o '"lag":[0-9]*' "$CACHE_FILE" 2>/dev/null | head -1 | sed 's/"lag"://' || echo 0)
+    SEV=$(severity_for_lag "${LAG:-0}")
+    LAST=$(date -d "@$CACHED_AT" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || echo "unknown")
+    emit "${LAG:-0}" "$SEV" "$LAST"
+    exit 0
+  fi
+fi
+
+# upstream repo がなければ静かに終わる (sessionStart を遮らない)
+if [ ! -d "$UPSTREAM_DIR/.git" ]; then
+  emit 0 none "never"
+  exit 0
+fi
+
+# 軽い fetch (失敗はサイレント、ネットなしでもブロックしない)
+( cd "$UPSTREAM_DIR" && timeout 5 git fetch --quiet origin 2>/dev/null ) || true
+date +%s > "$LAST_FETCH_FILE" 2>/dev/null || true
+
+# pinned commit を JSON から取得
+PINNED=""
+if [ -f "$TRACKING_JSON" ] && command -v python3 >/dev/null 2>&1; then
+  PINNED=$(python3 -c "import json; print(json.load(open('$TRACKING_JSON')).get('upstream_commit',''))" 2>/dev/null || true)
+fi
+
+if [ -z "$PINNED" ]; then
+  emit 0 none "$(date '+%Y-%m-%dT%H:%M:%SZ')"
+  exit 0
+fi
+
+# origin/main から PINNED までの距離を測る
+LAG=$( cd "$UPSTREAM_DIR" && git rev-list --count "${PINNED}..origin/main" 2>/dev/null || echo 0 )
+LAG=${LAG:-0}
+SEV=$(severity_for_lag "$LAG")
+TIMESTAMP=$(date '+%Y-%m-%dT%H:%M:%SZ')
+
+# キャッシュ書き込み
+mkdir -p "$(dirname "$CACHE_FILE")"
+printf '{"lag":%d,"severity":"%s","last_checked":"%s","pinned":"%s"}\n' \
+  "$LAG" "$SEV" "$TIMESTAMP" "$PINNED" > "$CACHE_FILE" 2>/dev/null || true
+
+emit "$LAG" "$SEV" "$TIMESTAMP"
