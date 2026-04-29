@@ -1,10 +1,8 @@
 ---
 name: plan-ceo-review
 version: 1.0.0
-description: "CEO/創業者レビュー。戦略的視点でプランを再検討する。Use when: スコープ見直し、戦略挑戦、野心度を上げたい、10倍のプロダクトを考えたい、plan review、scope challenge。4つのスコープモードで動作。
-"
-argument-hint: "レビュー対象のプランまたは機能の説明
-"
+description: "CEO/創業者レビュー。戦略的視点でプランを再検討する。Use when: スコープ見直し、戦略挑戦、野心度を上げたい、10倍のプロダクトを考えたい、plan review、scope challenge。4つのスコープモードで動作。"
+argument-hint: "レビュー対象のプランまたは機能の説明"
 triggers:
   - think bigger
   - expand scope

@@ -1,10 +1,8 @@
 ---
 name: plan-design-review
 version: 2.0.0
-description: "シニアデザイナーとしてデザインプランをレビュー。Use when: UI/UXレビュー、デザイン品質評価、AIスロップ検知、design review、UX audit。7つのデザイン次元で0-10評価し、10/10がどのようなものかを具体的に示す。
-"
-argument-hint: "レビュー対象のデザインプランまたはUI/UXの説明
-"
+description: "シニアデザイナーとしてデザインプランをレビュー。Use when: UI/UXレビュー、デザイン品質評価、AIスロップ検知、design review、UX audit。7つのデザイン次元で0-10評価し、10/10がどのようなものかを具体的に示す。"
+argument-hint: "レビュー対象のデザインプランまたはUI/UXの説明"
 triggers:
   - design plan review
   - review ux plan

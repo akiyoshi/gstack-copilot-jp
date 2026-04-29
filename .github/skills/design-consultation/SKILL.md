@@ -1,10 +1,8 @@
 ---
 name: design-consultation
 version: 1.0.0
-description: "デザインパートナーとしてゼロからデザインシステムを構築。Use when: デザイン相談、ブランド構築、デザインシステム作成、design system、brand、visual identity。リサーチ→創造的リスク→DESIGN.md生成。
-"
-argument-hint: "プロダクトの説明またはデザインの相談内容
-"
+description: "デザインパートナーとしてゼロからデザインシステムを構築。Use when: デザイン相談、ブランド構築、デザインシステム作成、design system、brand、visual identity。リサーチ→創造的リスク→DESIGN.md生成。"
+argument-hint: "プロダクトの説明またはデザインの相談内容"
 triggers:
   - design system
   - create a brand
