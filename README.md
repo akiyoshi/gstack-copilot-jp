@@ -18,60 +18,16 @@
 
 ## クイックスタート
 
-gstack-copilot-jp は **VS Code 公式の Agent Plugin 仕様**に準拠しており、`.github/skills/` `.github/agents/` `plugin.json` を提供する。インストール方法は3つ。
+gstack-copilot-jp は **VS Code 公式の Agent Plugin 仕様**に準拠しており、`.github/skills/` `.github/agents/` `plugin.json` を提供する。
 
-### 1. インストール
+### 1. インストール（最速）
 
-#### 方式 A: VS Code Plugin From Source（最推奨・全リポで再利用）
+VS Code でコマンドパレット (`Ctrl+Shift+P`) → `Chat: Install Plugin From Source` → URL に `https://github.com/akiyoshi/gstack-copilot-jp` を貼る。
 
-1 回入れるだけで **どのワークスペースを開いても全スキルが `/` メニューに出る**。
+これで **どのワークスペースを開いても全スキルが `/` メニューに出る**。
 
-1. VS Code でコマンドパレット (`Ctrl+Shift+P`) を開く
-2. `Chat: Install Plugin From Source` を実行
-3. URL に貼る: `https://github.com/akiyoshi/gstack-copilot-jp`
-4. インストール完了後、Copilot Chat で `/office-hours` を確認
-
-更新は `Extensions: Check for Extension Updates` または 24h ごとの自動チェック。
-
-> 詳しい使い方とトラブルシューティングは [INSTALL.md](INSTALL.md) と [docs/vscode-setup.md](docs/vscode-setup.md) を参照。
-
-#### 方式 B: ローカルクローン + `chat.pluginLocations`（カスタマイズ派向け）
-
-スキルを編集しながら使いたい場合に。
-
-```bash
-git clone https://github.com/akiyoshi/gstack-copilot-jp.git ~/.gstack-copilot-jp
-```
-
-各 VS Code ワークスペース、または **ユーザー設定 (`Ctrl+,` → `settings.json`)** に追加:
-
-```json
-{
-  "chat.pluginLocations": {
-    "~/.gstack-copilot-jp": true
-  }
-}
-```
-
-#### 方式 C: Copilot CLI（ターミナル派向け）
-
-```bash
-git clone https://github.com/akiyoshi/gstack-copilot-jp.git
-cd gstack-copilot-jp && ./setup --mode user-link
-```
-
-`--mode user-link` で `~/.copilot/skills/gstack-copilot-jp` にシンボリックリンクを張る。CLI と VS Code Chat の両方で使える。
-
-#### Tips: 親リポからの自動発見（monorepo / multi-folder workspace）
-
-別リポを VS Code で開いたとき gstack のスキルを認識させたい場合:
-
-```jsonc
-// .vscode/settings.json または ユーザー settings.json
-{
-  "chat.useCustomizationsInParentRepositories": true
-}
-```
+> **その他のインストール方式（編集しながら使う・Copilot CLI 中心など）と詳細なトラブルシューティングは [INSTALL.md](INSTALL.md) を参照。**
+> VS Code 固有の機能差分・hook 設定は [docs/vscode-setup.md](docs/vscode-setup.md) を参照。
 
 ### 2. 使い始める
 
@@ -91,8 +47,8 @@ Copilot: [diff分析 → 専門家サブエージェント並列dispatch → 自
 
 ### 3. 更新
 
-- 方式 A: VS Code の `Extensions: Check for Extension Updates` を実行（24h 自動更新）
-- 方式 B / C: `cd ~/.gstack-copilot-jp && git pull`
+- VS Code Plugin: `Extensions: Check for Extension Updates`（24h 自動更新）
+- ローカルクローン: `cd ~/.gstack-copilot-jp && git pull`
 
 ## スプリントプロセス
 
@@ -214,7 +170,7 @@ Copilot: $B goto https://staging.myapp.com
 
 Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェントも Outside Voice として使用する。
 
-アーキテクチャの詳細は [ARCHITECTURE.md](ARCHITECTURE.md)、設計方針は [DESIGN.md](DESIGN.md) を参照。
+アーキテクチャの全体像は [ARCHITECTURE.md](ARCHITECTURE.md)、設計判断の記録は [DESIGN.md](DESIGN.md)、未実装項目は [ROADMAP.md](ROADMAP.md) を参照。
 
 ## gstackとの違い
 
@@ -230,9 +186,23 @@ Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェン�
 
 ## アンインストール
 
-- 方式 A（Plugin From Source）: VS Code の Extensions ビュー → `Agent Plugins - Installed` → 右クリック `Uninstall`
-- 方式 B（`chat.pluginLocations`）: settings.json からエントリを削除し、`~/.gstack-copilot-jp` を `rm -rf`
-- 方式 C（CLI）: `cd gstack-copilot-jp && ./setup --uninstall`
+各方式のアンインストール手順は [INSTALL.md](INSTALL.md) を参照。
+
+## ドキュメント目次
+
+| ファイル | 内容 |
+|---------|------|
+| [INSTALL.md](INSTALL.md) | 3 方式のインストール手順・トラブルシューティング |
+| [docs/getting-started.md](docs/getting-started.md) | 初学者向けクイックスタート |
+| [docs/vscode-setup.md](docs/vscode-setup.md) | VS Code 固有の機能差分・hook 設定 |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | システム構成・データフロー |
+| [DESIGN.md](DESIGN.md) | 設計判断の記録（なぜ現在の形なのか） |
+| [BROWSER.md](BROWSER.md) | `/browse` の技術詳細・コマンドリファレンス |
+| [ETHOS.md](ETHOS.md) | 3 つの原則（哲学） |
+| [ROADMAP.md](ROADMAP.md) | 未実装項目・将来計画 |
+| [CHANGELOG.md](CHANGELOG.md) | リリース履歴 |
+| [upstream-tracking.md](upstream-tracking.md) | 本家 gstack との互換性台帳 |
+| [docs/archive/](docs/archive/) | 過去の設計探索資料 |
 
 ## ライセンス
 

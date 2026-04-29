@@ -20,9 +20,18 @@ gstack-copilot-jp/
 ├── test/                         # ルートテスト (Vitest)
 ├── plugin.json                   # プラグインマニフェスト
 ├── setup                         # セットアップスクリプト
-├── TODO.md                       # ロードマップと未実装項目
-├── DESIGN.md                     # 詳細設計ドキュメント
-├── ETHOS.md                      # 3つの原則
+├── README.md                     # フロントドア（概要・スプリントプロセス）
+├── INSTALL.md                    # 3 方式のインストール手順
+├── DESIGN.md                     # 設計判断の記録（なぜこの形か）
+├── ETHOS.md                      # 3 つの原則
+├── ROADMAP.md                    # 未実装項目・将来計画
+├── CHANGELOG.md                  # リリース履歴
+├── BROWSER.md                    # `/browse` 技術詳細
+├── upstream-tracking.md          # 本家 gstack との互換性台帳
+├── docs/
+│   ├── getting-started.md
+│   ├── vscode-setup.md
+│   └── archive/                  # 過去の設計探索資料
 └── VERSION                       # セマンティックバージョニング
 ```
 

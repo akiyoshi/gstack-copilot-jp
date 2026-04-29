@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1.0] - 2026-04-29
+
+### Changed (docs)
+
+- **ドキュメント構造のリファクタリング** — 業界ベストプラクティス（Diátaxis 風）に沿って整理:
+  - `TODO.md` → `ROADMAP.md` にリネーム。完了済みの v1.0 リリース基準を削除し、未着手項目に集中
+  - `DESIGN.md` を 575 行 → 約 200 行にスリム化。「これからどう作る」型の探索を排し、現状の設計判断記録に再構成
+  - `DESIGN-upstream-fidelity.md` → `docs/archive/2026-04-upstream-fidelity-migration.md` にアーカイブ（完了済み移行レポート）
+  - 旧 `DESIGN.md`（探索版）は `docs/archive/2026-04-v1.0-design-exploration.md` として保存
+  - `docs/vscode-setup.md` から方式 A/B/C の重複説明を削除し、VS Code 固有の機能差分・トラブルシューティングに集中
+  - `README.md` のインストールセクションを圧縮し、`INSTALL.md` をハブとしてリンク。ドキュメント目次を追加
+  - `docs/archive/README.md` を新設し、アーカイブ運用ルールを明文化
+
+### Updated
+
+- `ARCHITECTURE.md`: ファイル構成図を最新化（CHANGELOG / ROADMAP / docs/ を反映）
+- `.github/copilot-instructions.md`: ファイル構成記述を更新、`TODO.md` 参照を `ROADMAP.md` に修正
+- `test/phase4-completeness.test.js` / `test/quality-gate.test.js`: `TODO.md` 依存テストを `ROADMAP.md` / `CHANGELOG.md` に移行
+
 ## [1.0.0.0] - 2026-04-25
 
 ### 🎉 v1.0 リリース
