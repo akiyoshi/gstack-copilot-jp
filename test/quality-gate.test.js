@@ -5,26 +5,6 @@ import { RESERVED_BUILTIN_COMMANDS, isReservedName } from './reserved-names.js';
 
 const ROOT = join(import.meta.dirname, '..');
 
-describe('getting-started.md 品質', () => {
-  const gsPath = join(ROOT, 'docs', 'getting-started.md');
-
-  // v1.1.1: ディレクトリカウントを single source of truth にし、
-  // ドキュメントの prose regex 検証は「スキル数が含まれている場合のみ一致」
-  // に緩和。CHANGELOG 不要 preference (memory) と整合をとるため、記載は
-  // 任意とし、見つからなくても fail にしない。
-  it('スキル数が記載されている場合はディレクトリ数と一致する', () => {
-    const content = readFileSync(gsPath, 'utf-8');
-    const skillsDir = join(ROOT, '.github', 'skills');
-    const skillCount = readdirSync(skillsDir, { withFileTypes: true })
-      .filter(d => d.isDirectory() && d.name !== 'bin').length;
-    const match = content.match(/(\d+)\s*のスキル/);
-    if (match) {
-      expect(parseInt(match[1])).toBe(skillCount);
-    }
-    // 記載がなければ skip（docs のスキル数言及は任意）
-  });
-});
-
 describe('全スキル フロントマター検証', () => {
   const skillsDir = join(ROOT, '.github', 'skills');
   const skillDirs = readdirSync(skillsDir, { withFileTypes: true })

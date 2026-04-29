@@ -29,9 +29,8 @@ gstack-copilot-jp/
 ├── BROWSER.md                    # `/browse` 技術詳細
 ├── upstream-tracking.md          # 本家 gstack との互換性台帳
 ├── docs/
-│   ├── getting-started.md
 │   ├── vscode-setup.md
-│   └── archive/                  # 過去の設計探索資料
+│   └── archive/                  # 過去の設計探索資料・実装計画ドキュメント
 └── VERSION                       # セマンティックバージョニング
 ```
 

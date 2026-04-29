@@ -2,6 +2,161 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2.0] - 2026-04-29
+
+### 📚 ドキュメント整理（Diátaxis 風 + Keep a Changelog）
+
+実装済みの内容を ROADMAP から CHANGELOG に集約し、完了済みの設計探索ドキュメントをアーカイブへ退避。`getting-started.md` の独自要素を README/INSTALL に集約して 2 箇所メンテを解消。
+
+### Changed
+
+- **CHANGELOG.md にリリース実績を集約** — 抜けていた v1.0.3.0 / v1.1.0.0 / v1.1.1.0 / v1.2.0.0 / v1.2.1.0 のエントリを git log + ROADMAP の完了セクションから再構成
+- **ROADMAP.md をスリム化** — 完了したリリース／Phase をすべて削除し、未着手・進行中（現在は v1.3 Phase C / v1.4 Browser-Skills）のみに圧縮（236 → 約 65 行）
+- **README §「使い始める」を強化** — 削除した `getting-started.md` から「最初に試す 3 つ」表とスキル連鎖サンプルを README §2 に統合
+- **INSTALL.md トラブルシュートに `/browse` Chromium 起動失敗を追加** — Playwright インストール手順 + Bun#4253 の Node.js フォールバック説明
+
+### Removed
+
+- **`docs/getting-started.md`** — 内容は README §2 と INSTALL.md トラブルシュートに完全統合
+- **`docs/upstream-gap-plan.md`** → [docs/archive/2026-04-upstream-gap-plan.md](docs/archive/2026-04-upstream-gap-plan.md)（v1.0.2 〜 v1.1 で消化済み）
+- **`docs/v1.1-implementation-plan.md`** → [docs/archive/2026-04-v1.1-implementation-plan.md](docs/archive/2026-04-v1.1-implementation-plan.md)（v1.1.0.0 で出荷済み）
+- **`docs/v1.2-outside-voice-redesign.md`** → [docs/archive/2026-04-v1.2-outside-voice-redesign.md](docs/archive/2026-04-v1.2-outside-voice-redesign.md)（v1.2.0.0 で出荷済み）
+- **`test/quality-gate.test.js` から `getting-started.md` 品質検証 describe ブロックを撤去**（参照先消失）
+
+### Updated
+
+- `ARCHITECTURE.md` / `.github/copilot-instructions.md`: ファイル構成図から `docs/getting-started.md` を削除、archive コメントを「過去の設計探索資料・実装計画」に更新
+- `docs/archive/README.md`: アーカイブテーブルに 3 ファイル追記
+- `upstream-tracking.md` / `docs/archive/2026-04-v1.2-outside-voice-redesign.md`: アーカイブ移動後の相互参照パスを修正
+
+### Notes
+
+- ドキュメント変更のみ（PATCH リリース）。スキル設計・コマンド名・フロントマター契約・bin/ ロジックの変更なし。
+- テスト 826 件中 761 件 pass（事前から失敗している 65 件は `Next skill` ハンドオフ節未記載に関するもので、本リリースとは無関係）。
+
+## [1.2.1.0] - 2026-04-29
+
+### 🎯 user-skills sync 統合 — VS Code 認識保証 + 予約名衝突検出
+
+`~/.copilot/skills/` への per-skill リンク管理を `setup` に統合。VS Code Copilot Chat と Copilot CLI からスキルが認識されるよう保証し、VS Code 組み込みコマンド（`/review` `/explain` 等）との衝突を fail-fast で検出（PR #19）。
+
+### Added
+
+- **`bin/gstack-sync-user-skills`（bash 248 行）** — repo の `.github/skills/<dir>/SKILL.md` を持つ全ディレクトリを発見し、`~/.copilot/skills/<dir>` に link 作成（Linux/macOS/WSL: symlink、Windows Git Bash: junction で管理者権限不要）。dangling link / 古いリンク残骸を自動削除、予約名衝突は fail-fast (exit 2)、`--dry-run` / `--quiet` サポート
+- **`bin/gstack-sync-user-skills.ps1`（PowerShell 187 行）** — Windows ネイティブ動作（WSL/Git Bash 不要）。`mklink /J` でジャンクション作成（管理者権限不要、NTFS のみ）
+- **`test/reserved-names.js`** — VS Code Copilot Chat 組み込み 14 コマンド名を canonical list として管理。`RESERVED_BUILTIN_COMMANDS` を export、`isReservedName(name)` ヘルパー提供
+- **`test/quality-gate.test.js` に 5 契約追加**:
+  1. 重複フロントマターブロック検出（v1.1.2 の `gstack-upgrade` 事故の再発防止）
+  2. 予約名衝突検出（`name: review` 等で built-in を上書きしないよう fail-fast）
+  3. ディレクトリ名 ≡ name フィールド一致（silent-skip 防止）
+  4. name 正規表現の統一（kebab-case 厳格）
+  5. bash / ps1 / JS の予約名リスト同期検証
+
+### Changed
+
+- **`setup` の `do_user_link` / `do_uninstall` に sync 統合** — per-skill link を先に作成 / 削除し、repo root link はその後に処理
+- **`browse/SKILL.md` の重複フロントマターブロック解消** — v1.1.2 で残った事故の根因対応
+
+### Documentation
+
+- **INSTALL.md トラブルシュートセクション追加** — コマンド embeddings キャッシュ削除手順（VS Code が古いコマンド一覧をキャッシュする問題）、dangling link の自動復旧手順、`/review` などの組み込みコマンドが反応しない場合の prefix 回避策
+
+## [1.2.0.0] - 2026-04-29
+
+### 🎯 Outside Voice 刷新（Codex CLI 依存撤廃）
+
+設計判断（マルチホスト + マルチモデル）と SKILL.md 表面の乖離を解消。設計ドキュメントは [docs/archive/2026-04-v1.2-outside-voice-redesign.md](docs/archive/2026-04-v1.2-outside-voice-redesign.md) に保存（PR #18）。
+
+### Changed
+
+- **17 個のスキルの言語刷新** — `Codex` 言及を `Outside Voice` 表記へ統一。互換シム名（`gstack-codex-probe`、`_gstack_codex_*`）は本家 sync 摩擦を抑えるため維持
+- **autoplan の preflight 統一** — `command -v codex` ガード撤去 → `gstack-codex-probe` シム経由に一本化
+- **DESIGN.md §6.5「マルチモデル Outside Voice」追加** — README + ROADMAP と整合
+
+### Added
+
+- **`bin/decodex-skills.sh`** — 一括置換ツール（互換シム名 protect、dry-run 対応）
+- **契約テスト** — `Codex` 文字列が SKILL.md / `.github/copilot-instructions.md` に再混入したら fail（`test/skill-contracts.test.js`）
+- **adapter 翻案ルール** — `bin/adapt-upstream-skill.sh` Layer 2 に Codex → Outside Voice 自動置換を追加
+
+### Deferred
+
+- `gstack-codex-probe` → `gstack-outside-voice` rename は v1.4（Browser-Skills 取込と同期）に繰り延べ
+
+## [1.1.1.0] - 2026-04-29
+
+### Fixed (security)
+
+- **`bin/gstack-open-url` の PowerShell command injection 修正** — `'$URL'` を環境変数渡し（`GSTACK_URL` env var）に変更し、シングルクォート breakout を遮断
+- **`bin/gstack-open-url` に scheme allowlist 追加** — `http://` / `https://` のみ許可、`file://` `javascript:` 排除
+- **`bin/adapt-upstream-skill.sh` に `status='adapted'` ガード追加** — 手動再構築済み SKILL.md を本家 sync で誤って上書きしないよう保護
+- **adapter 内の `python3 -c` 2 箇所を env-var パターンに統一** — v1.0.3 の同種修正と整合
+
+### Fixed (truthfulness)
+
+- **`landing-report` SKILL.md と README から虚偽記述削除** — 「Bun 不在時は Node.js + tsx でフォールバック」は誤り（`bin/gstack-next-version` は Bun 必須、shebang `#!/usr/bin/env bun`）
+- **`landing-report` Step 1 に gh / bun 不在チェックを実コード化** — 前バージョンは「停止する」と記述するのみで実装は `echo main` フォールバックだった
+- **README で `browse` の Node.js fallback と `bin/gstack-next-version` の Bun 必須を明確に区別**
+
+### Changed
+
+- **`quality-gate.test.js` のスキル数検証をディレクトリカウント single source of truth に変更** — CHANGELOG / getting-started.md の prose regex 検証は「記載されている場合のみ一致」に緩和（CHANGELOG 不要 preference との整合）
+
+## [1.1.0.0] - 2026-04-29
+
+### Added
+
+- **`/landing-report` スキル** — 並行 PR の VERSION 衝突検出ダッシュボード。`bin/gstack-next-version` で次の空き VERSION スロットを表示
+- **`bin/gstack-next-version`** — VERSION スロット自動割当ユーティリティ（Bun 必須、`gh pr list` で衝突検出、Conductor 兄弟ワークツリー検出）
+- **`bin/gstack-open-url`** — クロス OS URL オープナー。WSL2 検出（`/proc/version` の `microsoft`）+ `powershell.exe Start-Process` フォールバック
+- **Windows 11 公式サポート再開（実験的、dogfooding）** — README に「Windows 対応（実験的）」セクション追加。Bun + Node.js + Git Bash/WSL2 + `gh` CLI の前提を明示
+- **`setup --mode user-link` の Windows Developer Mode 検出** — symlink テスト sentinel + 親切なエラーメッセージ + 3 つの代替案案内
+- **INSTALL.md にアップグレードガイド** — v1.0.3 → v1.1 の手順、ロールバック手順
+
+### Changed
+
+- **`copilot-instructions.md` ルーティングテーブル更新** — `/landing-report` 追加、スキル数 38 → 39 に整合
+- **前提条件に `gh` CLI 追加** — `/ship` `/landing-report` `/land-and-deploy` で必須
+
+### Notes
+
+- **B-2 `/gstack-claude` は v1.1 スコープ除外** — task tool 経由 Outside Voice と機能重複のため、v1.2 で再評価（→ v1.2 で「重複は解消、rename は v1.4 に繰延」と確定）
+- **hook の `windows` キーは不要** — `.github/hooks/lifecycle.json` は VS Code Copilot Chat 互換形式（PascalCase + `command`）で `bash bin/...` 統一されており、Windows でも WSL bash 経由で動作
+
+## [1.0.3.0] - 2026-04-29
+
+### Fixed (security)
+
+- **Python code injection 修正（`bin/upstream-diff.sh`）** — `python3 -c "... '$VAR' ..."` で bash 変数を文字列補間する箇所 3 箇所を環境変数渡しパターン（`VAR="$VAR" python3 -c 'import os; v=os.environ["VAR"]; ...'`）に統一。攻撃例: ディレクトリ名 `evil'+__import__('os').system('id')+'pad/`
+
+### Fixed
+
+- **`plugin.json` の version を VERSION ファイルと一致** — 乗り越しで 1.0.0 のままだったバグを修正
+- **15 個のスキルのフロントマター修正** — `/setup-deploy` `/unfreeze` ほか、v1.0.2 以前の壊れた `allowed-tools` を整形
+
+### Added
+
+- **3 ファイルバージョン一致テスト** — `quality-gate.test.js` に VERSION / package.json / plugin.json の version 一致を契約化（再発防止）
+- **`bin/upstream-diff.sh` 堅牢化**:
+  - dirty tree ガード追加（`--sync` 実行前に modified + untracked changes を検出して fail-fast）
+  - サブシェルでカウンタが親シェルに伝播しないバグを修正（`while read` のパイプ → `< <(...)`）
+  - `--sync --interactive` モード追加（diff プレビュー + 確認プロンプト、各スキルの先頭 40 行表示で supply chain 緩和）
+- **`test/skill-contracts.test.js` 拡張**:
+  - `name` フィールドがディレクトリ名と一致（認識不能のサイレントスキップを防ぐ）
+  - `allowed-tools` の値が既知ツール ID 集合に含まれる
+  - `description` が 1024 文字以下（VS Code Copilot Chat と Codex 両方の上限に適合）
+- **`bin/adapt-upstream-skill.sh` の設計見直し** — `upstream-tracking.json` の `upstream` フィールドをローカル名 ≠ upstream 名マッピングの単一情報源として使用
+- **INSTALL.md にアップグレードガイドセクション追加** — v1.0.2 → v1.0.3 の手順、ロールバック手順、`/gstack-review` 認識不能時のトラブルシュート
+- **ROADMAP.md にリリースポリシーセクション追加**
+
+### Changed
+
+- **ROADMAP の現在のリリース表記を v1.0.3.0 に修正**
+
+### Notes
+
+- v1.0.3 は内部改修と `plugin.json` のバージョン修正のみ。スキル設計・コマンド名・フロントマター契約は変えていないため PATCH リリース。
+
 ## [1.0.2.0] - 2026-04-29
 
 ### Fixed (critical)

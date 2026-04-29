@@ -32,19 +32,41 @@ VS Code でコマンドパレット (`Ctrl+Shift+P`) → `Chat: Install Plugin F
 
 ### 2. 使い始める
 
-> **初めての方は [docs/getting-started.md](docs/getting-started.md) へ。** 最初に試すべき3つのスキルとトラブルシューティングをまとめている。
+gstack-copilot-jp には 40 のスキルがあるが、全部を覚える必要はない。**まずはこの 3 つだけ**:
 
-Copilot CLI でスキルを呼び出す:
+| スキル | 何が起きるか | 所要時間 |
+|--------|-------------|---------|
+| `/office-hours` | アイディアの壁打ち。6 つの問いで本質を見つける | 5-10 分 |
+| `/gstack-review` | コードレビュー。専門家サブエージェントが並列で分析 | 2-5 分 |
+| `/ship` | テスト → VERSION 更新 → PR 作成まで一気通貫 | 3-5 分 |
+
+この 3 つで gstack-copilot-jp の価値の 80% を体験できる。慣れたら下の[スプリントプロセス](#スプリントプロセス)で全体像を把握する。
+
+Copilot CLI / VS Code Chat でスキルを呼び出す:
 
 ```
 あなた: /office-hours
         カレンダーのブリーフィングアプリを作りたい
 
 Copilot: [痛みを聞く → 前提を挑戦 → 3つのアプローチを工数付きで提示]
+         → DESIGN.md を生成（後続スキルへの入力）
 
 あなた: /gstack-review
 Copilot: [diff分析 → 専門家サブエージェント並列dispatch → 自動修正 → レポート]
 ```
+
+スキルは単体で使えるが、連鎖させると真価を発揮する:
+
+```
+/office-hours     → DESIGN.md 生成
+/plan-ceo-review  → 戦略レビュー
+/plan-eng-review  → アーキテクチャ図・テスト計画
+/gstack-review    → コードレビュー・自動修正
+/qa               → QA・バグ修正ループ
+/ship             → PR作成・出荷
+```
+
+全部手動で呼ぶのが面倒なら `/autoplan` で計画フェーズを一括実行できる。
 
 ### 3. 更新
 
@@ -250,7 +272,6 @@ cd ~/.gstack-copilot-jp
 | ファイル | 内容 |
 |---------|------|
 | [INSTALL.md](INSTALL.md) | 3 方式のインストール手順・トラブルシューティング |
-| [docs/getting-started.md](docs/getting-started.md) | 初学者向けクイックスタート |
 | [docs/vscode-setup.md](docs/vscode-setup.md) | VS Code 固有の機能差分・hook 設定 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | システム構成・データフロー |
 | [DESIGN.md](DESIGN.md) | 設計判断の記録（なぜ現在の形なのか） |

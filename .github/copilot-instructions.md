@@ -133,9 +133,8 @@ gstack-copilot-jp/
 ├── upstream-tracking.md # Upstream tracking ledger
 ├── upstream-tracking.json # Tracking data (machine-readable)
 ├── docs/
-│   ├── getting-started.md
 │   ├── vscode-setup.md
-│   └── archive/         # Past design exploration docs
+│   └── archive/         # Past design exploration & implementation plans
 └── package.json         # Build scripts (vitest, browse)
 ```
 
