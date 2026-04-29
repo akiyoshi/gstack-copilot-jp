@@ -47,7 +47,7 @@ DESIGN.md が設計方針、このファイルがタスク管理。完了した�
   - `common/`: coding-style.md, git-workflow.md, testing.md, security.md
   - `typescript/`: coding-style.md, testing.md
   - `python/`: coding-style.md, testing.md
-
+- [ ] ETHOS.md upstream版に差し替え
 ### 上流追跡
 
 - [ ] 本家の次期バージョン（v1.12.1.0以降）への追随

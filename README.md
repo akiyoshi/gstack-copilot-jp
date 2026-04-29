@@ -11,44 +11,66 @@
 
 ## 前提条件
 
-- GitHub Copilot（CLI または VS Code Copilot Chat）
+- GitHub Copilot（VS Code Copilot Chat 拡張 0.45+ または Copilot CLI）
 - Git
 - Linux / macOS / WSL (Ubuntu)
-- Bun v1.0+（browse 機能を使う場合）
+- Bun v1.0+（browse 機能を使う場合のみ）
 
 ## クイックスタート
 
+gstack-copilot-jp は **VS Code 公式の Agent Plugin 仕様**に準拠しており、`.github/skills/` `.github/agents/` `plugin.json` を提供する。インストール方法は3つ。
+
 ### 1. インストール
 
-**Copilot CLI**
+#### 方式 A: VS Code Plugin From Source（最推奨・全リポで再利用）
+
+1 回入れるだけで **どのワークスペースを開いても全スキルが `/` メニューに出る**。
+
+1. VS Code でコマンドパレット (`Ctrl+Shift+P`) を開く
+2. `Chat: Install Plugin From Source` を実行
+3. URL に貼る: `https://github.com/akiyoshi/gstack-copilot-jp`
+4. インストール完了後、Copilot Chat で `/office-hours` を確認
+
+更新は `Extensions: Check for Extension Updates` または 24h ごとの自動チェック。
+
+> 詳しい使い方とトラブルシューティングは [INSTALL.md](INSTALL.md) と [docs/vscode-setup.md](docs/vscode-setup.md) を参照。
+
+#### 方式 B: ローカルクローン + `chat.pluginLocations`（カスタマイズ派向け）
+
+スキルを編集しながら使いたい場合に。
+
+```bash
+git clone https://github.com/akiyoshi/gstack-copilot-jp.git ~/.gstack-copilot-jp
+```
+
+各 VS Code ワークスペース、または **ユーザー設定 (`Ctrl+,` → `settings.json`)** に追加:
+
+```json
+{
+  "chat.pluginLocations": {
+    "~/.gstack-copilot-jp": true
+  }
+}
+```
+
+#### 方式 C: Copilot CLI（ターミナル派向け）
 
 ```bash
 git clone https://github.com/akiyoshi/gstack-copilot-jp.git
-cd gstack-copilot-jp && ./setup
+cd gstack-copilot-jp && ./setup --mode user-link
 ```
 
-**VS Code Copilot Chat**
+`--mode user-link` で `~/.copilot/skills/gstack-copilot-jp` にシンボリックリンクを張る。CLI と VS Code Chat の両方で使える。
 
-```bash
-# プロジェクトにクローン
-cd your-project
-git clone https://github.com/akiyoshi/gstack-copilot-jp.git .gstack-copilot-jp
-# .github/skills/ にシンボリックリンクを作成
-mkdir -p .github
-ln -s ../.gstack-copilot-jp/.github/skills .github/skills
-ln -s ../.gstack-copilot-jp/.github/agents .github/agents
-```
+#### Tips: 親リポからの自動発見（monorepo / multi-folder workspace）
 
-VS Code で Copilot Chat を開き、`/office-hours` と入力して動作確認。
+別リポを VS Code で開いたとき gstack のスキルを認識させたい場合:
 
-> 詳細な手順は [docs/vscode-setup.md](docs/vscode-setup.md) を参照。
-
-**実験的: プラグインインストール**
-
-> ⚠️ プラグインシステムの安定化後に正式対応予定。動作しない場合は上記の手動インストールを使用。
-
-```bash
-copilot plugin install akiyoshi/gstack-copilot-jp
+```jsonc
+// .vscode/settings.json または ユーザー settings.json
+{
+  "chat.useCustomizationsInParentRepositories": true
+}
 ```
 
 ### 2. 使い始める
@@ -69,9 +91,8 @@ Copilot: [diff分析 → 専門家サブエージェント並列dispatch → 自
 
 ### 3. 更新
 
-```bash
-cd gstack-copilot-jp && git pull
-```
+- 方式 A: VS Code の `Extensions: Check for Extension Updates` を実行（24h 自動更新）
+- 方式 B / C: `cd ~/.gstack-copilot-jp && git pull`
 
 ## スプリントプロセス
 
@@ -199,19 +220,19 @@ Copilot CLI ビルトインの `code-review` と `rubber-duck` エージェン�
 
 | 観点 | gstack | gstack-copilot-jp |
 |------|--------|------------------|
-| ターゲット | Claude Code | GitHub Copilot（CLI + VS Code Chat） |
+| ターゲット | Claude Code | GitHub Copilot（VS Code Copilot Chat + CLI） |
 | 言語 | 英語 | 日本語 |
-| インストール | `./setup` + シンボリックリンク | `git clone` / `./setup` / `copilot plugin install`（実験的） |
-| ブラウザ | Bun コンパイル済みバイナリ | Bun コンパイル済み（本家互換、CLI専用） |
+| インストール | `./setup` + シンボリックリンク | VS Code Plugin From Source / `chat.pluginLocations` / `./setup` |
+| ブラウザ | Bun コンパイル済みバイナリ | Bun コンパイル済み（CLI専用） |
 | ホスト | 10エージェント対応 | Copilot CLI + VS Code Chat |
 | 外部の目 | Codex CLI | `code-review` + `rubber-duck` + fallback |
 | テンプレート | .tmpl + gen-skill-docs | 直接 SKILL.md |
 
 ## アンインストール
 
-```bash
-cd gstack-copilot-jp && ./setup --uninstall
-```
+- 方式 A（Plugin From Source）: VS Code の Extensions ビュー → `Agent Plugins - Installed` → 右クリック `Uninstall`
+- 方式 B（`chat.pluginLocations`）: settings.json からエントリを削除し、`~/.gstack-copilot-jp` を `rm -rf`
+- 方式 C（CLI）: `cd gstack-copilot-jp && ./setup --uninstall`
 
 ## ライセンス
 

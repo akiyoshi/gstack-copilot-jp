@@ -48,7 +48,9 @@ describe('plugin.json integrity', () => {
     const plugin = JSON.parse(readFileSync(pluginPath, 'utf-8'));
     expect(plugin).toHaveProperty('name');
     expect(plugin).toHaveProperty('version');
-    expect(plugin).toHaveProperty('includes');
+    expect(plugin).toHaveProperty('skills');
+    expect(plugin).toHaveProperty('agents');
+    expect(plugin).toHaveProperty('hooks');
   });
 
   it('copilot-instructions.md exists', () => {
