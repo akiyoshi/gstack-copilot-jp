@@ -1,6 +1,6 @@
 # Archive
 
-過去の設計探索資料・移行レポート。**現状の設計を知りたい場合は、ルートの `ARCHITECTURE.md` と `DESIGN.md` を参照すること。**
+過去の設計探索資料・実装計画・移行レポート。**現状の設計を知りたい場合は、ルートの `ARCHITECTURE.md` と `DESIGN.md` を参照すること。**
 
 ここに置かれたファイルは:
 
@@ -14,5 +14,8 @@
 |---------|------|---------|
 | `2026-04-v1.0-design-exploration.md` | v1.0 リリースに向けた設計探索（575行）。19節の判断ログ、本家との差異マトリクス | 2026-04-25 (v1.0.0.0) |
 | `2026-04-upstream-fidelity-migration.md` | 本家 SKILL.md を vendoring する 3層分離モデルへの移行レポート | 2026-04-25 (v1.0.0-alpha.5以前) |
+| `2026-04-upstream-gap-plan.md` | 本家追従ギャップ監査と Phase A〜E 実装計画（v1.0.2 〜 v1.1 にかけて段階的に消化） | 2026-04-29 (v1.0.2.0 〜 v1.1.0.0) |
+| `2026-04-v1.1-implementation-plan.md` | `/landing-report` + Windows 公式サポート再開の実装計画 | 2026-04-29 (v1.1.0.0) |
+| `2026-04-v1.2-outside-voice-redesign.md` | Codex CLI 依存撤廃と Outside Voice 言語刷新の実装計画 | 2026-04-29 (v1.2.0.0) |
 
 新しい大きな設計探索が完了したら、ここにフラットに置く（`YYYY-MM-<topic>.md` 形式）。

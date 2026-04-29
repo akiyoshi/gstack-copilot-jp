@@ -296,6 +296,16 @@ VS Code Copilot Chat はスキル一覧をローカルにキャッシュする�
 
 v1.0.2.0 以前の壊れたフロントマターが残っている可能性。v1.0.3.0 でこれら 13 スキルのフロントマターが修正された。`git pull` で最新へ更新すれば解消する。
 
+### `/browse` で Chromium が起動しない
+
+Playwright のブラウザを取得していない可能性が高い:
+
+```bash
+cd ~/.gstack-copilot-jp/browse && bun install && bunx playwright install chromium
+```
+
+Windows では Bun の Playwright pipe transport bug ([bun#4253](https://github.com/oven-sh/bun/issues/4253)) で起動できないことがある。`browse/` の TypeScript ソースは Node.js + tsx へ自動フォールバックするため、Node.js v18+ が PATH にあることを確認する。
+
 ### Windows で `bin/upstream-diff.sh` が動かない
 
 Git Bash または WSL2 から実行すること。PowerShell から bash スクリプトを直接呼ぶことはサポートしていない（v1.1 で改善予定）。

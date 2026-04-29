@@ -26,7 +26,7 @@
 - 既知の制約: `gstack-review` (upstream `review/`) は upstream-diff の名前マッピング未対応で未同期 → Phase B-3 で個別取込予定
 - 新規スキル `landing-report`, `claude` (gstack-claude), `scrape`, `skillify` は `planned` ステータスのまま（Phase B/D で取込）
 
-**Phase A-1 修正**: `bin/upstream-diff.sh` の浅いクローン + サイレント `pull` 失敗を解消。完全履歴クローン化 + 失敗時 exit 1。lag コミット数の可視化を追加。詳細は [docs/upstream-gap-plan.md](docs/upstream-gap-plan.md) を参照。
+**Phase A-1 修正**: `bin/upstream-diff.sh` の浅いクローン + サイレント `pull` 失敗を解消。完全履歴クローン化 + 失敗時 exit 1。lag コミット数の可視化を追加。詳細は [docs/archive/2026-04-upstream-gap-plan.md](docs/archive/2026-04-upstream-gap-plan.md) を参照。
 
 ## 本家の方向性
 
