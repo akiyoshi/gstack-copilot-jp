@@ -8,7 +8,7 @@ const ROOT = join(import.meta.dirname, '..');
 const SKILLS_DIR = join(ROOT, '.github', 'skills');
 const TRACKING_PATH = join(ROOT, 'upstream-tracking.json');
 
-const VALID_STATUSES = ['unaudited', 'vendored', 'compat-patched', 'behavior-verified', 'same', 'adapted', 'precision-gap', 'diverged', 'excluded'];
+const VALID_STATUSES = ['unaudited', 'vendored', 'compat-patched', 'behavior-verified', 'same', 'adapted', 'precision-gap', 'diverged', 'excluded', 'planned'];
 
 describe('upstream-tracking.json structure', () => {
   it('exists and is valid JSON', () => {
@@ -45,11 +45,20 @@ describe('upstream-tracking.json ↔ skills/ consistency', () => {
     expect(missing, `Missing tracking entries: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('all non-excluded tracking entries have a corresponding skill directory', () => {
-    const orphaned = Object.keys(tracking.skills).filter(s => 
-      tracking.skills[s].status !== 'excluded' && !skillDirs.includes(s)
+  it('all non-excluded/planned tracking entries have a corresponding skill directory', () => {
+    const orphaned = Object.keys(tracking.skills).filter(s =>
+      tracking.skills[s].status !== 'excluded' &&
+      tracking.skills[s].status !== 'planned' &&
+      !skillDirs.includes(s)
     );
     expect(orphaned, `Orphaned tracking entries: ${orphaned.join(', ')}`).toEqual([]);
+  });
+
+  it('planned tracking entries do NOT yet have a skill directory', () => {
+    const plannedWithDir = Object.keys(tracking.skills).filter(s =>
+      tracking.skills[s].status === 'planned' && skillDirs.includes(s)
+    );
+    expect(plannedWithDir, `Planned but dir already exists: ${plannedWithDir.join(', ')}`).toEqual([]);
   });
 
   it('excluded tracking entries do NOT have a skill directory', () => {

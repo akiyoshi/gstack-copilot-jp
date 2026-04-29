@@ -129,6 +129,37 @@ describe('Phase 2: bin/ Utilities', () => {
   }
 })
 
+describe('Phase A: bin/ existence (no exec-bit check on Windows)', () => {
+  // Phase A で追加した bin。Windows では実行ビットが NTFS 上で再現できないため
+  // 存在のみ確認する。bash 構文チェックは phase4-completeness.test.js が行う。
+  const phaseABins = [
+    'gstack-platform-detect',
+    'gstack-update-check',
+  ]
+
+  for (const bin of phaseABins) {
+    it(`${bin} exists`, () => {
+      expect(fs.existsSync(path.join(BIN_DIR, bin)), `${bin} missing`).toBe(true)
+    })
+  }
+})
+
+describe('Phase A: SKILL.md コードフェンス balance', () => {
+  // adapt-upstream-skill.sh の awk アンカーが壊れると preamble を巻き込み、
+  // ``` の数が奇数になる。Phase A-3 で発見・修正したバグへの再発防止。
+  const skills = fs.readdirSync(SKILLS_DIR).filter(d =>
+    fs.statSync(path.join(SKILLS_DIR, d)).isDirectory() && d !== 'bin'
+  )
+
+  for (const skill of skills) {
+    it(`${skill}/SKILL.md has balanced \`\`\` fences`, () => {
+      const content = fs.readFileSync(path.join(SKILLS_DIR, skill, 'SKILL.md'), 'utf-8')
+      const fences = (content.match(/^```/gm) || []).length
+      expect(fences % 2, `${skill}: ${fences} fences (奇数 = preamble 巻き込みの疑い)`).toBe(0)
+    })
+  }
+})
+
 describe('Phase 2: Hook System', () => {
   it('lifecycle.json includes PostToolUse hook', () => {
     const hooks = JSON.parse(
