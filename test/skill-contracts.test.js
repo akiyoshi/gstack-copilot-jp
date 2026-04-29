@@ -3,7 +3,7 @@
 // P0-P2 スキルの方法論的精度を検証する。
 // 契約テストが FAIL = そのスキルに精度ギャップがある。
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -232,7 +232,7 @@ describe('/autoplan semantic contract', () => {
 // `/gstack-review` がスキルとして認識されない問題を契機に、ホスト側で skill が
 // 黙ってスキップされるパターンを契約化する。フロントマター契約を満たさないスキルは
 // fail-fast でテスト落ちさせ、リグレッションを防ぐ。
-import { readdirSync } from 'fs';
+
 
 describe('全スキル frontmatter 契約 (v1.0.3+)', () => {
   const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
@@ -273,10 +273,12 @@ describe('全スキル frontmatter 契約 (v1.0.3+)', () => {
 
       it('description が定義されており 1024 文字以内 (Codex/VS Code 上限)', () => {
         // description は 1 行 quoted または block scalar。両形式に対応。
+        // bare fallback は YAML block scalar indicator (`|` / `>`) を除外しないと
+        // false-pass するため、negative lookahead でガードする。
         const quoted = fm.match(/^description:\s*"((?:[^"\\]|\\.)*)"\s*$/m);
-        const bare = fm.match(/^description:\s*(.+)$/m);
+        const bare = fm.match(/^description:\s*(?![|>])(.+)$/m);
         const desc = quoted ? quoted[1].replace(/\\"/g, '"') : (bare ? bare[1].trim() : '');
-        expect(desc, `${skill}: description フィールドが空`).toBeTruthy();
+        expect(desc, `${skill}: description フィールドが空または block scalar (未対応)`).toBeTruthy();
         expect(desc.length, `${skill}: description が ${desc.length} 文字 (上限 ${DESCRIPTION_MAX})`)
           .toBeLessThanOrEqual(DESCRIPTION_MAX);
       });

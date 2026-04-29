@@ -5,6 +5,7 @@
 #   bin/upstream-diff.sh --update              # upstream を pull してから差分検出
 #   bin/upstream-diff.sh --sync                # 差分検出 + 変更スキルを自動変換
 #   bin/upstream-diff.sh --sync --interactive  # diff プレビューと確認プロンプト付き
+# 引数の順序は上記のとおり。`--interactive` は `--sync` と併用した時のみ有効。
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -12,14 +13,28 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 UPSTREAM_DIR="$HOME/.gstack/repos/gstack"
 LAST_CHECK_FILE="$HOME/.gstack/upstream-last-check"
 TRACKING_JSON="$ROOT_DIR/upstream-tracking.json"
-MODE="${1:-check}"
+
+# 引数パーサー（順序に依存しない）
+MODE="check"
 INTERACTIVE=0
-if [ "${2:-}" = "--interactive" ]; then
-  INTERACTIVE=1
-fi
+for arg in "$@"; do
+  case "$arg" in
+    --update|--sync) MODE="$arg" ;;
+    --interactive)   INTERACTIVE=1 ;;
+    -h|--help)
+      sed -n '2,9p' "$0" | sed 's/^# \?//'
+      exit 0
+      ;;
+    *)
+      echo "ERROR: 不明な引数: $arg" >&2
+      echo "  使い方: $0 [--update|--sync] [--interactive]" >&2
+      exit 1
+      ;;
+  esac
+done
 
 if [ ! -d "$UPSTREAM_DIR" ]; then
-  echo "Upstream not found. Cloning (full history for reliable diffs)..."
+  echo "upstream 未クローン — クローンします（完全履歴）..."
   mkdir -p "$(dirname "$UPSTREAM_DIR")"
   git clone --single-branch \
     https://github.com/garrytan/gstack.git "$UPSTREAM_DIR"
@@ -28,21 +43,21 @@ fi
 # 浅いクローン (--depth 50) で取得済みの古い repo を完全履歴へ昇格
 # 浅いクローン + 多コミット間隔の pull はサイレント失敗するため必須。
 if [ -f "$UPSTREAM_DIR/.git/shallow" ]; then
-  echo "Existing upstream is shallow — promoting to full history..."
+  echo "既存 upstream は浅いクローン — 完全履歴に昇格中..."
   if ! ( cd "$UPSTREAM_DIR" && git fetch --unshallow ); then
-    echo "ERROR: git fetch --unshallow failed for $UPSTREAM_DIR" >&2
-    echo "Hint: rm -rf $UPSTREAM_DIR && rerun this script" >&2
+    echo "ERROR: $UPSTREAM_DIR で git fetch --unshallow が失敗" >&2
+    echo "ヒント: rm -rf $UPSTREAM_DIR してもう一度実行してください" >&2
     exit 1
   fi
 fi
 
-# 更新（pull の失敗をサイレントにしない）
+# upstream の更新（pull の失敗をサイレントにしない）
 # --sync は既存のローカル upstream 状態を使う（pull は --update で明示的に実施）
 if [ "$MODE" = "--update" ] || [ ! -f "$LAST_CHECK_FILE" ]; then
-  echo "Pulling upstream..."
+  echo "upstream を pull 中..."
   if ! ( cd "$UPSTREAM_DIR" && git pull --ff-only ); then
-    echo "ERROR: git pull --ff-only failed in $UPSTREAM_DIR" >&2
-    echo "Hint: ローカル変更がないか、ネットワーク状態を確認。" >&2
+    echo "ERROR: $UPSTREAM_DIR で git pull --ff-only が失敗" >&2
+    echo "ヒント: ローカル変更がないか、ネットワーク状態を確認してください。" >&2
     echo "      手動で復旧する場合: cd $UPSTREAM_DIR && git fetch && git reset --hard origin/main" >&2
     exit 1
   fi
@@ -60,7 +75,13 @@ UPSTREAM_COMMIT=$(cd "$UPSTREAM_DIR" && git rev-parse HEAD 2>/dev/null || echo "
 
 PINNED_COMMIT=""
 if [ -f "$TRACKING_JSON" ]; then
-  PINNED_COMMIT=$(python3 -c "import json; print(json.load(open('$TRACKING_JSON')).get('upstream_commit',''))" 2>/dev/null || true)
+  # セキュア: bash 変数を python コードに文字列補間せず、環境変数経由で渡す。
+  # パスにシングルクォート含むレアケースで python 構文エラーや injection を防ぐ。
+  PINNED_COMMIT=$(GSTACK_TRACKING_JSON="$TRACKING_JSON" python3 -c '
+import os, json
+with open(os.environ["GSTACK_TRACKING_JSON"]) as f:
+    print(json.load(f).get("upstream_commit", ""))
+' 2>/dev/null || true)
 fi
 
 echo "━━━ upstream diff ━━━"
@@ -117,13 +138,21 @@ fi
 # --sync モード: 変更スキルを自動変換
 if [ "$MODE" = "--sync" ] && [ -n "$CHANGED_SKILLS" ]; then
   # dirty tree ガード — 未コミット変更がある状態で一括上書きするとロールバック不能
+  # modified files (git diff) と untracked files (git status --porcelain) の両方を検出
+  DIRTY=0
   if ! git -C "$ROOT_DIR" diff --quiet HEAD -- .github/skills/ 2>/dev/null; then
+    DIRTY=1
+  fi
+  if [ -n "$(git -C "$ROOT_DIR" ls-files --others --exclude-standard -- .github/skills/ 2>/dev/null)" ]; then
+    DIRTY=1
+  fi
+  if [ "$DIRTY" = "1" ]; then
     echo "" >&2
-    echo "ERROR: .github/skills/ に未コミット変更があります。" >&2
+    echo "ERROR: .github/skills/ に未コミット変更または untracked ファイルがあります。" >&2
     echo "  --sync は破壊的操作です。先に commit するか stash してください:" >&2
-    echo "    git stash push -m pre-sync -- .github/skills/" >&2
+    echo "    git stash push -u -m pre-sync -- .github/skills/   # untracked も含めて stash" >&2
     echo "  または変更を破棄:" >&2
-    echo "    git checkout -- .github/skills/" >&2
+    echo "    git checkout -- .github/skills/ && git clean -fd .github/skills/" >&2
     exit 1
   fi
 
@@ -131,7 +160,23 @@ if [ "$MODE" = "--sync" ] && [ -n "$CHANGED_SKILLS" ]; then
   if [ "$INTERACTIVE" = "1" ]; then
     echo ""
     echo "━━━ 同期対象（プレビュー）━━━"
-    echo "$CHANGED_SKILLS" | sed 's|^|  - |'
+    if [ -n "$PINNED_COMMIT" ]; then
+      # 各スキルの SKILL.md 差分プレビュー（先頭 40 行）
+      # supply chain 緩和: スキル名だけでなく実際の変更内容を確認できるようにする
+      while read -r preview_skill; do
+        [ -z "$preview_skill" ] && continue
+        echo ""
+        echo "── $preview_skill ──"
+        ( cd "$UPSTREAM_DIR" && git diff "$PINNED_COMMIT..HEAD" -- "$preview_skill/SKILL.md" 2>/dev/null \
+          || git diff "$PINNED_COMMIT..HEAD" -- "skills/$preview_skill/SKILL.md" 2>/dev/null ) \
+          | head -40
+      done < <(echo "$CHANGED_SKILLS")
+      echo ""
+      echo "（各スキル先頭 40 行のみ表示。フル diff は: git -C $UPSTREAM_DIR diff $PINNED_COMMIT..HEAD -- '<skill>/SKILL.md'）"
+    else
+      echo "$CHANGED_SKILLS" | sed 's|^|  - |'
+      echo "（pinned commit なし — スキル名のみ表示）"
+    fi
     echo ""
     if [ -t 0 ] || [ -e /dev/tty ]; then
       printf "続行しますか？ [y/N] "
@@ -163,7 +208,14 @@ if [ "$MODE" = "--sync" ] && [ -n "$CHANGED_SKILLS" ]; then
   while read -r skill; do
     [ -z "$skill" ] && continue
     # diverged / excluded / planned スキルはスキップ
-    SKILL_STATUS=$(python3 -c "import json; print(json.load(open('$TRACKING_JSON'))['skills'].get('$skill',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
+    # セキュリティ: bash 変数を python コードに文字列補間せず、環境変数経由で渡す。
+    # $skill は upstream `git diff --name-only` 由来（外部入力）のため code injection 防止が必要。
+    SKILL_STATUS=$(GSTACK_TRACKING_JSON="$TRACKING_JSON" GSTACK_SKILL="$skill" python3 -c '
+import os, json
+with open(os.environ["GSTACK_TRACKING_JSON"]) as f:
+    data = json.load(f)
+print(data["skills"].get(os.environ["GSTACK_SKILL"], {}).get("status", "unknown"))
+' 2>/dev/null || echo "unknown")
     case "$SKILL_STATUS" in
       diverged|excluded|planned)
         echo "⏭️  $skill (status: $SKILL_STATUS — スキップ)"
@@ -186,17 +238,23 @@ if [ "$MODE" = "--sync" ] && [ -n "$CHANGED_SKILLS" ]; then
   done < <(echo "$CHANGED_SKILLS")
 
   # upstream-tracking.json の commit SHA を更新
-  python3 -c "
-import json
-with open('$TRACKING_JSON') as f:
+  # セキュリティ: $UPSTREAM_VERSION は upstream の VERSION ファイル由来（外部入力）。
+  # python コードへ文字列補間すると code injection リスクがあるため、環境変数経由で渡す。
+  GSTACK_TRACKING_JSON="$TRACKING_JSON" \
+  GSTACK_UPSTREAM_COMMIT="$UPSTREAM_COMMIT" \
+  GSTACK_UPSTREAM_VERSION="$UPSTREAM_VERSION" \
+  python3 -c '
+import os, json
+p = os.environ["GSTACK_TRACKING_JSON"]
+with open(p) as f:
     data = json.load(f)
-data['upstream_commit'] = '$UPSTREAM_COMMIT'
-data['upstream_version'] = '${UPSTREAM_VERSION}'
-with open('$TRACKING_JSON', 'w') as f:
+data["upstream_commit"] = os.environ["GSTACK_UPSTREAM_COMMIT"]
+data["upstream_version"] = os.environ["GSTACK_UPSTREAM_VERSION"]
+with open(p, "w") as f:
     json.dump(data, f, indent=2, ensure_ascii=False)
-    f.write('\n')
-print('upstream-tracking.json updated: commit=$UPSTREAM_COMMIT')
-"
+    f.write("\n")
+print("upstream-tracking.json updated: commit=" + os.environ["GSTACK_UPSTREAM_COMMIT"])
+'
 
   echo ""
   echo "━━━ 同期完了 ━━━"

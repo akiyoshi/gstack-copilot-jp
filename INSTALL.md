@@ -192,8 +192,10 @@ rm skills agents          # WSL/Linux/macOS
 
 ### v1.0.2.0 → v1.0.3.0
 
-**含まれる変更**: バージョン乖離修正（plugin.json）、`bin/upstream-diff.sh` 堅牢化、`/setup-deploy` `/unfreeze` ほか 13 スキルのフロントマター修正、契約テスト追加。  
-**互換性**: 後方互換のパッチリリース。スキル名・コマンド・フロントマター契約に破壊的変更なし。
+**含まれる変更**: バージョン乖離修正（plugin.json）、`bin/upstream-diff.sh` 堅牢化、`/setup-deploy` `/unfreeze` ほか 13 スキルのフロントマター修正、契約テスト追加、Python code injection の修正（`--sync` 内）。
+**互換性**: スキル名・コマンド・フロントマター契約に破壊的変更なし。設定ファイルや CLI 引数の使い方も変わらない。
+
+> **注記 (plugin.json バージョン跳躍)**: `plugin.json.version` は v1.0.0 から v1.0.3.0 に直接ジャンプする（v1.0.1.0 / v1.0.2.0 では更新漏れだった）。VS Code の Plugin From Source キャッシュは内部的に最新版へ追従するため通常は問題なし。`plugin.json.version` を直接パースしている独自ツールがあれば確認推奨。
 
 **方式 A（Plugin From Source）**:
 
@@ -239,6 +241,8 @@ git checkout HEAD -- .github/skills/
 cd ~/.gstack-copilot-jp
 git checkout v1.0.2.0
 ```
+
+> **方式 A の制限**: Plugin From Source は最新版への自動追従が前提で、特定バージョン固定の機構はない。バージョン固定が必要な運用（社内本番など）では、最初から方式 B または方式 C を選ぶこと。
 
 ---
 
