@@ -28,7 +28,7 @@ All notable changes to this project will be documented in this file.
 
 ### Notes
 
-- 大規模差分（+5813 / -15840 行）の大半は upstream v1.15 の preamble 削減を 27 SKILL.md にまとめて反映した結果。新規ロジックは bin/ の 2 スクリプトと adapter の awk anchor 修正のみ。
+- 総差分は +1701 / -15842 行。削除側の大半は upstream v1.15 の preamble 削減を 27 SKILL.md にまとめて反映した結果（SKILL.md 部分: +5813 / -3805）。新規ロジックは bin/ の 2 スクリプトと adapter の awk anchor 修正のみ。
 
 ## [1.0.1.0] - 2026-04-29
 

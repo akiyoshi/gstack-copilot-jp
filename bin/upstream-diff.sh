@@ -118,13 +118,16 @@ if [ "$MODE" = "--sync" ] && [ -n "$CHANGED_SKILLS" ]; then
   SKIP=0
 
   echo "$CHANGED_SKILLS" | while read -r skill; do
-    # diverged スキルはスキップ
+    # diverged / excluded / planned スキルはスキップ
+    # (planned: 取込予定だが未実装 — 詳細は upstream-tracking.json)
     SKILL_STATUS=$(python3 -c "import json; print(json.load(open('$TRACKING_JSON'))['skills'].get('$skill',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
-    if [ "$SKILL_STATUS" = "diverged" ] || [ "$SKILL_STATUS" = "excluded" ]; then
-      echo "⏭️  $skill (status: $SKILL_STATUS — スキップ)"
-      SKIP=$((SKIP + 1))
-      continue
-    fi
+    case "$SKILL_STATUS" in
+      diverged|excluded|planned)
+        echo "⏭️  $skill (status: $SKILL_STATUS — スキップ)"
+        SKIP=$((SKIP + 1))
+        continue
+        ;;
+    esac
 
     if [ -d ".github/skills/$skill" ]; then
       echo -n "🔄 $skill ... "
