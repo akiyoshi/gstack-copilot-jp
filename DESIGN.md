@@ -53,11 +53,11 @@ npm test                       # テスト
 
 ### 2. マルチホスト（Copilot CLI + VS Code Chat）
 
-**判断:** `.github/skills/`, `.github/agents/`, `.github/hooks/` は両ホストで共有し、ホスト固有の挙動は `bin/gstack-detect-host.sh` で分岐する。スキル互換性は Tier A（完全互換）/ B（制限付き）/ C（CLI 専用）に分類。
+**判断:** `.github/skills/`, `.github/hooks/` は両ホストで共有し、ホスト固有の挙動は `bin/gstack-detect-host.sh` で分岐する。スキル互換性は Tier A（完全互換）/ B（制限付き）/ C（CLI 専用）に分類。
 
 **Tier C 例:** `/browse`, `/canary`, `/benchmark`（ヘッドレス Chromium 依存）
 
-**理由:** VS Code Copilot Chat (Agent Mode) は Copilot CLI と同じ `.github/skills/`, `.github/agents/`, `.github/hooks/` を読む。配布パッケージ 1 つで両ホストをカバーできる。
+**理由:** VS Code Copilot Chat (Agent Mode) は Copilot CLI と同じ `.github/skills/`, `.github/hooks/` を読む。配布パッケージ 1 つで両ホストをカバーできる。
 
 ### 3. hooks: PascalCase 単一ファイル形式
 

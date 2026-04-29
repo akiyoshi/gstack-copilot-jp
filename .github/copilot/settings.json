@@ -3,9 +3,6 @@
   "skills": {
     "enabled": true
   },
-  "agents": {
-    "enabled": true
-  },
   "hooks": {
     "enabled": true
   }

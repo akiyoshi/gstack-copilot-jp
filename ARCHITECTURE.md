@@ -8,8 +8,7 @@ gstack-copilot-jp のアーキテクチャと設計判断の記録。
 gstack-copilot-jp/
 ├── .github/
 │   ├── copilot-instructions.md   # スキルルーティング + ボイス + ethos
-│   ├── skills/ (38)              # SKILL.md — スキル定義
-│   ├── agents/ (5)               # *.agent.md — サブエージェント
+│   ├── skills/ (39)              # SKILL.md — スキル定義
 │   ├── hooks/lifecycle.json      # SessionStart/Stop, PreToolUse, PostToolUse
 │   └── copilot/settings.json     # Copilot CLI リポジトリ設定
 ├── browse/                       # ヘッドレスブラウザ (Bun + Playwright)
@@ -45,12 +44,8 @@ copilot-instructions.md (ルーティング)
   ▼
 SKILL.md (スキル実行)
   │
-  ├──→ task tool (サブエージェント)
-  │      ├── code-review (ビルトイン)
-  │      ├── rubber-duck (ビルトイン)
-  │      ├── architect.agent.md
-  │      ├── security.agent.md
-  │      └── testing.agent.md
+  ├──→ task tool (サブエージェント / runSubagent)
+  │      └── インラインプロンプトで役割を指定して起動
   │
   ├──→ bin/gstack-* (JSONL書き込み)
   │      └──→ ~/.gstack/projects/{slug}/*.jsonl
@@ -64,7 +59,7 @@ SKILL.md (スキル実行)
 ### 1. マルチホスト（Copilot CLI + VS Code Chat）
 
 Copilot CLI と VS Code Copilot Chat (Agent Mode) の両方をサポートする。
-`.github/skills/`, `.github/agents/`, `.github/hooks/` は両ホストで共有。
+`.github/skills/`, `.github/hooks/` は両ホストで共有。
 スキルは Tier A（完全互換）/ B（制限付き互換）/ C（CLI専用）に分類。
 Claude Code、Cursor、Gemini CLI は対象外。
 

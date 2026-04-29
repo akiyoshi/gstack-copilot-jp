@@ -49,7 +49,6 @@ describe('plugin.json integrity', () => {
     expect(plugin).toHaveProperty('name');
     expect(plugin).toHaveProperty('version');
     expect(plugin).toHaveProperty('skills');
-    expect(plugin).toHaveProperty('agents');
     expect(plugin).toHaveProperty('hooks');
   });
 

@@ -161,8 +161,8 @@ ln -s ../.gstack-copilot-jp/.github/skills .github/skills
 ```bash
 # 1. 旧 Junction/symlink を削除
 cd /path/to/your-repo/.github
-rm skills agents          # WSL/Linux/macOS
-# または rmdir skills agents (Windows: junction はディレクトリ扱い)
+rm skills          # WSL/Linux/macOS
+# または rmdir skills (Windows: junction はディレクトリ扱い)
 
 # 2. プロジェクトの copilot-instructions.md から `inherits: gstack-copilot-jp` 行を削除
 #    （単独運用に戻す or プロジェクト固有ルールのみ保持）

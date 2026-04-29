@@ -17,7 +17,6 @@ INSTALL.md の方式 A / B / C で使える機能を VS Code 視点で比較:
 | 機能 | 方式 A (Plugin From Source) | 方式 B (pluginLocations) | 方式 C (CLI user-link) |
 |------|---------------------------|------------------------|----------------------|
 | `/skill-name` 発火 | ✅ | ✅ | ✅ |
-| エージェント (`*.agent.md`) | ✅ | ✅ | ✅ |
 | MCP サーバー | ✅ | ✅ | — |
 | Hooks（`PreToolUse`/`Stop` 等） | △ Preview / 相対パス問題あり | △ 同上 | ✅（cwd が repo のため安定） |
 | browse / `$B`（Chromium） | ❌ CLI 専用 | ❌ CLI 専用 | ✅ |

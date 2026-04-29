@@ -19,7 +19,7 @@
 
 ## クイックスタート
 
-gstack-copilot-jp は **VS Code 公式の Agent Plugin 仕様**に準拠しており、`.github/skills/` `.github/agents/` `plugin.json` を提供する。
+gstack-copilot-jp は **VS Code 公式の Agent Plugin 仕様**に準拠しており、`.github/skills/` `plugin.json` を提供する。
 
 ### 1. インストール（最速）
 

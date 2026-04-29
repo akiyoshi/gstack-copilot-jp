@@ -261,10 +261,14 @@ Override: every ask_user → auto-decide using the 6 principles.
   `runSubagent` with `model: $GSTACK_OUTSIDE_MODEL`). Both must complete
   before building the consensus table.
 
+  Both calls use `runSubagent` with an inline `prompt` that defines the role
+  (CEO / designer / engineer / DX) for that phase. There is no named persona
+  agent file — the role is encoded in the prompt itself.
+
   **Outside Voice (CEO) — via task tool with model override**:
 
-  Invoke `runSubagent({ agentName: "architect", model: "$GSTACK_OUTSIDE_MODEL",
-  prompt: "..." })` (or the equivalent task tool spawn). The prompt:
+  Invoke `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", prompt: "..." })`
+  (or the equivalent task tool spawn). The prompt:
 
   > You are a CEO/founder advisor reviewing a development plan.
   > Challenge the strategic foundations: Are the premises valid or assumed? Is this the
@@ -385,8 +389,7 @@ Override: every ask_user → auto-decide using the 6 principles.
 
   **Outside Voice (design) — via task tool with model override**:
 
-  Invoke `runSubagent({ agentName: "design-critic", model: "$GSTACK_OUTSIDE_MODEL",
-  prompt: "..." })`. The prompt:
+  Invoke `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", prompt: "..." })`. The prompt:
 
   > Read the plan file at `<plan_path>`. Evaluate this plan's UI/UX design decisions.
   >
@@ -469,8 +472,7 @@ Override: every ask_user → auto-decide using the 6 principles.
 
   **Outside Voice (eng) — via task tool with model override**:
 
-  Invoke `runSubagent({ agentName: "architect", model: "$GSTACK_OUTSIDE_MODEL",
-  prompt: "..." })`. The prompt:
+  Invoke `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", prompt: "..." })`. The prompt:
 
   > Review this plan for architectural issues, missing edge cases, and hidden
   > complexity. Be adversarial.
@@ -594,8 +596,7 @@ Log: "Phase 3.5 skipped — no developer-facing scope detected."
 
   **Outside Voice (DX) — via task tool with model override**:
 
-  Invoke `runSubagent({ agentName: "dx-tester", model: "$GSTACK_OUTSIDE_MODEL",
-  prompt: "..." })`. The prompt:
+  Invoke `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", prompt: "..." })`. The prompt:
 
   > Read the plan file at `<plan_path>`. Evaluate this plan's developer experience.
   >
