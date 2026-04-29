@@ -193,15 +193,14 @@ describe('copilot-instructions.md 品質ゲート機能', () => {
 
 describe('ドキュメント数値整合性', () => {
 
-  // v1.1.1: ディレクトリカウントを single source of truth に、
-  // CHANGELOG の prose regex を「記載されていれば一致」に緩和。
-  // （ユーザー preference: CHANGELOG は作らない/作っても任意 format）
+  // CHANGELOG はスキル本来の運用上必須。スキル数記載の prose regex は
+  // 「記載されている場合は一致」を要求（ディレクトリカウントを single source of truth に）。
   it('CHANGELOG.md にスキル数が記載されている場合はディレクトリ数と一致する', () => {
     const skillsDir = join(ROOT, '.github', 'skills');
     const skillCount = readdirSync(skillsDir, { withFileTypes: true })
       .filter(d => d.isDirectory() && d.name !== 'bin').length;
     const changelogPath = join(ROOT, 'CHANGELOG.md');
-    if (!existsSync(changelogPath)) return; // CHANGELOG 不要 preference
+    expect(existsSync(changelogPath), 'CHANGELOG.md is required').toBe(true);
     const changelogContent = readFileSync(changelogPath, 'utf-8');
     const match = changelogContent.match(/\*{0,2}(\d+)\s*スキル\*{0,2}/);
     if (match) {
