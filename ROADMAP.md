@@ -32,10 +32,11 @@ v1.1 の前提として、認識問題と追従パイプを追加修正したパ
 - [x] `plugin.json` の version を VERSION ファイルと一致させる（乗り越しで 1.0.0 のままだった）
 - [x] 3 ファイル（VERSION / package.json / plugin.json）バージョン一致テストを `quality-gate.test.js` に追加
 - [x] `bin/upstream-diff.sh` の堅牢化:
-  - dirty tree ガード追加（`--sync` 実行前に uncommitted changes を検出して fail-fast）
+  - dirty tree ガード追加（`--sync` 実行前に modified + untracked changes を検出して fail-fast）
   - サブシェルでカウンタが親シェルに伝播しないバグを修正（`while read` のパイプ → `< <(...)` に変更）
-  - `--sync` 実行前に自動プレシャップショット commit（ロールバック可能性の確保）
-  - `--sync --interactive` モード追加（diff プレビューと確認プロンプト）
+  - **ロールバック可能性の確保**: dirty-tree guard により実行前 HEAD が常にクリーンなスナップショット状態であることが保証される。`git checkout HEAD -- .github/skills/` で確実にロールバック可能（自動 pre-sync commit は冗長のため不採用）
+  - `--sync --interactive` モード追加（diff プレビューと確認プロンプト、各スキルの先頭 40 行表示で supply chain 緩和）
+- [x] **Python code injection 修正** (`/gstack-review` 指摘 F1-F3): `bin/upstream-diff.sh` の 3 箇所の `python3 -c` ブロックで bash 変数を文字列補間する code injection 脆弱性を環境変数渡しパターンに統一
 - [x] `bin/adapt-upstream-skill.sh` の設計見直し：`upstream-tracking.json` の `upstream` フィールドをローカル名 ≠ upstream 名マッピングの単一情報源として使用（第 2 引数追加は不採用、既存 `--dry-run`/`--validate` インターフェースを保護）
 - [x] `test/skill-contracts.test.js` 拡張:
   - `name` フィールドがディレクトリ名と一致（認識不能のサイレントスキップを防ぐ）
