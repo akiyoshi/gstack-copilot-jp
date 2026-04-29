@@ -1,6 +1,6 @@
 {
   "name": "gstack-copilot-jp",
-  "version": "1.2.2.0",
+  "version": "1.2.3.0",
   "description": "日本語のGitHub Copilotユーザーのための、AIソフトウェアファクトリー",
   "author": {
     "name": "akiyoshi"
@@ -15,6 +15,5 @@
     "skills"
   ],
   "skills": ".github/skills/",
-  "agents": ".github/agents/",
   "hooks": ".github/hooks/lifecycle.json"
 }

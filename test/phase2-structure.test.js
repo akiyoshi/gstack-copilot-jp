@@ -6,7 +6,6 @@ import path from 'path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SKILLS_DIR = path.join(ROOT, '.github', 'skills');
-const AGENTS_DIR = path.join(ROOT, '.github', 'agents');
 const BIN_DIR = path.join(ROOT, 'bin');
 
 describe('Phase 2: Asset Cleanup', () => {
@@ -29,12 +28,9 @@ describe('Phase 2: Asset Cleanup', () => {
     expect(fs.existsSync(path.join(SKILLS_DIR, 'gstack-upgrade', 'SKILL.md'))).toBe(true)
   })
 
-  const deletedAgents = ['reviewer.agent.md', 'adversarial.agent.md']
-  for (const agent of deletedAgents) {
-    it(`deprecated agent "${agent}" does not exist`, () => {
-      expect(fs.existsSync(path.join(AGENTS_DIR, agent))).toBe(false)
-    })
-  }
+  it('.github/agents/ directory does not exist (subagents removed in v1.2.3)', () => {
+    expect(fs.existsSync(path.join(ROOT, '.github', 'agents'))).toBe(false)
+  })
 
   const deletedVscodeDirs = ['instructions', 'rules', 'prompts']
   for (const dir of deletedVscodeDirs) {
