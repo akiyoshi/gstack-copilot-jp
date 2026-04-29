@@ -43,19 +43,35 @@ fi
 # 本家の生成済み SKILL.md を検索（.tmpl ではなく生成済みを優先）
 # upstream のスキル名を upstream-tracking.json から解決
 UPSTREAM_SKILL_NAME="$SKILL_NAME"
+SKILL_STATUS=""
 if [ -f "$TRACKING_JSON" ]; then
-  UPSTREAM_PATH=$(python3 -c "
-import json
-with open('$TRACKING_JSON') as f:
+  UPSTREAM_PATH=$(GSTACK_TRACKING_JSON="$TRACKING_JSON" GSTACK_SKILL="$SKILL_NAME" python3 -c '
+import os, json
+with open(os.environ["GSTACK_TRACKING_JSON"]) as f:
     data = json.load(f)
-entry = data.get('skills', {}).get('$SKILL_NAME', {})
-upstream = entry.get('upstream', '')
+entry = data.get("skills", {}).get(os.environ["GSTACK_SKILL"], {})
+upstream = entry.get("upstream", "")
 if upstream:
-    print(upstream.replace('/SKILL.md', ''))
-" 2>/dev/null || true)
+    print(upstream.replace("/SKILL.md", ""))
+' 2>/dev/null || true)
   if [ -n "$UPSTREAM_PATH" ]; then
     UPSTREAM_SKILL_NAME="$UPSTREAM_PATH"
   fi
+  SKILL_STATUS=$(GSTACK_TRACKING_JSON="$TRACKING_JSON" GSTACK_SKILL="$SKILL_NAME" python3 -c '
+import os, json
+with open(os.environ["GSTACK_TRACKING_JSON"]) as f:
+    data = json.load(f)
+print(data.get("skills", {}).get(os.environ["GSTACK_SKILL"], {}).get("status", ""))
+' 2>/dev/null || true)
+fi
+
+# v1.1.1: status='adapted' は手動再構築済みのため誤って上書きしないようガード。
+# /landing-report のように adapter regression を回避して手書きされた SKILL.md を
+# 次の sync で破壊するのを防ぐ。--force で明示的にバイパス可能。
+if [ "$SKILL_STATUS" = "adapted" ] && [ "$MODE" != "--force" ]; then
+  echo "⏭️  $SKILL_NAME (status=adapted — 手動調整済み、上書きスキップ)" >&2
+  echo "   強制実行する場合: bin/adapt-upstream-skill.sh $SKILL_NAME --force" >&2
+  exit 0
 fi
 
 UPSTREAM_FILE=""

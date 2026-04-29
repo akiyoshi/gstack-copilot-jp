@@ -190,6 +190,15 @@ rm skills agents          # WSL/Linux/macOS
 
 ## アップグレード
 
+### v1.1.0.0 → v1.1.1.0
+
+**含まれる変更**: post-merge `/gstack-review` 指摘の hotfix。
+- **Security**: `bin/gstack-open-url` の PowerShell injection 修正（env-var パターン、scheme allowlist 追加）。`bin/adapt-upstream-skill.sh` の Python injection 修正と `status='adapted'` ガード
+- **Truth in docs**: `/landing-report` SKILL.md と README から「Bun fallback」虚偽記述削除。`/landing-report` Step 1 に gh/bun 不在チェック実装
+- **Test design**: スキル数検証をディレクトリカウント single source of truth に統一
+
+**互換性**: 機能変更なし、バグ修正のみ。**`/landing-report` を使うには bun が PATH に必要**（前バージョンの「Node.js fallback」記述に依拠していた場合は注意）。
+
 ### v1.0.3.0 → v1.1.0.0
 
 **含まれる変更**:

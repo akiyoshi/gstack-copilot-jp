@@ -1,6 +1,6 @@
 # ROADMAP — 未実装項目と将来計画
 
-**現在のリリース:** v1.1.0.0（2026-04-29）
+**現在のリリース:** v1.1.1.0（2026-04-29）
 **追跡 upstream:** garrytan/gstack v1.20.0.0
 **完了済みリリース履歴:** [CHANGELOG.md](CHANGELOG.md)
 
@@ -90,6 +90,32 @@ upstream 追従の前提となるツールチェーンを修理。これを先�
 - [x] Severity 階段: `none` (lag=0) / `info` (1-9) / `warn` (10+)
 - [x] `--json` 出力対応
 - [x] `bin/gstack-session-start.sh` から呼び出すように更新
+
+---
+
+## v1.1.1 — /gstack-review 後追い hotfix — **完了**
+
+v1.1.0.0 (PR #16) を post-merge `/gstack-review` で再評価して見つかった 11 findings (HIGH 2, MEDIUM 4, LOW 3, INFO 2) のうち修正可能な 8 件を v1.1.1 patch で出荷。
+
+**Security**:
+- [x] **F1 [HIGH]**: `bin/gstack-open-url` の PowerShell command injection 修正。`'$URL'` を環境変数渡し (`GSTACK_URL` env var) に変更し、シングルクォート breakout を遮断
+- [x] **F2 [MEDIUM]**: `bin/gstack-open-url` に scheme allowlist 追加 (`http://` / `https://` のみ許可、`file://` `javascript:` 排除)
+- [x] **F5 [MEDIUM]**: `bin/adapt-upstream-skill.sh` に `status='adapted'` ガード追加。手動再構築済み SKILL.md を誤って上書きしないよう保護
+- [x] adapter 内の `python3 -c` 2 箇所も env-var パターンに統一 (v1.0.3 の同種修正と整合)
+
+**Documentation truthfulness**:
+- [x] **F4 [HIGH]**: `landing-report` SKILL.md と README から「Bun 不在時は Node.js + tsx でフォールバック」の虚偽記述を削除。実際には `bin/gstack-next-version` は Bun 必須 (shebang `#!/usr/bin/env bun`)
+- [x] **F6 [MEDIUM]**: `landing-report` SKILL.md Step 1 に gh / bun 不在チェックを実コード化 (前バージョンは「停止する」と記述するのみ、実装は `echo main` フォールバック)
+- [x] **F10 [LOW]**: README で `browse` の Node.js fallback と `bin/gstack-next-version` の Bun 必須を明確に区別
+
+**Test design**:
+- [x] **F7 [MEDIUM]**: `quality-gate.test.js` のスキル数検証をディレクトリカウント single source of truth に変更。CHANGELOG / getting-started.md の prose regex 検証は「記載されている場合のみ一致」に緩和 (CHANGELOG 不要 preference との整合)
+
+**v1.2 へ送り**:
+- F3 [LOW] (URL 長さ制限・ASCII enforcement) — 過剰防衛、Phase C で再評価
+- F8 [INFO] (`bin/gstack-next-version` smoke test) — Phase C の `gh` モックフレームワークと同時実装
+- F9 [INFO] (CHANGELOG regex fragility) — F7 で部分的に解消、残りは Phase C で
+- F11 [INFO] (setup sentinel cleanup trap) — 実害無し、defensive にしすぎる必要なし
 
 ---
 
