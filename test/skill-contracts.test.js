@@ -226,3 +226,71 @@ describe('/autoplan semantic contract', () => {
     expect(md).toMatch(/再実行|re-?run|やり直し/i);
   });
 });
+
+// --- v1.0.3: VS Code Copilot Chat / Codex 認識のための契約 ---
+//
+// `/gstack-review` がスキルとして認識されない問題を契機に、ホスト側で skill が
+// 黙ってスキップされるパターンを契約化する。フロントマター契約を満たさないスキルは
+// fail-fast でテスト落ちさせ、リグレッションを防ぐ。
+import { readdirSync } from 'fs';
+
+describe('全スキル frontmatter 契約 (v1.0.3+)', () => {
+  const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
+    .filter(d => d.isDirectory() && d.name !== 'bin')
+    .map(d => d.name);
+
+  // 既知のホスト互換ツール ID。upstream Claude Code + VS Code Copilot Chat + Codex で
+  // 共通して認識される値のスーパーセット。新ツールを追加する際は upstream の動向確認が必要。
+  const KNOWN_TOOLS = new Set([
+    'ask_user', 'bash', 'create', 'edit', 'glob', 'grep',
+    'task', 'view', 'web_search',
+  ]);
+
+  // VS Code Copilot Chat の description フィールド長の安全圏。
+  // Codex (1024) と VS Code (実測上は更に小さい可能性あり) の両方を満たすため
+  // 1024 を上限とする。実測でより厳しい上限が判明した場合はここを更新。
+  const DESCRIPTION_MAX = 1024;
+
+  for (const skill of skillDirs) {
+    describe(`${skill}`, () => {
+      const content = readSkill(skill).replace(/\r\n/g, '\n');
+      const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+
+      it('フロントマターブロックがファイル先頭にある', () => {
+        expect(fmMatch, `${skill}: SKILL.md がフロントマターで始まっていない`).toBeTruthy();
+      });
+
+      const fm = fmMatch ? fmMatch[1] : '';
+
+      it('name フィールドがディレクトリ名と一致する (silent-skip 防止)', () => {
+        // 公式仕様: name 不一致は silently skip される。
+        const m = fm.match(/^name:\s*([a-z][a-z0-9-]*)\s*$/m);
+        expect(m, `${skill}: name フィールドが見つからない or kebab-case でない`).toBeTruthy();
+        if (m) {
+          expect(m[1], `${skill}: name="${m[1]}" がディレクトリ名と不一致`).toBe(skill);
+        }
+      });
+
+      it('description が定義されており 1024 文字以内 (Codex/VS Code 上限)', () => {
+        // description は 1 行 quoted または block scalar。両形式に対応。
+        const quoted = fm.match(/^description:\s*"((?:[^"\\]|\\.)*)"\s*$/m);
+        const bare = fm.match(/^description:\s*(.+)$/m);
+        const desc = quoted ? quoted[1].replace(/\\"/g, '"') : (bare ? bare[1].trim() : '');
+        expect(desc, `${skill}: description フィールドが空`).toBeTruthy();
+        expect(desc.length, `${skill}: description が ${desc.length} 文字 (上限 ${DESCRIPTION_MAX})`)
+          .toBeLessThanOrEqual(DESCRIPTION_MAX);
+      });
+
+      it('allowed-tools が既知ツール ID のみを含む', () => {
+        // 未知のツール ID はホスト側で skill 全体を弾く可能性がある。
+        const toolBlock = fm.match(/^allowed-tools:\s*\n((?:\s+-\s+\S+\s*\n?)+)/m);
+        if (!toolBlock) return; // allowed-tools 自体が任意フィールド
+        const tools = [...toolBlock[1].matchAll(/-\s+(\S+)/g)].map(m => m[1]);
+        for (const tool of tools) {
+          expect(KNOWN_TOOLS.has(tool), `${skill}: allowed-tools に未知の値 "${tool}"`)
+            .toBe(true);
+        }
+      });
+    });
+  }
+});

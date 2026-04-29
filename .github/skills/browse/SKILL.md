@@ -8,7 +8,6 @@ triggers:
   - headless browser
   - take page screenshot
 allowed-tools:
-  - --
   - ask_user
   - bash
   - view

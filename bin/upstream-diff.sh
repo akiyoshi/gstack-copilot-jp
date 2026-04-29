@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # bin/upstream-diff.sh — 本家 gstack との差分を検出し、同期する
 # 使い方:
-#   bin/upstream-diff.sh              # 差分検出のみ
-#   bin/upstream-diff.sh --update     # upstream を pull してから差分検出
-#   bin/upstream-diff.sh --sync       # 差分検出 + 変更スキルを自動変換
+#   bin/upstream-diff.sh                       # 差分検出のみ
+#   bin/upstream-diff.sh --update              # upstream を pull してから差分検出
+#   bin/upstream-diff.sh --sync                # 差分検出 + 変更スキルを自動変換
+#   bin/upstream-diff.sh --sync --interactive  # diff プレビューと確認プロンプト付き
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -12,6 +13,10 @@ UPSTREAM_DIR="$HOME/.gstack/repos/gstack"
 LAST_CHECK_FILE="$HOME/.gstack/upstream-last-check"
 TRACKING_JSON="$ROOT_DIR/upstream-tracking.json"
 MODE="${1:-check}"
+INTERACTIVE=0
+if [ "${2:-}" = "--interactive" ]; then
+  INTERACTIVE=1
+fi
 
 if [ ! -d "$UPSTREAM_DIR" ]; then
   echo "Upstream not found. Cloning (full history for reliable diffs)..."
@@ -111,15 +116,53 @@ fi
 
 # --sync モード: 変更スキルを自動変換
 if [ "$MODE" = "--sync" ] && [ -n "$CHANGED_SKILLS" ]; then
+  # dirty tree ガード — 未コミット変更がある状態で一括上書きするとロールバック不能
+  if ! git -C "$ROOT_DIR" diff --quiet HEAD -- .github/skills/ 2>/dev/null; then
+    echo "" >&2
+    echo "ERROR: .github/skills/ に未コミット変更があります。" >&2
+    echo "  --sync は破壊的操作です。先に commit するか stash してください:" >&2
+    echo "    git stash push -m pre-sync -- .github/skills/" >&2
+    echo "  または変更を破棄:" >&2
+    echo "    git checkout -- .github/skills/" >&2
+    exit 1
+  fi
+
+  # interactive モード: diff プレビューと確認
+  if [ "$INTERACTIVE" = "1" ]; then
+    echo ""
+    echo "━━━ 同期対象（プレビュー）━━━"
+    echo "$CHANGED_SKILLS" | sed 's|^|  - |'
+    echo ""
+    if [ -t 0 ] || [ -e /dev/tty ]; then
+      printf "続行しますか？ [y/N] "
+      if [ -e /dev/tty ]; then
+        read -r ANSWER < /dev/tty || ANSWER=""
+      else
+        read -r ANSWER || ANSWER=""
+      fi
+      case "$ANSWER" in
+        y|Y|yes|YES) ;;
+        *) echo "中止しました。"; exit 0 ;;
+      esac
+    else
+      echo "ERROR: --interactive は対話端末が必要。CI 等では --sync 単体で実行してください。" >&2
+      exit 1
+    fi
+  fi
+
   echo ""
   echo "━━━ 同期実行 ━━━"
   SUCCESS=0
   FAIL=0
   SKIP=0
+  FAILED_SKILLS=""
 
-  echo "$CHANGED_SKILLS" | while read -r skill; do
+  # サブシェルでカウンタが消えるバグの修正:
+  # `echo | while` のパイプは右側がサブシェルになり SUCCESS/FAIL/SKIP が親に伝播しない。
+  # プロセス置換 `< <(...)` を使えば while が親シェルで実行される。
+  while read -r skill; do
+    [ -z "$skill" ] && continue
     # diverged / excluded / planned スキルはスキップ
-    # (planned: 取込予定だが未実装 — 詳細は upstream-tracking.json)
     SKILL_STATUS=$(python3 -c "import json; print(json.load(open('$TRACKING_JSON'))['skills'].get('$skill',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
     case "$SKILL_STATUS" in
       diverged|excluded|planned)
@@ -129,17 +172,18 @@ if [ "$MODE" = "--sync" ] && [ -n "$CHANGED_SKILLS" ]; then
         ;;
     esac
 
-    if [ -d ".github/skills/$skill" ]; then
+    if [ -d "$ROOT_DIR/.github/skills/$skill" ]; then
       echo -n "🔄 $skill ... "
-      if bash bin/adapt-upstream-skill.sh "$skill" > /dev/null 2>&1; then
+      if bash "$SCRIPT_DIR/adapt-upstream-skill.sh" "$skill" > /dev/null 2>&1; then
         echo "✅"
         SUCCESS=$((SUCCESS + 1))
       else
         echo "❌"
         FAIL=$((FAIL + 1))
+        FAILED_SKILLS="$FAILED_SKILLS $skill"
       fi
     fi
-  done
+  done < <(echo "$CHANGED_SKILLS")
 
   # upstream-tracking.json の commit SHA を更新
   python3 -c "
@@ -156,8 +200,19 @@ print('upstream-tracking.json updated: commit=$UPSTREAM_COMMIT')
 
   echo ""
   echo "━━━ 同期完了 ━━━"
+  echo "結果: $SUCCESS 成功 / $FAIL 失敗 / $SKIP スキップ"
+  if [ "$FAIL" -gt 0 ]; then
+    echo "失敗したスキル:$FAILED_SKILLS" >&2
+    echo "次のステップ: 失敗したスキルを手動で確認してから commit してください。" >&2
+    echo "  ロールバック: git checkout HEAD -- .github/skills/" >&2
+    exit 2
+  fi
   echo "次のステップ: npm test && git add -A && git commit"
+elif [ "$MODE" = "--sync" ]; then
+  echo ""
+  echo "  (--sync 指定だが、変更されたスキルが検出されませんでした)"
 else
   echo ""
   echo "同期するには: bin/upstream-diff.sh --sync"
+  echo "プレビュー付きで同期: bin/upstream-diff.sh --sync --interactive"
 fi

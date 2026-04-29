@@ -9,7 +9,6 @@ triggers:
   - benchmark skill across models
   - which model should I use
 allowed-tools:
-  - --
   - ask_user
   - bash
   - view

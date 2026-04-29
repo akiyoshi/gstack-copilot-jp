@@ -133,3 +133,42 @@ describe('upstream-tracking.json state integrity', () => {
     }
   });
 });
+
+// v1.0.3 で追加: ローカル名 ≠ upstream 名マッピング契約
+//
+// `bin/adapt-upstream-skill.sh` は upstream-tracking.json の `upstream` フィールドを
+// 単一情報源として「ローカル名 ≠ upstream 名」を解決する（例: `gstack-review/SKILL.md`
+// は upstream の `review/SKILL.md` から派生）。adapter に第二引数を追加する設計は採用せず、
+// tracking.json への一本化を契約として固定する。
+describe('upstream-tracking.json: ローカル名 ≠ upstream 名マッピング', () => {
+  const tracking = JSON.parse(readFileSync(TRACKING_PATH, 'utf-8'));
+
+  it('upstream パスは "<dir>/SKILL.md" 形式である', () => {
+    for (const [name, entry] of Object.entries(tracking.skills)) {
+      if (entry.status === 'diverged' || entry.status === 'excluded') continue;
+      if (!entry.upstream) continue;
+      expect(entry.upstream, `${name}: upstream path "${entry.upstream}" should end with /SKILL.md`)
+        .toMatch(/\/SKILL\.md$/);
+    }
+  });
+
+  it('ローカル名 ≠ upstream 名のスキルが少なくとも 1 つ存在する（B-3 検証）', () => {
+    // 例: gstack-review (ローカル) ↔ review (upstream)
+    // この種のリネームが adapter で解決可能であることを示す sentinel test。
+    const renamed = Object.entries(tracking.skills).filter(([name, entry]) => {
+      if (!entry.upstream) return false;
+      const upstreamDir = entry.upstream.replace(/\/SKILL\.md$/, '');
+      return upstreamDir !== name;
+    });
+    expect(renamed.length, 'リネームスキルが 1 つも見つからない（B-3 contract 検証不能）')
+      .toBeGreaterThan(0);
+  });
+
+  it('gstack-review は upstream review/ にマッピングされている（B-3 リグレッション防止）', () => {
+    const entry = tracking.skills['gstack-review'];
+    if (!entry) return; // スキル未配置時はスキップ
+    if (entry.status === 'diverged' || entry.status === 'excluded') return;
+    expect(entry.upstream, 'gstack-review の upstream パスが未設定').toBeTruthy();
+    expect(entry.upstream).toMatch(/^review\/SKILL\.md$/);
+  });
+});

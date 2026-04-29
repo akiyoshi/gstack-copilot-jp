@@ -185,3 +185,86 @@ rm skills agents          # WSL/Linux/macOS
 | Windows ネイティブ | ✅（hook以外） | ✅（hook以外） | ❌（WSL必須） |
 
 **迷ったら方式 A**。CLI/Hook/Browser を本格的に使うなら **方式 C** を併用。
+
+---
+
+## アップグレード
+
+### v1.0.2.0 → v1.0.3.0
+
+**含まれる変更**: バージョン乖離修正（plugin.json）、`bin/upstream-diff.sh` 堅牢化、`/setup-deploy` `/unfreeze` ほか 13 スキルのフロントマター修正、契約テスト追加。  
+**互換性**: 後方互換のパッチリリース。スキル名・コマンド・フロントマター契約に破壊的変更なし。
+
+**方式 A（Plugin From Source）**:
+
+VS Code が 24h ごとに自動 pull するため、特別な手順は不要。即時更新したい場合:
+
+```text
+コマンドパレット → "Extensions: Check for Extension Updates"
+```
+
+**方式 B / C（ローカルクローン）**:
+
+```bash
+cd ~/.gstack-copilot-jp   # または clone した場所
+git fetch origin
+git pull --ff-only origin main
+```
+
+`bin/upstream-diff.sh --sync` を **使っていた場合のみ**: v1.0.3 から `--sync` は事前に `.github/skills/` の dirty tree を検出して fail-fast するようになった。同期前に作業中の変更は commit/stash しておくこと。
+
+```bash
+# Before sync (v1.0.3+):
+git status .github/skills/   # 未コミットがないか確認
+git stash push -m pre-sync -- .github/skills/   # 必要なら退避
+
+# Sync with preview:
+bash bin/upstream-diff.sh --sync --interactive
+
+# Rollback if needed:
+git checkout HEAD -- .github/skills/
+```
+
+### ロールバック手順（v1.0.3 → v1.0.2）
+
+問題が発生した場合:
+
+```bash
+# 方式 A: VS Code 拡張のロールバックは不可。
+#         代わりに akiyoshi/gstack-copilot-jp を pin commit clone:
+#   1. Uninstall して
+#   2. git clone --branch v1.0.2.0 ... して方式 B/C へ移行
+
+# 方式 B/C:
+cd ~/.gstack-copilot-jp
+git checkout v1.0.2.0
+```
+
+---
+
+## トラブルシューティング
+
+### スキルが Copilot Chat の `/` 候補に出てこない
+
+VS Code Copilot Chat はスキル一覧をローカルにキャッシュする。新スキル追加 / フロントマター修正後に認識されない場合:
+
+1. **VS Code をリロード**: コマンドパレット → `Developer: Reload Window`
+2. **Plugin の再読み込み**: コマンドパレット → `Chat: Reload Plugin From Source` → URL に `https://github.com/akiyoshi/gstack-copilot-jp` を再入力
+3. **Diagnostics で確認**: Chat ビュー → 右クリック → `Diagnostics` → Plugins セクションで gstack-copilot-jp の `Skills` 個数を確認
+4. それでも出ない場合は SKILL.md のフロントマターが契約を満たしているか:
+   ```bash
+   npx vitest run test/skill-contracts.test.js
+   ```
+
+### `/setup-deploy` `/unfreeze` 等で「allowed-tools 未知」エラー
+
+v1.0.2.0 以前の壊れたフロントマターが残っている可能性。v1.0.3.0 でこれら 13 スキルのフロントマターが修正された。`git pull` で最新へ更新すれば解消する。
+
+### Windows で `bin/upstream-diff.sh` が動かない
+
+Git Bash または WSL2 から実行すること。PowerShell から bash スクリプトを直接呼ぶことはサポートしていない（v1.1 で改善予定）。
+
+```bash
+# Git Bash の例:
+bash bin/upstream-diff.sh
+```

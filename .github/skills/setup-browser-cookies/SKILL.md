@@ -8,7 +8,6 @@ triggers:
   - login to test site
   - setup authenticated session
 allowed-tools:
-  - --
   - ask_user
   - bash
   - view

@@ -8,7 +8,6 @@ triggers:
   - check page speed
   - detect performance regression
 allowed-tools:
-  - --
   - ask_user
   - bash
   - create

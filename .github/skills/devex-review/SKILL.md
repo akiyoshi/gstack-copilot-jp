@@ -8,7 +8,6 @@ triggers:
   - test developer experience
   - measure onboarding time
 allowed-tools:
-  - --
   - ask_user
   - bash
   - edit

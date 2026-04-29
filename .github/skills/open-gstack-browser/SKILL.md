@@ -8,7 +8,6 @@ triggers:
   - launch chromium
   - show me the browser
 allowed-tools:
-  - --
   - ask_user
   - bash
   - view

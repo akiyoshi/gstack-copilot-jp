@@ -8,7 +8,6 @@ triggers:
   - code the mockup
   - make design real
 allowed-tools:
-  - --
   - ask_user
   - bash
   - create

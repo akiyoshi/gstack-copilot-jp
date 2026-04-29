@@ -8,7 +8,6 @@ triggers:
   - connect remote agent
   - share my browser
 allowed-tools:
-  - --
   - ask_user
   - bash
   - view

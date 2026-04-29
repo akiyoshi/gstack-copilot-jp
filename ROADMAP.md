@@ -1,17 +1,49 @@
 # ROADMAP — 未実装項目と将来計画
 
-**現在のリリース:** v1.0.1.0（2026-04-29）
+**現在のリリース:** v1.0.3.0（2026-04-29）
 **追跡 upstream:** garrytan/gstack v1.20.0.0
 **完了済みリリース履歴:** [CHANGELOG.md](CHANGELOG.md)
 
 このファイルは **未着手 / 進行中** の作業を管理する。
 本家追従ギャップの全体像と取込方針は [docs/upstream-gap-plan.md](docs/upstream-gap-plan.md) を参照。
 
+## リリースポリシー
+
+SemVer に準拠（上流 gstack の 4 桁形式 `MAJOR.MINOR.PATCH.BUILD` に拡張）。
+
+- **PATCH** (`x.y.Z`): バグ修正、ドキュメント修正、全た後方互換の内部改修。スキル設計・コマンド名・フロントマター契約を変えない
+- **MINOR** (`x.Y.0`): 新スキル追加、新しい hook、追加的なオプション。既存スキルの動作を変えない
+- **MAJOR** (`X.0.0`): スキル rename / 削除、フロントマター契約変更、host サポート取り下げ等の破壊的変更
+
+参考: v1.0.3 は `bin/upstream-diff.sh` ・`bin/adapt-upstream-skill.sh` の内部改修と `plugin.json` のバージョン修正のみを含むため PATCH。スキル設計・公開インターフェースは変えない。
+
 ---
 
 ## 進行中
 
-なし（Phase A 完了。次リリースは v1.0.2 として出荷可能）。
+なし（v1.0.3 出荷済み、次リリースは v1.1.0.0）。
+
+---
+
+## v1.0.3 — Phase A++：B-3 先行パッチ — **完了**
+
+v1.1 の前提として、認識問題と追従パイプを追加修正したパッチリリース。スコープ詳細は [docs/v1.1-implementation-plan.md](docs/v1.1-implementation-plan.md) 参照。
+
+- [x] `plugin.json` の version を VERSION ファイルと一致させる（乗り越しで 1.0.0 のままだった）
+- [x] 3 ファイル（VERSION / package.json / plugin.json）バージョン一致テストを `quality-gate.test.js` に追加
+- [x] `bin/upstream-diff.sh` の堅牢化:
+  - dirty tree ガード追加（`--sync` 実行前に uncommitted changes を検出して fail-fast）
+  - サブシェルでカウンタが親シェルに伝播しないバグを修正（`while read` のパイプ → `< <(...)` に変更）
+  - `--sync` 実行前に自動プレシャップショット commit（ロールバック可能性の確保）
+  - `--sync --interactive` モード追加（diff プレビューと確認プロンプト）
+- [x] `bin/adapt-upstream-skill.sh` の設計見直し：`upstream-tracking.json` の `upstream` フィールドをローカル名 ≠ upstream 名マッピングの単一情報源として使用（第 2 引数追加は不採用、既存 `--dry-run`/`--validate` インターフェースを保護）
+- [x] `test/skill-contracts.test.js` 拡張:
+  - `name` フィールドがディレクトリ名と一致（認識不能のサイレントスキップを防ぐ）
+  - `allowed-tools` の値が既知ツール ID 集合に含まれる
+  - `description` が 1024 文字以下（VS Code Copilot Chat と Codex 両方の上限に適合）
+  - サイレントスキップの再発防止のため fail-fast 型
+- [x] `INSTALL.md` にアップグレードガイドセクション追加：v1.0.2 → v1.0.3 の手順、ロールバック手順、`/gstack-review` 認識不能時のトラブルシュート
+- [x] ROADMAP.md にリリースポリシーセクション追加、現在のリリース表記を v1.0.3.0 に修正
 
 ---
 
@@ -62,35 +94,35 @@ upstream 追従の前提となるツールチェーンを修理。これを先�
 
 ## v1.1 — Phase B: スキル追従 + Phase E: Windows 再対応
 
+> **Premise Gate（2026-04-29）決定**: B-2 (`/gstack-claude`) は v1.1 スコープから除外（task tool 経由 Outside Voice と機能重複）。B-3 は v1.0.3 で先行出荷済み。Phase D は v1.2 維持。詳細は [docs/v1.1-implementation-plan.md](docs/v1.1-implementation-plan.md)。
+
 ### B-1: `/landing-report` + `bin/gstack-next-version`
 
-- [ ] upstream `bin/gstack-next-version` を vendor（`gh pr list` で VERSION 衝突検出）
+- [ ] upstream `bin/gstack-next-version` を vendor（`gh pr list` で VERSION 衝突検出、3 ファイルアトミック更新）
 - [ ] `landing-report/SKILL.md` を `.github/skills/` に追加
+- [ ] `/landing-report` の smoke テスト追加（`gh` モック）
+- [ ] `/landing-report` SKILL.md に gh 未認証時の親切メッセージを埋め込み
+- [ ] README/INSTALL.md の前提条件に `gh` CLI 追加
 - [ ] `/ship` の workspace-aware 版番割当を実コード化（現在ロジックは記述のみ）
+- [ ] `/ship` SKILL.md に「VERSION ファイル不在時は自動スキップ」を明記（escape hatch）
 
-### B-2: `/gstack-claude` 追加
+### B-2: `/gstack-claude` 追加 — **v1.1 スコープ除外（v1.2 で再評価）**
 
-非-Claude ホスト（Copilot CLI）から claude CLI を Outside Voice として呼ぶ。
-- [ ] `.github/skills/gstack-claude/SKILL.md` 追加（review/challenge/consult 三モード）
-- [ ] claude CLI 不在時に `task` tool フォールバック
-- [ ] 既存の Outside Voice ルーティングと衝突しないよう `copilot-instructions.md` を更新
+`task` tool 経由のマルチモデル Outside Voice と機能重複のため、v1.1 では取込まない。Outside Voice 設計の見直しと同時に v1.2 以降で再検討する。
 
-### B-3: 既存スキルの本家追従パッチ一括反映
+### B-3: `/gstack-review` 認識問題 + 既存スキル同期 — **v1.0.3 で完了**
 
-Phase A-3 で v1.13-v1.20 の SKILL.md 変更は既に取り込み済み。残課題:
-
-- [ ] `gstack-review` の追従（upstream `review/` → ローカル `gstack-review/` 名前マッピング問題で未同期）
-- [ ] adapt-upstream-skill.sh に「ローカル名 ≠ upstream 名」ケースのサポートを追加
+→ ROADMAP の v1.0.3 セクション参照。
 
 ### B-4: `copilot-instructions.md` の追従
 
 - [ ] upstream `CLAUDE.md` (v1.20.0.0) に対する diff を取り、適応
-- [ ] ルーティングテーブルに新スキルを追加
-- [ ] スキル数表示を整合（現在 38 → 取込後の数へ）
+- [ ] ルーティングテーブルに新スキル `/landing-report` を追加
+- [ ] **全ドキュメント**（README, INSTALL.md, getting-started.md, copilot-instructions.md, CHANGELOG.md）のスキル数表記を実態と一致
 
 ### E-1〜E-4: Windows 再対応
 
-upstream は v1.0 から Windows 11（Git Bash / WSL）を公式サポート。我々の v2.0 方針メモ「Linux 統一」を撤回。
+upstream は v1.0 から Windows 11（Git Bash / WSL）を公式サポート。dogfooding 目的（実ユーザー需要は作者のみ）を README で誠実に開示する。
 
 - [x] `bin/browse.ps1` の修正（Phase A-2 で完了）
 - [ ] README に Windows セクション追加（Bun + Node.js 必須、Git Bash か WSL を選択）
