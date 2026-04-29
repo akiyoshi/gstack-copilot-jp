@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.4.0] - 2026-04-29
+
+### 🔄 upstream 整合：`TODOS.md` 命名へ統一
+
+本家 gstack の `autoplan` ほか各レビュースキルが採用する `TODOS.md` 命名にリポジトリ全体を揃えた。これまで `bin/adapt-upstream-skill.sh` で upstream の `TODOS.md` を `plan.md` に書き換えていたため、autoplan / ship / plan-ceo-review などで「Deferred to TODOS.md」「TODOS.md auto-update」といった本家の手順がローカルでは `plan.md` を参照しており、ファイルがないため事実上スキップされていた。
+
+### Changed
+
+- **`ROADMAP.md` → `TODOS.md` にリネーム** — 本家命名と整合。VERSION 整合テストや retro / ship のバックログ走査も `TODOS.md` を見るように更新
+- **15 個のスキルの SKILL.md で `plan.md` → `TODOS.md` 90 箇所置換** — autoplan / ship / plan-ceo-review / plan-eng-review / plan-design-review / plan-devex-review / qa / qa-only / retro / investigate / cso / design-review / document-release / gstack-review / office-hours
+- **`bin/adapt-upstream-skill.sh` の `TODOS.md → plan.md` sed を削除** — 今後 upstream を取り込むと `TODOS.md` がそのまま反映される
+- **README / ARCHITECTURE / DESIGN / copilot-instructions のリンク・記述を `TODOS.md` に更新**
+- **VERSION / package.json / plugin.json を `1.2.4.0` に統一** — `1.2.3.0` 出荷時に `package.json` が `1.2.2.0` のまま残っていたドリフトを解消
+
 ## [1.2.2.0] - 2026-04-29
 
 ### 📚 ドキュメント整理（Diátaxis 風 + Keep a Changelog）
