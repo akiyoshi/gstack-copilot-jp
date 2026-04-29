@@ -1,10 +1,8 @@
 ---
 name: qa-only
 version: 1.0.0
-description: "QAレポーターとしてバグレポートのみ作成（コード修正なし）。Use when: バグレポートだけ欲しい、修正は自分でやる、report only、qa report。
-"
-argument-hint: "テスト対象のプロジェクトまたは機能
-"
+description: "QAレポーターとしてバグレポートのみ作成（コード修正なし）。Use when: バグレポートだけ欲しい、修正は自分でやる、report only、qa report。"
+argument-hint: "テスト対象のプロジェクトまたは機能"
 triggers:
   - qa report only
   - just report bugs

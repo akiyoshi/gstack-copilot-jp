@@ -1,10 +1,8 @@
 ---
 name: design-review
 version: 2.0.0
-description: "デザイナー兼エンジニアとしてUI実装をレビュー・修正。Use when: デザイン実装の品質チェック、CSS修正、UI/UX改善の実行、design implementation review。plan-design-reviewの実行版。
-"
-argument-hint: "レビュー対象のUI/コンポーネント
-"
+description: "デザイナー兼エンジニアとしてUI実装をレビュー・修正。Use when: デザイン実装の品質チェック、CSS修正、UI/UX改善の実行、design implementation review。plan-design-reviewの実行版。"
+argument-hint: "レビュー対象のUI/コンポーネント"
 triggers:
   - visual design audit
   - design qa

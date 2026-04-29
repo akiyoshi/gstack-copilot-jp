@@ -1,10 +1,8 @@
 ---
 name: plan-eng-review
 version: 1.0.0
-description: "エンジニアリングマネージャーとしてアーキテクチャをレビュー。Use when: 設計レビュー、アーキテクチャ確認、データフロー、テスト計画、エッジケース洗い出し、technical review、architecture。ASCII図でデータフロー・状態遷移を可視化する。
-"
-argument-hint: "レビュー対象のプランまたはアーキテクチャの説明
-"
+description: "エンジニアリングマネージャーとしてアーキテクチャをレビュー。Use when: 設計レビュー、アーキテクチャ確認、データフロー、テスト計画、エッジケース洗い出し、technical review、architecture。ASCII図でデータフロー・状態遷移を可視化する。"
+argument-hint: "レビュー対象のプランまたはアーキテクチャの説明"
 triggers:
   - review architecture
   - eng plan review

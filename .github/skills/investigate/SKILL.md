@@ -1,10 +1,8 @@
 ---
 name: investigate
 version: 1.0.0
-description: "根本原因デバッガー。Iron Law: 調査なしの修正は禁止。Use when: バグ調査、エラー原因、why is this broken、デバッグ、investigate、root cause。5フェーズの体系的デバッグ。3回失敗→エスカレート。
-"
-argument-hint: "バグの症状、エラーメッセージ、または問題の説明
-"
+description: "根本原因デバッガー。Iron Law: 調査なしの修正は禁止。Use when: バグ調査、エラー原因、why is this broken、デバッグ、investigate、root cause。5フェーズの体系的デバッグ。3回失敗→エスカレート。"
+argument-hint: "バグの症状、エラーメッセージ、または問題の説明"
 triggers:
   - debug this
   - fix this bug

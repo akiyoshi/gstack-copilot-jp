@@ -1,10 +1,8 @@
 ---
 name: gstack-review
 version: 1.0.0
-description: "スタッフエンジニアとしてコードレビュー。Use when: コードレビュー、diff確認、PR確認、pre-merge check、code review。専門家サブエージェントを並列dispatchし、明確なバグは自動修正する。
-"
-argument-hint: "レビュー対象のブランチ名またはPR番号
-"
+description: "スタッフエンジニアとしてコードレビュー。Use when: コードレビュー、diff確認、PR確認、pre-merge check、code review。専門家サブエージェントを並列dispatchし、明確なバグは自動修正する。"
+argument-hint: "レビュー対象のブランチ名またはPR番号"
 triggers:
   - review this pr
   - code review
