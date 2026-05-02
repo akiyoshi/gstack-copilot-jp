@@ -215,46 +215,69 @@ do_profile() {
 # -----------------------------------------------------------------------
 # Append session: stdin から JSON entry を読み sessions 配列に追加。
 # signals_accumulated / resources_shown / topics も更新（推移的に集約）。
-# 同時実行で profile が壊れないよう atomic rename で書き戻す。
+# 並行呼出では flock(1) で read-modify-write を直列化（Linux/WSL）。
+# flock が無い環境（macOS デフォルト）はベストエフォートで進める。
 # -----------------------------------------------------------------------
 do_append_session() {
   ensure_profile
-  local TMPOUT
-  TMPOUT=$(mktemp "$PROFILE_FILE.XXXXXX.tmp")
-  # shellcheck disable=SC2064
-  trap "rm -f '$TMPOUT'" EXIT
 
-  PROFILE="$PROFILE_FILE" node -e '
-    const fs = require("fs");
-    const path = process.env.PROFILE;
-    const stdin = fs.readFileSync(0, "utf-8");
-    let entry;
-    try {
-      entry = JSON.parse(stdin);
-    } catch (err) {
-      console.error("APPEND: invalid JSON on stdin:", err.message);
-      process.exit(1);
-    }
-    const p = JSON.parse(fs.readFileSync(path, "utf-8"));
-    p.sessions = p.sessions || [];
-    p.sessions.push(entry);
-    p.signals_accumulated = p.signals_accumulated || {};
-    for (const s of (entry.signals || [])) {
-      p.signals_accumulated[s] = (p.signals_accumulated[s] || 0) + 1;
-    }
-    const resources = new Set(p.resources_shown || []);
-    for (const r of (entry.resources_shown || [])) resources.add(r);
-    p.resources_shown = Array.from(resources);
-    const topics = new Set(p.topics || []);
-    for (const t of (entry.topics || [])) topics.add(t);
-    p.topics = Array.from(topics);
-    p.updated_at = new Date().toISOString();
-    process.stdout.write(JSON.stringify(p, null, 2));
-  ' < /dev/stdin > "$TMPOUT"
+  # 並行呼出の race condition 対策。flock があれば exclusive lock を取る。
+  # タイムアウト 10 秒（hung process で永久ブロック回避）。
+  _do_append_session_locked() {
+    local TMPOUT
+    TMPOUT=$(mktemp "$PROFILE_FILE.XXXXXX.tmp")
+    # shellcheck disable=SC2064
+    trap "rm -f '$TMPOUT'" EXIT
 
-  mv "$TMPOUT" "$PROFILE_FILE"
-  trap - EXIT
-  echo "APPEND: ok"
+    PROFILE="$PROFILE_FILE" node -e '
+      const fs = require("fs");
+      const path = process.env.PROFILE;
+      const stdin = fs.readFileSync(0, "utf-8");
+      let entry;
+      try {
+        entry = JSON.parse(stdin);
+      } catch (err) {
+        console.error("APPEND: invalid JSON on stdin:", err.message);
+        process.exit(1);
+      }
+      const p = JSON.parse(fs.readFileSync(path, "utf-8"));
+      p.sessions = p.sessions || [];
+      p.sessions.push(entry);
+      p.signals_accumulated = p.signals_accumulated || {};
+      // 配列以外は無視（type confusion で signals_accumulated が壊れるのを防ぐ）
+      const sigs = Array.isArray(entry.signals) ? entry.signals : [];
+      for (const s of sigs) {
+        if (typeof s !== "string") continue;
+        p.signals_accumulated[s] = (p.signals_accumulated[s] || 0) + 1;
+      }
+      const resources = new Set(Array.isArray(p.resources_shown) ? p.resources_shown : []);
+      const newRes = Array.isArray(entry.resources_shown) ? entry.resources_shown : [];
+      for (const r of newRes) if (typeof r === "string") resources.add(r);
+      p.resources_shown = Array.from(resources);
+      const topics = new Set(Array.isArray(p.topics) ? p.topics : []);
+      const newTopics = Array.isArray(entry.topics) ? entry.topics : [];
+      for (const t of newTopics) if (typeof t === "string") topics.add(t);
+      p.topics = Array.from(topics);
+      p.updated_at = new Date().toISOString();
+      process.stdout.write(JSON.stringify(p, null, 2));
+    ' > "$TMPOUT"
+
+    mv "$TMPOUT" "$PROFILE_FILE"
+    trap - EXIT
+    echo "APPEND: ok"
+  }
+
+  if command -v flock >/dev/null 2>&1; then
+    local LOCK_FILE="$PROFILE_FILE.lock"
+    # サブシェルで FD 9 に lock を取り、解放は exit で自動
+    (
+      flock -w 10 -x 9 || { echo "APPEND: lock timeout (10s)" >&2; exit 1; }
+      _do_append_session_locked
+    ) 9>>"$LOCK_FILE"
+  else
+    # macOS デフォルト等、flock 不在環境のフォールバック（best-effort）
+    _do_append_session_locked
+  fi
 }
 
 # -----------------------------------------------------------------------

@@ -247,6 +247,59 @@ describe('gstack-developer-profile --append-session', () => {
     expect(r.status).not.toBe(0);
     expect(r.stderr).toMatch(/invalid JSON/);
   });
+
+  it('preserves all sessions under concurrent --append-session calls', async () => {
+    // Code-review エージェントが実測した 70% data-loss race の回帰テスト
+    const N = 10;
+    const { spawn } = require('child_process');
+    const procs = [];
+    for (let i = 0; i < N; i++) {
+      const entry = { project_slug: 'concur', signals: [`sig${i}`], resources_shown: [], topics: [] };
+      procs.push(new Promise((resolve, reject) => {
+        const cp = spawn(BIN, ['--append-session'], {
+          env: { ...process.env, GSTACK_HOME: home },
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        let stderr = '';
+        cp.stderr.on('data', d => { stderr += d.toString(); });
+        cp.stdout.on('data', () => {});
+        cp.stdin.end(JSON.stringify(entry));
+        cp.on('exit', code => {
+          if (code !== 0) reject(new Error(`exit ${code}: ${stderr}`));
+          else resolve();
+        });
+      }));
+    }
+    await Promise.all(procs);
+    const p = JSON.parse(fs.readFileSync(path.join(home, 'developer-profile.json'), 'utf-8'));
+    expect(p.sessions).toHaveLength(N);
+    expect(Object.keys(p.signals_accumulated).sort()).toEqual(
+      Array.from({ length: N }, (_, i) => `sig${i}`).sort()
+    );
+  });
+
+  it('ignores non-array signals/resources/topics (type-confusion guard)', () => {
+    // signals が string の場合、char-by-char イテレートして signals_accumulated を
+    // 汚染するバグ（"evil" → {e:1,v:1,i:1,l:1}）が以前あった。Array.isArray ガード済み。
+    appendSession({ project_slug: 'a', signals: 'evil', resources_shown: 'url', topics: 'topic' });
+    const p = JSON.parse(fs.readFileSync(path.join(home, 'developer-profile.json'), 'utf-8'));
+    expect(p.signals_accumulated).toEqual({});
+    expect(p.resources_shown).toEqual([]);
+    expect(p.topics).toEqual([]);
+  });
+
+  it('skips non-string entries inside signals/resources/topics arrays', () => {
+    appendSession({
+      project_slug: 'a',
+      signals: ['ok', 123, null, 'also_ok'],
+      resources_shown: ['u1', { evil: true }, 'u2'],
+      topics: ['t1', [], 't2'],
+    });
+    const p = JSON.parse(fs.readFileSync(path.join(home, 'developer-profile.json'), 'utf-8'));
+    expect(p.signals_accumulated).toEqual({ ok: 1, also_ok: 1 });
+    expect(p.resources_shown.sort()).toEqual(['u1', 'u2']);
+    expect(p.topics.sort()).toEqual(['t1', 't2']);
+  });
 });
 
 describe('gstack-developer-profile error handling', () => {
