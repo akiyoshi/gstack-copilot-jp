@@ -3,7 +3,7 @@
   "upstream_latest_known": "v1.20.0.0",
   "upstream_latest_audit_date": "2026-04-29",
   "upstream_lag_versions": 0,
-  "upstream_lag_note": "Phase A-3 完了。commit/version を v1.20.0.0 (e8893a18) に同期済み。",
+  "upstream_lag_note": "Phase A-3 完了。commit/version を v1.20.0.0 (e8893a18) に同期済み。developer-profile 機能を v1.2.6.0 で取り込み。",
   "upstream_repo": "garrytan/gstack",
   "upstream_commit": "e8893a18b18e32ebd63a21f6915337868249ebe1",
   "snapshot_path": null,

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.6.0] - 2026-05-02
+
+### 🧠 /office-hours の記憶機能を復活（developer-profile 統合）
+
+これまで `/office-hours` は何度実行してもセッション数を覚えていなかった。`gstack-builder-profile` バイナリが stub のまま出荷されており、Phase 6 の関係深化（welcome_back / regular / inner_circle）が常に `introduction` モードに固定されていた。本家 gstack v1.20.0.0 の `gstack-developer-profile` 設計に合わせて、休眠していた記憶機能を復活させた。
+
+これで複数のリポジトリで `/office-hours` を並行実行しても、リポごとに独立したコンテキストとして記録される（`~/.gstack/projects/{slug}/` 配下にイベントが per-slug 分離）。同じプロジェクトに何度も戻れば、CEO は前回の design doc / assignment を覚えていて関係を深めてくれる。
+
+### Added
+
+- **`bin/gstack-developer-profile`** — 統一プロファイルバイナリ（本家 v1.20.0.0 準拠の最小実装）。`--read` / `--profile` / `--migrate` / `--append-session` をサポート
+- **自動マイグレーション** — 既存ユーザーの `~/.gstack/builder-profile.jsonl` は初回 `--read` で `~/.gstack/developer-profile.json` に idempotent 移行される。元ファイルは `.migrated-<TS>` にアーカイブ
+
+### Changed
+
+- **`.github/skills/bin/gstack-builder-profile`** — stub から legacy shim へ。`gstack-developer-profile --read` に委譲
+- **`.github/skills/office-hours/SKILL.md`** — `builder-profile.jsonl` 直書き 2 箇所を `gstack-developer-profile --append-session` 経由に変更。Phase 6 の profile 読み込みも統一バイナリ経由に
+- **`upstream-tracking.json` / `upstream-tracking.md`** — developer-profile 周りの追跡を `vendored` に更新
+
 ## [1.2.5.0] - 2026-04-29
 
 ### 🔁 出荷時 CHANGELOG 必須化（preference 撤回）

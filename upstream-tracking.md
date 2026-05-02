@@ -15,9 +15,9 @@
 |------|-----|
 | 本家バージョン | **v1.20.0.0** (e8893a18) — Browser-Skills runtime + /scrape + /skillify |
 | 本家 HEAD（最終監査時点） | v1.20.0.0 (2026-04-29 同期完了) |
-| 取込ラグ | 0 commits（Phase A-3 で 8 リリース分の SKILL.md を一括同期） |
-| 最終検証日 | 2026-04-29 |
-| gstack-copilot-jp バージョン | 1.0.1.0 |
+| 取込ラグ | 0 commits（Phase A-3 で 8 リリース分の SKILL.md を一括同期、v1.2.6.0 で `gstack-developer-profile` 取込） |
+| 最終検証日 | 2026-05-02 |
+| gstack-copilot-jp バージョン | 1.2.6.0 |
 
 **Phase A-3 同期サマリ**:
 
@@ -151,6 +151,8 @@ v1.4.0.0 以降、本家は**セキュリティ層**（ML Prompt Injection Defen
 | `gstack-platform-detect` | — | **planned (Phase A-4)** — エージェント検出（Bun 非依存版） |
 | `gstack-open-url` | — | **planned (Phase E)** — クロス OS URL オープナー（Darwin/Linux/MINGW） |
 | `gstack-update-check` (実装) | — | **planned (Phase A-5)** — 上記 Phase 3 を A-5 で実装 |
+| `gstack-developer-profile` | `bin/gstack-developer-profile` | ✓ vendored (v1.2.6.0、最小実装: --read/--profile/--migrate/--append-session) |
+| `gstack-builder-profile` | `.github/skills/bin/gstack-builder-profile` | ✓ legacy shim (--read を委譲) |
 
 ## JSONL スキーマ
 
