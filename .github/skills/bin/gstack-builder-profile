@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
-# .github/skills/bin/gstack-builder-profile — ビルダープロファイル stub
-# 本家の builder-profile.jsonl 操作用。gstack-copilot-jp では ~/.gstack/ に直接書く。
-echo "{}"
+# .github/skills/bin/gstack-builder-profile — LEGACY SHIM.
+#
+# 本家 gstack v1.20.0.0 で gstack-developer-profile に統合されたため、
+# このバイナリは互換のための薄い shim となった。`--read` をデフォルトで
+# 統一バイナリ bin/gstack-developer-profile に委譲する。
+#
+# builder-profile.jsonl → developer-profile.json への移行は初回 read 時に
+# 自動発火する（gstack-developer-profile の ensure_profile を参照）。
+#
+# 全ての呼び出し元が gstack-developer-profile に切り替われば、このファイルは
+# 削除できる。
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+exec "$ROOT_DIR/bin/gstack-developer-profile" --read "$@"
