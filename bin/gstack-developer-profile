@@ -1,0 +1,276 @@
+#!/usr/bin/env bash
+# gstack-developer-profile — 統一 developer profile（upstream gstack v1.20.0.0 準拠の最小実装）
+#
+# 本家の bin/gstack-developer-profile を gstack-copilot-jp 用に最小化。
+# office-hours から実際に呼ばれる --read / --migrate / --profile のみ実装。
+# 本家の --derive / --trace / --gap / --vibe / --check-mismatch は未実装
+# （呼び出し 0 箇所のため）。必要になった時点で追加する。
+#
+# Subcommands:
+#   --read              (default)  KEY: VALUE 形式で出力（/office-hours 互換）
+#   --profile                      developer-profile.json をそのまま出力
+#   --migrate                      ~/.gstack/builder-profile.jsonl → developer-profile.json を idempotent に移行
+#   --append-session               stdin から session JSON を読み、sessions 配列と
+#                                  signals_accumulated/resources_shown/topics を更新
+#
+# Profile file: ~/.gstack/developer-profile.json
+# Legacy file:  ~/.gstack/builder-profile.jsonl（migrate 後は .migrated-<TS> に rename）
+# Events file:  ~/.gstack/projects/{SLUG}/question-events.jsonl（per-slug 分離）
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
+PROFILE_FILE="$GSTACK_HOME/developer-profile.json"
+LEGACY_FILE="$GSTACK_HOME/builder-profile.jsonl"
+
+CMD="${1:---read}"
+shift || true
+
+# Node が無い環境では fail-fast（setup で前提化済み）
+if ! command -v node >/dev/null 2>&1; then
+  echo "gstack-developer-profile: node が必要です（setup を実行してください）" >&2
+  exit 1
+fi
+
+# -----------------------------------------------------------------------
+# Migration: builder-profile.jsonl → developer-profile.json
+# Idempotent: PROFILE_FILE が既に存在すれば no-op
+# Atomic: 一時ファイル → mv で書き込み
+# -----------------------------------------------------------------------
+do_migrate() {
+  mkdir -p "$GSTACK_HOME"
+
+  if [ ! -f "$LEGACY_FILE" ]; then
+    echo "MIGRATE: no legacy file to migrate"
+    return 0
+  fi
+
+  if [ -f "$PROFILE_FILE" ]; then
+    echo "MIGRATE: already migrated (developer-profile.json exists)"
+    return 0
+  fi
+
+  local TMPOUT
+  TMPOUT=$(mktemp "$GSTACK_HOME/developer-profile.json.XXXXXX.tmp")
+  # shellcheck disable=SC2064
+  trap "rm -f '$TMPOUT'" EXIT
+
+  LEGACY_PATH="$LEGACY_FILE" node -e '
+    const fs = require("fs");
+    const path = process.env.LEGACY_PATH;
+    const raw = fs.readFileSync(path, "utf-8");
+    const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+    const sessions = [];
+    const signalsAcc = {};
+    const resources = new Set();
+    const topics = new Set();
+    for (const line of lines) {
+      try {
+        const e = JSON.parse(line);
+        sessions.push(e);
+        for (const s of (e.signals || [])) {
+          signalsAcc[s] = (signalsAcc[s] || 0) + 1;
+        }
+        for (const r of (e.resources_shown || [])) resources.add(r);
+        for (const t of (e.topics || [])) topics.add(t);
+      } catch { /* malformed lines are skipped */ }
+    }
+    const profile = {
+      identity: {},
+      declared: {},
+      inferred: {
+        values: {
+          scope_appetite: 0.5,
+          risk_tolerance: 0.5,
+          detail_preference: 0.5,
+          autonomy: 0.5,
+          architecture_care: 0.5
+        },
+        sample_size: 0,
+        diversity: { skills_covered: 0, question_ids_covered: 0, days_span: 0 }
+      },
+      gap: {},
+      overrides: {},
+      sessions,
+      signals_accumulated: signalsAcc,
+      resources_shown: Array.from(resources),
+      topics: Array.from(topics),
+      migrated_at: new Date().toISOString(),
+      schema_version: 1
+    };
+    process.stdout.write(JSON.stringify(profile, null, 2));
+  ' > "$TMPOUT"
+
+  mv "$TMPOUT" "$PROFILE_FILE"
+  trap - EXIT
+
+  local TS
+  TS="$(date +%Y-%m-%d-%H%M%S)"
+  mv "$LEGACY_FILE" "$LEGACY_FILE.migrated-$TS"
+
+  local COUNT
+  COUNT=$(PROFILE="$PROFILE_FILE" node -e 'console.log(JSON.parse(require("fs").readFileSync(process.env.PROFILE,"utf-8")).sessions.length)' 2>/dev/null || echo "?")
+  echo "MIGRATE: ok — migrated $COUNT sessions from builder-profile.jsonl"
+}
+
+# -----------------------------------------------------------------------
+# ensure_profile: profile が存在しなければ作る（migration → stub の順）
+# -----------------------------------------------------------------------
+ensure_profile() {
+  if [ -f "$PROFILE_FILE" ]; then
+    return 0
+  fi
+  if [ -f "$LEGACY_FILE" ]; then
+    do_migrate >/dev/null
+    return 0
+  fi
+  mkdir -p "$GSTACK_HOME"
+  cat > "$PROFILE_FILE" <<'EOF'
+{
+  "identity": {},
+  "declared": {},
+  "inferred": {
+    "values": {
+      "scope_appetite": 0.5,
+      "risk_tolerance": 0.5,
+      "detail_preference": 0.5,
+      "autonomy": 0.5,
+      "architecture_care": 0.5
+    },
+    "sample_size": 0,
+    "diversity": { "skills_covered": 0, "question_ids_covered": 0, "days_span": 0 }
+  },
+  "gap": {},
+  "overrides": {},
+  "sessions": [],
+  "signals_accumulated": {},
+  "schema_version": 1
+}
+EOF
+}
+
+# -----------------------------------------------------------------------
+# Read: legacy KEY: VALUE 形式（office-hours 互換）
+# 本家 v1.20.0.0 と同じ tier しきい値・NUDGE_ELIGIBLE 計算を維持
+# -----------------------------------------------------------------------
+do_read() {
+  ensure_profile
+  PROFILE="$PROFILE_FILE" node -e '
+    const fs = require("fs");
+    const p = JSON.parse(fs.readFileSync(process.env.PROFILE, "utf-8"));
+    const sessions = p.sessions || [];
+    const count = sessions.length;
+    let tier = "introduction";
+    if (count >= 8) tier = "inner_circle";
+    else if (count >= 4) tier = "regular";
+    else if (count >= 1) tier = "welcome_back";
+
+    const last = sessions[count - 1] || {};
+    const prev = sessions[count - 2] || {};
+    const crossProject = prev.project_slug && last.project_slug
+      ? prev.project_slug !== last.project_slug
+      : false;
+
+    const designs = sessions.map(e => e.design_doc || "").filter(Boolean);
+    const designTitles = sessions
+      .map(e => (e.design_doc ? (e.project_slug || "unknown") : ""))
+      .filter(Boolean);
+
+    const signalCounts = p.signals_accumulated || {};
+    let totalSignals = 0;
+    for (const v of Object.values(signalCounts)) totalSignals += v;
+    const signalStr = Object.entries(signalCounts).map(([k, v]) => k + ":" + v).join(",");
+
+    const builderSessions = sessions.filter(e => e.mode !== "startup").length;
+    const nudgeEligible = builderSessions >= 3 && totalSignals >= 5;
+
+    const resources = p.resources_shown || [];
+    const topics = p.topics || [];
+
+    console.log("SESSION_COUNT: " + count);
+    console.log("TIER: " + tier);
+    console.log("LAST_PROJECT: " + (last.project_slug || ""));
+    console.log("LAST_ASSIGNMENT: " + (last.assignment || ""));
+    console.log("LAST_DESIGN_TITLE: " + (last.design_doc || ""));
+    console.log("DESIGN_COUNT: " + designs.length);
+    console.log("DESIGN_TITLES: " + JSON.stringify(designTitles));
+    console.log("ACCUMULATED_SIGNALS: " + signalStr);
+    console.log("TOTAL_SIGNAL_COUNT: " + totalSignals);
+    console.log("CROSS_PROJECT: " + crossProject);
+    console.log("NUDGE_ELIGIBLE: " + nudgeEligible);
+    console.log("RESOURCES_SHOWN: " + resources.join(","));
+    console.log("RESOURCES_SHOWN_COUNT: " + resources.length);
+    console.log("TOPICS: " + topics.join(","));
+  '
+}
+
+# -----------------------------------------------------------------------
+# Profile: 完全な JSON を出力
+# -----------------------------------------------------------------------
+do_profile() {
+  ensure_profile
+  cat "$PROFILE_FILE"
+}
+
+# -----------------------------------------------------------------------
+# Append session: stdin から JSON entry を読み sessions 配列に追加。
+# signals_accumulated / resources_shown / topics も更新（推移的に集約）。
+# 同時実行で profile が壊れないよう atomic rename で書き戻す。
+# -----------------------------------------------------------------------
+do_append_session() {
+  ensure_profile
+  local TMPOUT
+  TMPOUT=$(mktemp "$PROFILE_FILE.XXXXXX.tmp")
+  # shellcheck disable=SC2064
+  trap "rm -f '$TMPOUT'" EXIT
+
+  PROFILE="$PROFILE_FILE" node -e '
+    const fs = require("fs");
+    const path = process.env.PROFILE;
+    const stdin = fs.readFileSync(0, "utf-8");
+    let entry;
+    try {
+      entry = JSON.parse(stdin);
+    } catch (err) {
+      console.error("APPEND: invalid JSON on stdin:", err.message);
+      process.exit(1);
+    }
+    const p = JSON.parse(fs.readFileSync(path, "utf-8"));
+    p.sessions = p.sessions || [];
+    p.sessions.push(entry);
+    p.signals_accumulated = p.signals_accumulated || {};
+    for (const s of (entry.signals || [])) {
+      p.signals_accumulated[s] = (p.signals_accumulated[s] || 0) + 1;
+    }
+    const resources = new Set(p.resources_shown || []);
+    for (const r of (entry.resources_shown || [])) resources.add(r);
+    p.resources_shown = Array.from(resources);
+    const topics = new Set(p.topics || []);
+    for (const t of (entry.topics || [])) topics.add(t);
+    p.topics = Array.from(topics);
+    p.updated_at = new Date().toISOString();
+    process.stdout.write(JSON.stringify(p, null, 2));
+  ' < /dev/stdin > "$TMPOUT"
+
+  mv "$TMPOUT" "$PROFILE_FILE"
+  trap - EXIT
+  echo "APPEND: ok"
+}
+
+# -----------------------------------------------------------------------
+# Dispatch
+# -----------------------------------------------------------------------
+case "$CMD" in
+  --read) do_read ;;
+  --profile) do_profile ;;
+  --migrate) do_migrate ;;
+  --append-session) do_append_session ;;
+  --help|-h)
+    sed -n '1,/^set -euo/p' "$0" | sed 's|^# \?||'
+    ;;
+  *)
+    echo "gstack-developer-profile: unknown subcommand '$CMD'" >&2
+    echo "run --help for usage" >&2
+    exit 1
+    ;;
+esac
