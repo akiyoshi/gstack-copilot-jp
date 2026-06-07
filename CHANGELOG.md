@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0.0] - 2026-06-07
+
+### ⬆️ 本家 gstack v1.20.0.0 → v1.56.0.0 を同期（58 commits）
+
+本家の方法論改善 ── とりわけ大幅な token-reduction（v1.46 の catalog tokens -56%、v1.54 の ship skeleton 化）── を取り込んだ。`/office-hours` や 4 つの `/plan-*` レビュー系スキルは 7 割前後スリムになり、同じ振る舞いをより少ないトークンで読み込めるようになった。日本語ファーストの出力や Outside Voice（マルチモデルレビュー）の仕組みはそのまま維持している。
+
+GitHub Copilot CLI 専用という方針は不変で、本家が追加した iOS デバイスファーム・GBrain クロスマシンメモリ・Claude Code サイドバー固有の機能は取り込んでいない。
+
+### Changed
+
+- **34 の vendored スキルを再生成** — `/office-hours` `/plan-ceo-review` `/plan-eng-review` `/plan-design-review` `/plan-devex-review` `/autoplan` `/cso` `/qa` ほか。本家 v1.21〜v1.56 の簡潔化・AskUserQuestion 分割ルール（v1.48）を反映
+- **`/plan-*` の「次のスキル」ハンドオフと `/office-hours` の品質ゲート（Spec Review Loop）を維持** — 本家が削除した skill-chaining セクションを gstack-copilot-jp の契約として復元
+
+### Fixed
+
+- **スキル同期ツール `bin/adapt-upstream-skill.sh` を本家の新パターンに対応** — gbrain の「Brain Context」ブロック混入、`eval "$(true"` という壊れた bash の生成、小文字 `codex` 表記の残存、`allowed-tools` への不正値混入を解消。次回以降の同期がよりクリーンになる
+- **`sections/` サイドカー（v1.46 で導入された on-demand セクション分割）の互換変換に対応** — 本体と同じ互換ルールを適用し、Claude 固有パス・gbrain 参照・`codex` 表記を除去。さらに本体側のパス書き換え（`/review` → `/gstack-review`）に合わせてサイドカーのファイル名（`review-sections.md` → `gstack-review-sections.md`）も変換し、参照切れを防止
+
+### Tracking
+
+- **新規スキルを追跡台帳に分類** — iOS デバイスファーム 5 種類と `/sync-gbrain` を excluded、`/spec`・`/document-generate` を planned（将来採用候補）として追加
+- `upstream-tracking.json` / `upstream-tracking.md` を v1.56.0.0 (cab774cc) に更新
+
 ## [1.2.6.0] - 2026-05-02
 
 ### 🧠 /office-hours の記憶機能を復活（developer-profile 統合）

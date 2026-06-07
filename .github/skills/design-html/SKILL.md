@@ -182,7 +182,6 @@ If `NEEDS_SETUP`:
 ## Step 0: Input Detection
 
 ```bash
-eval "$(true"
 ```
 
 Detect what design context exists for this project. Run all four checks:

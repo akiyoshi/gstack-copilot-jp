@@ -10,13 +10,6 @@ triggers:
 allowed-tools:
   - bash
   - view
-hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/bin/check-careful.sh"
-          statusMessage: "Checking for destructive commands..."
 ---
 
 # /careful — Destructive Command Guardrails

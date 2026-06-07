@@ -16,7 +16,7 @@ allowed-tools:
 # /pair-agent — Share Your Browser With Another AI Agent
 
 You're sitting in Claude Code with a browser running. You also have another AI agent
-open (OpenClaw, Hermes, Codex, Cursor, whatever). You want that other agent to be
+open (OpenClaw, Hermes, Outside Voice, Cursor, whatever). You want that other agent to be
 able to browse the web using YOUR browser. This skill makes that happen.
 
 ## How it works
@@ -93,14 +93,14 @@ Use ask_user:
 
 Options:
 - A) OpenClaw (local or remote)
-- B) Codex / OpenAI Agents (local)
+- B) Outside Voice / OpenAI Agents (local)
 - C) Cursor (local)
 - D) Another Claude Code session (local or remote)
 - E) Something else (generic HTTP instructions — use this for Hermes)
 
 Based on the answer, set `TARGET_HOST`:
 - A → `openclaw`
-- B → `codex`
+- B → `Outside Voice`
 - C → `cursor`
 - D → `claude`
 - E → generic (no host-specific config)
@@ -133,7 +133,7 @@ Run pair-agent with --local flag:
 $B pair-agent --local TARGET_HOST
 ```
 
-Replace `TARGET_HOST` with the value from Step 2 (openclaw, codex, cursor, etc.).
+Replace `TARGET_HOST` with the value from Step 2 (openclaw, Outside Voice, cursor, etc.).
 
 If it succeeds, tell the user:
 "Done. TARGET_HOST can now use your browser. It will read credentials from the
@@ -256,11 +256,11 @@ generate a new setup key.
 OpenClaw agents use the `exec` tool instead of `Bash`. The instruction block uses
 `exec curl` syntax which OpenClaw understands natively. When using `--local openclaw`,
 credentials are written to `~/.openclaw/skills/gstack/browse-remote.json`.
-### Codex
+### Outside Voice
 
-Codex agents can execute shell commands via `codex exec`. The instruction block's
-curl commands work directly. When using `--local codex`, credentials are written
-to `~/.codex/skills/gstack/browse-remote.json`.
+Outside Voice agents can execute shell commands via `Outside Voice exec`. The instruction block's
+curl commands work directly. When using `--local Outside Voice`, credentials are written
+to `~/.Outside Voice/skills/gstack/browse-remote.json`.
 
 ### Cursor
 
