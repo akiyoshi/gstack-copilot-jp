@@ -299,7 +299,6 @@ If `DESIGN_NOT_AVAILABLE`: skip mockup generation — the fix loop works without
 **Create output directories:**
 
 ```bash
-eval "$(true"
 REPORT_DIR="$HOME/.gstack/projects/$SLUG/designs/design-audit-$(date +%Y%m%d)"
 mkdir -p "$REPORT_DIR/screenshots"
 echo "REPORT_DIR: $REPORT_DIR"
@@ -731,7 +730,6 @@ Compare screenshots and observations across pages for:
 
 **Project-scoped:**
 ```bash
-eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 ```
 Write to: `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md`
 
@@ -982,13 +980,13 @@ Present subagent output under a `INDEPENDENT SUBAGENT (design consistency):` hea
 **Synthesis — Litmus scorecard:**
 
 Use the same scorecard format as /plan-design-review (shown above). Fill in from both outputs.
-Merge findings into the triage with `[outside voice]` / `[subagent]` / `[cross-model]` tags.
+Merge findings into the triage with `[Outside Voice]` / `[subagent]` / `[cross-model]` tags.
 
 **Log the result:**
 ```bash
 .github/skills/bin/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Replace STATUS with "clean" or "issues_found", SOURCE with "outside+independent", "outside-only", "independent-only", or "unavailable".
+Replace STATUS with "clean" or "issues_found", SOURCE with "outside-voice+subagent", "outside-only", "independent-only", or "unavailable".
 
 ## Phase 7: Triage
 
@@ -1115,7 +1113,6 @@ Write the report to `$REPORT_DIR` (already set up in the setup phase):
 
 **Also write a summary to the project index:**
 ```bash
-eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 ```
 Write a one-line summary to `~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md` with a pointer to the full report in `$REPORT_DIR`.
 

@@ -240,6 +240,15 @@ MUST be saved to `./designs/`, NEVER to `.context/`,
 `docs/designs/`, `/tmp/`, or any project-local directory. Design artifacts are USER
 data, not project files. They persist across branches, conversations, and workspaces.
 
+## Section index — Read each section when its situation applies
+
+This skill is a decision-tree skeleton. The steps below point to on-demand
+sections. Read a section in full before doing its step; do not work from memory.
+
+| When | Read this section |
+|------|-------------------|
+| running the 7 design passes, required outputs, and review report (only after Step 0 scope is agreed) | `sections/gstack-review-sections.md` |
+---
 ## Step 0: Design Scope Assessment
 
 ### 0A. Initial Design Rating
@@ -283,13 +292,11 @@ designer outputs PNGs and HTML comparison boards for human review during the
 planning phase. Generating mockups during planning is the whole point.
 
 Allowed commands under this exception:
-- `mkdir -p ./designs/...`
 - `open` (fallback for viewing boards when `$B` is not available)
 
 First, set up the output directory. Name it after the screen/feature being designed and today's date:
 
 ```bash
-eval "$(true"
 _DESIGN_DIR="$HOME/.gstack/projects/$SLUG/designs/<screen-name>-$(date +%Y%m%d)"
 mkdir -p "$_DESIGN_DIR"
 echo "DESIGN_DIR: $_DESIGN_DIR"
@@ -330,8 +337,12 @@ This command generates the board HTML, starts an HTTP server on a random port,
 and opens it in the user's default browser. **Run it in the background** with `&`
 because the server needs to stay running while the user interacts with the board.
 
-Parse the port from stderr output: `SERVE_STARTED: port=XXXXX`. You need this
-for the board URL and for reloading during regeneration cycles.
+Parse the board URL from stderr output. Default daemon path:
+`BOARD_URL: http://127.0.0.1:N/boards/<id>/` (already includes the per-board
+path; use this for the ask_user URL AND as the base for the reload
+endpoint). Legacy `--no-daemon` path emits `SERVE_STARTED: port=XXXXX` and
+serves a single board at `/`, with reload at `/api/reload` — only relevant
+when an external caller explicitly passes `--no-daemon`.
 
 **PRIMARY WAIT: ask_user with board URL**
 
@@ -339,10 +350,13 @@ After the board is serving, use ask_user to wait for the user. Include the
 board URL so they can click it if they lost the browser tab:
 
 "I've opened a comparison board with the design variants:
-http://127.0.0.1:<PORT>/ — Rate them, leave comments, remix
+<BOARD_URL> — Rate them, leave comments, remix
 elements you like, and click Submit when you're done. Let me know when you've
 submitted your feedback (or paste your preferences here). If you clicked
 Regenerate or Remix on the board, tell me and I'll generate new variants."
+
+Substitute `<BOARD_URL>` with the URL parsed from stderr (the daemon path
+emits `BOARD_URL: http://127.0.0.1:N/boards/<id>/`).
 
 **Do NOT use ask_user to ask which variant the user prefers.** The comparison
 board IS the chooser. ask_user is just the blocking wait mechanism.
@@ -385,8 +399,13 @@ the approved variant.
 1. Read `regenerateAction` from the JSON (`"different"`, `"match"`, `"more_like_B"`,
    `"remix"`, or custom text)
 2. If `regenerateAction` is `"remix"`, read `remixSpec` (e.g. `{"layout":"A","colors":"B"}`)
-5. Reload the board in the user's browser (same tab):
-   `curl -s -X POST http://127.0.0.1:PORT/api/reload -H 'Content-Type: application/json' -d '{"html":"$_DESIGN_DIR/design-board.html"}'`
+5. Reload the board in the user's browser (same tab) — the URL is per-board
+   under daemon mode, so use `<BOARD_URL>` (from the `BOARD_URL:` stderr
+   line) as the base:
+   `curl -s -X POST "${BOARD_URL}api/reload" -H 'Content-Type: application/json' -d '{"html":"$_DESIGN_DIR/design-board.html"}'`
+   Under `--no-daemon` the reload endpoint is `/api/reload` at the legacy
+   port; this path only matters if the caller explicitly opted out of the
+   daemon.
 6. The board auto-refreshes. **ask_user again** with the same board URL to
    wait for the next round of feedback. Repeat until `feedback.json` appears.
 
@@ -525,7 +544,7 @@ Fill in each cell from the Outside Voice and subagent outputs. CONFIRMED = both 
 ```bash
 .github/skills/bin/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 ```
-Replace STATUS with "clean" or "issues_found", SOURCE with "outside+independent", "outside-only", "independent-only", or "unavailable".
+Replace STATUS with "clean" or "issues_found", SOURCE with "outside-voice+subagent", "outside-only", "independent-only", or "unavailable".
 
 ## The 0-10 Rating Method
 
@@ -555,420 +574,8 @@ Show the mockup to the user via the view tool. This makes the gap between
 If the design binary is not available, skip this and continue with text-based
 descriptions of what 10/10 looks like.
 
-## Review Sections (7 passes, after scope is agreed)
-
-**Anti-skip rule:** Never condense, abbreviate, or skip any review pass (1-7) regardless of plan type (strategy, spec, code, infra). Every pass in this skill exists for a reason. "This is a strategy doc so design passes don't apply" is always wrong — design gaps are where implementation breaks down. If a pass genuinely has zero findings, say "No issues found" and move on — but you must evaluate it.
-
-## Prior Learnings
-
-Search for relevant learnings from previous sessions:
-
-```bash
-else
-fi
-```
-
-If `CROSS_PROJECT` is `unset` (first time): Use ask_user:
-
-> gstack can search learnings from your other projects on this machine to find
-> patterns that might apply here. This stays local (no data leaves your machine).
-> Recommended for solo developers. Skip if you work on multiple client codebases
-> where cross-contamination would be a concern.
-
-Options:
-- A) Enable cross-project learnings (recommended)
-- B) Keep learnings project-scoped only
-Then re-run the search with the appropriate flag.
-
-If learnings are found, incorporate them into your analysis. When a review finding
-matches a past learning, display:
-
-**"Prior learning applied: [key] (confidence N/10, from [date])"**
-
-This makes the compounding visible. The user should see that gstack is getting
-smarter on their codebase over time.
-
-### Pass 1: Information Architecture
-Rate 0-10: Does the plan define what the user sees first, second, third?
-FIX TO 10: Add information hierarchy to the plan. Include ASCII diagram of screen/page structure and navigation flow. Apply "constraint worship" — if you can only show 3 things, which 3?
-**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY. If no issues, say so and move on. Do NOT proceed until user responds.
-
-### Pass 2: Interaction State Coverage
-Rate 0-10: Does the plan specify loading, empty, error, success, partial states?
-FIX TO 10: Add interaction state table to the plan:
-```
-  FEATURE              | LOADING | EMPTY | ERROR | SUCCESS | PARTIAL
-  ---------------------|---------|-------|-------|---------|--------
-  [each UI feature]    | [spec]  | [spec]| [spec]| [spec]  | [spec]
-```
-For each state: describe what the user SEES, not backend behavior.
-Empty states are features — specify warmth, primary action, context.
-**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
-
-### Pass 3: User Journey & Emotional Arc
-Rate 0-10: Does the plan consider the user's emotional experience?
-FIX TO 10: Add user journey storyboard:
-```
-  STEP | USER DOES        | USER FEELS      | PLAN SPECIFIES?
-  -----|------------------|-----------------|----------------
-  1    | Lands on page    | [what emotion?] | [what supports it?]
-  ...
-```
-Apply time-horizon design: 5-sec visceral, 5-min behavioral, 5-year reflective.
-**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
-
-### Pass 4: AI Slop Risk
-Rate 0-10: Does the plan describe specific, intentional UI — or generic patterns?
-FIX TO 10: Rewrite vague UI descriptions with specific alternatives.
-
-### Design Hard Rules
-
-**Classifier — determine rule set before evaluating:**
-- **MARKETING/LANDING PAGE** (hero-driven, brand-forward, conversion-focused) → apply Landing Page Rules
-- **APP UI** (workspace-driven, data-dense, task-focused: dashboards, admin, settings) → apply App UI Rules
-- **HYBRID** (marketing shell with app-like sections) → apply Landing Page Rules to hero/marketing sections, App UI Rules to functional sections
-
-**Hard rejection criteria** (instant-fail patterns — flag if ANY apply):
-1. Generic SaaS card grid as first impression
-2. Beautiful image with weak brand
-3. Strong headline with no clear action
-4. Busy imagery behind text
-5. Sections repeating same mood statement
-6. Carousel with no narrative purpose
-7. App UI made of stacked cards instead of layout
-
-**Litmus checks** (answer YES/NO for each — used for cross-model consensus scoring):
-1. Brand/product unmistakable in first screen?
-2. One strong visual anchor present?
-3. Page understandable by scanning headlines only?
-4. Each section has one job?
-5. Are cards actually necessary?
-6. Does motion improve hierarchy or atmosphere?
-7. Would design feel premium with all decorative shadows removed?
-
-**Landing page rules** (apply when classifier = MARKETING/LANDING):
-- First viewport reads as one composition, not a dashboard
-- Brand-first hierarchy: brand > headline > body > CTA
-- Typography: expressive, purposeful — no default stacks (Inter, Roboto, Arial, system)
-- No flat single-color backgrounds — use gradients, images, subtle patterns
-- Hero: full-bleed, edge-to-edge, no inset/tiled/rounded variants
-- Hero budget: brand, one headline, one supporting sentence, one CTA group, one image
-- No cards in hero. Cards only when card IS the interaction
-- One job per section: one purpose, one headline, one short supporting sentence
-- Motion: 2-3 intentional motions minimum (entrance, scroll-linked, hover/reveal)
-- Color: define CSS variables, avoid purple-on-white defaults, one accent color default
-- Copy: product language not design commentary. "If deleting 30% improves it, keep deleting"
-- Beautiful defaults: composition-first, brand as loudest text, two typefaces max, cardless by default, first viewport as poster not document
-
-**App UI rules** (apply when classifier = APP UI):
-- Calm surface hierarchy, strong typography, few colors
-- Dense but readable, minimal chrome
-- Organize: primary workspace, navigation, secondary context, one accent
-- Avoid: dashboard-card mosaics, thick borders, decorative gradients, ornamental icons
-- Copy: utility language — orientation, status, action. Not mood/brand/aspiration
-- Cards only when card IS the interaction
-- Section headings state what area is or what user can do ("Selected KPIs", "Plan status")
-
-**Universal rules** (apply to ALL types):
-- Define CSS variables for color system
-- No default font stacks (Inter, Roboto, Arial, system)
-- One job per section
-- "If deleting 30% of the copy improves it, keep deleting"
-- Cards earn their existence — no decorative card grids
-- NEVER use small, low-contrast type (body text < 16px or contrast ratio < 4.5:1 on body text)
-- NEVER put labels inside form fields as the only label (placeholder-as-label pattern — labels must be visible when the field has content)
-- ALWAYS preserve visited vs unvisited link distinction (visited links must have a different color)
-- NEVER float headings between paragraphs (heading must be visually closer to the section it introduces than to the preceding section)
-
-**AI Slop blacklist** (the 10 patterns that scream "AI-generated"):
-1. Purple/violet/indigo gradient backgrounds or blue-to-purple color schemes
-2. **The 3-column feature grid:** icon-in-colored-circle + bold title + 2-line description, repeated 3x symmetrically. THE most recognizable AI layout.
-3. Icons in colored circles as section decoration (SaaS starter template look)
-4. Centered everything (`text-align: center` on all headings, descriptions, cards)
-5. Uniform bubbly border-radius on every element (same large radius on everything)
-6. Decorative blobs, floating circles, wavy SVG dividers (if a section feels empty, it needs better content, not decoration)
-7. Emoji as design elements (rockets in headings, emoji as bullet points)
-8. Colored left-border on cards (`border-left: 3px solid <accent>`)
-9. Generic hero copy ("Welcome to [X]", "Unlock the power of...", "Your all-in-one solution for...")
-10. Cookie-cutter section rhythm (hero → 3 features → testimonials → pricing → CTA, every section same height)
-11. system-ui or `-apple-system` as the PRIMARY display/body font — the "I gave up on typography" signal. Pick a real typeface.
-
-Source: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + gstack design methodology.
-- "Cards with icons" → what differentiates these from every SaaS template?
-- "Hero section" → what makes this hero feel like THIS product?
-- "Clean, modern UI" → meaningless. Replace with actual design decisions.
-- "Dashboard with widgets" → what makes this NOT every other dashboard?
-**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
-
-### Pass 5: Design System Alignment
-Rate 0-10: Does the plan align with DESIGN.md?
-FIX TO 10: If DESIGN.md exists, annotate with specific tokens/components. If no DESIGN.md, flag the gap and recommend `/design-consultation`.
-Flag any new component — does it fit the existing vocabulary?
-**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
-
-### Pass 6: Responsive & Accessibility
-Rate 0-10: Does the plan specify mobile/tablet, keyboard nav, screen readers?
-FIX TO 10: Add responsive specs per viewport — not "stacked on mobile" but intentional layout changes. Add a11y: keyboard nav patterns, ARIA landmarks, touch target sizes (44px min), color contrast requirements.
-**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
-
-### Pass 7: Unresolved Design Decisions
-Surface ambiguities that will haunt implementation:
-```
-  DECISION NEEDED              | IF DEFERRED, WHAT HAPPENS
-  -----------------------------|---------------------------
-  What does empty state look like? | Engineer ships "No items found."
-  Mobile nav pattern?          | Desktop nav hides behind hamburger
-  ...
-```
-If visual mockups were generated in Step 0.5, reference them as evidence when surfacing unresolved decisions. A mockup makes decisions concrete — e.g., "Your approved mockup shows a sidebar nav, but the plan doesn't specify mobile behavior. What happens to this sidebar on 375px?"
-Each decision = one ask_user with recommendation + WHY + alternatives. Edit the plan with each decision as it's made.
-
-### Post-Pass: Update Mockups (if generated)
-
-If mockups were generated in Step 0.5 and review passes changed significant design decisions (information architecture restructure, new states, layout changes), offer to regenerate (one-shot, not a loop):
-
-ask_user: "The review passes changed [list major design changes]. Want me to regenerate mockups to reflect the updated plan? This ensures the visual reference matches what we're actually building."
-## CRITICAL RULE — How to ask questions
-Follow the ask_user format from the Preamble above. Additional rules for plan design reviews:
-* **One issue = one ask_user call.** Never combine multiple issues into one question.
-* Describe the design gap concretely — what's missing, what the user will experience if it's not specified.
-* Present 2-3 options. For each: effort to specify now, risk if deferred.
-* **Map to Design Principles above.** One sentence connecting your recommendation to a specific principle.
-* Label with issue NUMBER + option LETTER (e.g., "3A", "3B").
-* **Escape hatch (tightened):** If a section has zero findings, state "No issues, moving on" and proceed. If it has findings, use ask_user for each — a gap with an "obvious fix" is still a gap and still needs user approval before any change lands in the plan. Only skip ask_user when the fix is genuinely trivial AND there are no meaningful design alternatives. When in doubt, ask.
-
-## Required Outputs
-
-### "NOT in scope" section
-Design decisions considered and explicitly deferred, with one-line rationale each.
-
-### "What already exists" section
-Existing DESIGN.md, UI patterns, and components that the plan should reuse.
-
-### TODOS.md updates
-After all review passes are complete, present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step.
-
-For design debt: missing a11y, unresolved responsive behavior, deferred empty states. Each TODO gets:
-* **What:** One-line description of the work.
-* **Why:** The concrete problem it solves or value it unlocks.
-* **Pros:** What you gain by doing this work.
-* **Cons:** Cost, complexity, or risks of doing it.
-* **Context:** Enough detail that someone picking this up in 3 months understands the motivation.
-* **Depends on / blocked by:** Any prerequisites.
-
-Then present options: **A)** Add to TODOS.md **B)** Skip — not valuable enough **C)** Build it now in this PR instead of deferring.
-
-### Completion Summary
-```
-  +====================================================================+
-  |         DESIGN PLAN REVIEW — COMPLETION SUMMARY                    |
-  +====================================================================+
-  | System Audit         | [DESIGN.md status, UI scope]                |
-  | Step 0               | [initial rating, focus areas]               |
-  | Pass 1  (Info Arch)  | ___/10 → ___/10 after fixes                |
-  | Pass 2  (States)     | ___/10 → ___/10 after fixes                |
-  | Pass 3  (Journey)    | ___/10 → ___/10 after fixes                |
-  | Pass 4  (AI Slop)    | ___/10 → ___/10 after fixes                |
-  | Pass 5  (Design Sys) | ___/10 → ___/10 after fixes                |
-  | Pass 6  (Responsive) | ___/10 → ___/10 after fixes                |
-  | Pass 7  (Decisions)  | ___ resolved, ___ deferred                 |
-  +--------------------------------------------------------------------+
-  | NOT in scope         | written (___ items)                         |
-  | What already exists  | written                                     |
-  | TODOS.md updates     | ___ items proposed                          |
-  | Approved Mockups     | ___ generated, ___ approved                  |
-  | Decisions made       | ___ added to plan                           |
-  | Decisions deferred   | ___ (listed below)                          |
-  | Overall design score | ___/10 → ___/10                             |
-  +====================================================================+
-```
-
-If all passes 8+: "Plan is design-complete. Run /design-review after implementation for visual QA."
-If any below 8: note what's unresolved and why (user chose to defer).
-
-### Unresolved Decisions
-If any ask_user goes unanswered, note it here. Never silently default to an option.
-
-### Approved Mockups
-
-If visual mockups were generated during this review, add to the plan file:
-
-```
-## Approved Mockups
-
-| Screen/Section | Mockup Path | Direction | Notes |
-|----------------|-------------|-----------|-------|
-| [screen name]  | ./designs/[folder]/[filename].png | [brief description] | [constraints from review] |
-```
-
-Include the full path to each approved mockup (the variant the user chose), a one-line description of the direction, and any constraints. The implementer reads this to know exactly which visual to build from. These persist across conversations and workspaces. If no mockups were generated, omit this section.
-
-## Review Log
-
-After producing the Completion Summary above, persist the review result.
-
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes review metadata to
-`~/.gstack/` (user config directory, not project files). The skill preamble
-the same pattern. The review dashboard depends on this data. Skipping this
-command breaks the review readiness dashboard in /ship.
-
-```bash
-.github/skills/bin/gstack-review-log '{"skill":"plan-design-review","timestamp":"TIMESTAMP","status":"STATUS","initial_score":N,"overall_score":N,"unresolved":N,"decisions_made":N,"commit":"COMMIT"}'
-```
-
-Substitute values from the Completion Summary:
-- **TIMESTAMP**: current ISO 8601 datetime
-- **STATUS**: "clean" if overall score 8+ AND 0 unresolved; otherwise "issues_open"
-- **initial_score**: initial overall design score before fixes (0-10)
-- **overall_score**: final overall design score after fixes (0-10)
-- **unresolved**: number of unresolved design decisions
-- **decisions_made**: number of design decisions added to the plan
-- **COMMIT**: output of `git rev-parse --short HEAD`
-
-## Review Readiness Dashboard
-
-After completing the review, read the review log and config to display the dashboard.
-
-```bash
-```
-
-Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, review, plan-design-review, design-review-lite, adversarial-review, outside-voice-review, outside-voice-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between `review` (diff-scoped pre-landing review) and `plan-eng-review` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between `adversarial-review` and `outside-voice-review` (same review log cluster). For Design Review, show whichever is more recent between `plan-design-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. For the Outside Voice row, show the most recent `outside-voice-plan-review` entry — this captures outside voices from both /plan-ceo-review and /plan-eng-review.
-
-**Source attribution:** If the most recent entry for a skill has a \`"via"\` field, append it to the status label in parentheses. Examples: `plan-eng-review` with `via:"autoplan"` shows as "CLEAR (PLAN via /autoplan)". `review` with `via:"ship"` shows as "CLEAR (DIFF via /ship)". Entries without a `via` field show as "CLEAR (PLAN)" or "CLEAR (DIFF)" as before.
-
-Note: `autoplan-voices` and `design-outside-voices` entries are audit-trail-only (forensic data for cross-model consensus analysis). They do not appear in the dashboard and are not checked by any consumer.
-
-Display:
-
-```
-+====================================================================+
-|                    REVIEW READINESS DASHBOARD                       |
-+====================================================================+
-| Review          | Runs | Last Run            | Status    | Required |
-|-----------------|------|---------------------|-----------|----------|
-| Eng Review      |  1   | 2026-03-16 15:00    | CLEAR     | YES      |
-| CEO Review      |  0   | —                   | —         | no       |
-| Design Review   |  0   | —                   | —         | no       |
-| Adversarial     |  0   | —                   | —         | no       |
-| Outside Voice   |  0   | —                   | —         | no       |
-+--------------------------------------------------------------------+
-| VERDICT: CLEARED — Eng Review passed                                |
-+====================================================================+
-```
-
-**Review tiers:**
-- **CEO Review (optional):** Use your judgment. Recommend it for big product/business changes, new user-facing features, or scope decisions. Skip for bug fixes, refactors, infra, and cleanup.
-- **Design Review (optional):** Use your judgment. Recommend it for UI/UX changes. Skip for backend-only, infra, or prompt-only changes.
-- **Adversarial Review (automatic):** Always-on for every review. Every diff gets both Claude adversarial subagent and Outside Voice adversarial challenge. Large diffs (200+ lines) additionally get Outside Voice structured review with P1 gate. No configuration needed.
-- **Outside Voice (optional):** Independent plan review from a different AI model. Offered after all review sections complete in /plan-ceo-review and /plan-eng-review. Falls back to Primary subagent if Outside Voice is unavailable. Never gates shipping.
-
-**Verdict logic:**
-- **CLEARED**: Eng Review has >= 1 entry within 7 days from either \`review\` or \`plan-eng-review\` with status "clean" (or \`skip_eng_review\` is \`true\`)
-- **NOT CLEARED**: Eng Review missing, stale (>7 days), or has open issues
-- CEO, Design, and Outside Voice reviews are shown for context but never block shipping
-- If \`skip_eng_review\` config is \`true\`, Eng Review shows "SKIPPED (global)" and verdict is CLEARED
-
-**Staleness detection:** After displaying the dashboard, check if any existing reviews may be stale:
-- Parse the \`---HEAD---\` section from the bash output to get the current HEAD commit hash
-- For each review entry that has a \`commit\` field: compare it against the current HEAD. If different, count elapsed commits: \`git rev-list --count STORED_COMMIT..HEAD\`. Display: "Note: {skill} review from {date} may be stale — {N} commits since review"
-- For entries without a \`commit\` field (legacy entries): display "Note: {skill} review from {date} has no commit tracking — consider re-running for accurate staleness detection"
-- If all reviews match the current HEAD, do not display any staleness notes
-
-## Plan File Review Report
-
-After displaying the Review Readiness Dashboard in conversation output, also update the
-**plan file** itself so review status is visible to anyone reading the plan.
-
-### Detect the plan file
-
-1. Check if there is an active plan file in this conversation (the host provides plan file
-   paths in system messages — look for plan file references in the conversation context).
-2. If not found, skip this section silently — not every review runs in plan mode.
-
-### Generate the report
-
-Read the review log output you already have from the Review Readiness Dashboard step above.
-Parse each JSONL entry. Each skill logs different fields:
-
-- **plan-ceo-review**: \`status\`, \`unresolved\`, \`critical_gaps\`, \`mode\`, \`scope_proposed\`, \`scope_accepted\`, \`scope_deferred\`, \`commit\`
-  → Findings: "{scope_proposed} proposals, {scope_accepted} accepted, {scope_deferred} deferred"
-  → If scope fields are 0 or missing (HOLD/REDUCTION mode): "mode: {mode}, {critical_gaps} critical gaps"
-- **plan-eng-review**: \`status\`, \`unresolved\`, \`critical_gaps\`, \`issues_found\`, \`mode\`, \`commit\`
-  → Findings: "{issues_found} issues, {critical_gaps} critical gaps"
-- **plan-design-review**: \`status\`, \`initial_score\`, \`overall_score\`, \`unresolved\`, \`decisions_made\`, \`commit\`
-  → Findings: "score: {initial_score}/10 → {overall_score}/10, {decisions_made} decisions"
-- **plan-devex-review**: \`status\`, \`initial_score\`, \`overall_score\`, \`product_type\`, \`tthw_current\`, \`tthw_target\`, \`mode\`, \`persona\`, \`competitive_tier\`, \`unresolved\`, \`commit\`
-  → Findings: "score: {initial_score}/10 → {overall_score}/10, TTHW: {tthw_current} → {tthw_target}"
-- **devex-review**: \`status\`, \`overall_score\`, \`product_type\`, \`tthw_measured\`, \`dimensions_tested\`, \`dimensions_inferred\`, \`boomerang\`, \`commit\`
-  → Findings: "score: {overall_score}/10, TTHW: {tthw_measured}, {dimensions_tested} tested/{dimensions_inferred} inferred"
-- **outside-voice-review**: \`status\`, \`gate\`, \`findings\`, \`findings_fixed\`
-  → Findings: "{findings} findings, {findings_fixed}/{findings} fixed"
-
-All fields needed for the Findings column are now present in the JSONL entries.
-For the review you just completed, you may use richer details from your own Completion
-Summary. For prior reviews, use the JSONL fields directly — they contain all required data.
-
-Produce this markdown table:
-
-\`\`\`markdown
-## GSTACK REVIEW REPORT
-
-| Review | Trigger | Why | Runs | Status | Findings |
-|--------|---------|-----|------|--------|----------|
-| CEO Review | \`/plan-ceo-review\` | Scope & strategy | {runs} | {status} | {findings} |
-| Eng Review | \`/plan-eng-review\` | Architecture & tests (required) | {runs} | {status} | {findings} |
-| Design Review | \`/plan-design-review\` | UI/UX gaps | {runs} | {status} | {findings} |
-| DX Review | \`/plan-devex-review\` | Developer experience gaps | {runs} | {status} | {findings} |
-\`\`\`
-
-Below the table, add these lines (omit any that are empty/not applicable):
-
-- **OUTSIDE VOICE:** (only if outside-voice-review ran) — one-line summary of outside voice fixes
-- **CROSS-MODEL:** (only if both Claude and Outside Voice reviews exist) — overlap analysis
-- **UNRESOLVED:** total unresolved decisions across all reviews
-- **VERDICT:** list reviews that are CLEAR (e.g., "CEO + ENG CLEARED — ready to implement").
-  If Eng Review is not CLEAR and not skipped globally, append "eng review required".
-
-### Write to the plan file
-
-**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
-file you are allowed to edit in plan mode. The plan file review report is part of the
-plan's living status.
-
-- Search the plan file for a \`## GSTACK REVIEW REPORT\` section **anywhere** in the file
-  (not just at the end — content may have been added after it).
-- If found, **replace it** entirely using the edit tool. Match from \`## GSTACK REVIEW REPORT\`
-  through either the next \`## \` heading or end of file, whichever comes first. This ensures
-  content added after the report section is preserved, not eaten. If the Edit fails
-  (e.g., concurrent edit changed the content), re-read the plan file and retry once.
-- If no such section exists, **append it** to the end of the plan file.
-- Always place it as the very last section in the plan file. If it was found mid-file,
-  move it: delete the old location and append at the end.
-
-## Capture Learnings
-
-If you discovered a non-obvious pattern, pitfall, or architectural insight during
-this session, log it for future sessions:
-
-```bash
-'
-```
-
-**Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`
-(user stated), `architecture` (structural decision), `tool` (library/framework insight),
-`operational` (project environment/CLI/workflow knowledge).
-
-**Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Outside Voice agree).
-
-**Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
-An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
-
-**files:** Include the specific file paths this learning references. This enables
-staleness detection: if those files are later deleted, the learning can be flagged.
-
-**Only log genuine discoveries.** Don't log obvious things. Don't log things the user
-already knows. A good test: would this insight save time in a future session? If yes, log it.
+> **STOP.** Before running the 7 design passes, required outputs, and review report (only after Step 0 scope is agreed), Read `.github/skills/plan-design-review/sections/gstack-review-sections.md` and execute it
+> in full. Do not work from memory — that section is the source of truth for this step.
 
 ## Next Steps — Review Chaining
 
@@ -993,9 +600,25 @@ Use ask_user to present the next step. Include only applicable options:
 - **D)** Run /design-html — generate Pretext-native HTML from approved mockups
 - **E)** Skip — I'll handle next steps manually
 
-## Formatting Rules
-* NUMBER issues (1, 2, 3...) and LETTERS for options (A, B, C...).
-* Label with NUMBER + LETTER (e.g., "3A", "3B").
-* One sentence max per option.
-* After each pass, pause and wait for feedback.
-* Rate before and after each pass for scannability.
+## Section self-check (before you finish)
+
+Confirm you Read the review section the Section index named, and executed all 7 design passes, the required outputs, and the review report in full. If you produced findings or the review report from memory without Reading `sections/gstack-review-sections.md`, stop and Read it now.
+
+## EXIT PLAN MODE GATE (BLOCKING)
+1. Read the plan file with the view tool (after your most recent write to it).
+2. Confirm the LAST `## ` heading in the file is `## GSTACK REVIEW REPORT`.
+   In-body prose that mentions "outside voice", "Outside Voice findings", or similar
+   does NOT count — only the structured `## GSTACK REVIEW REPORT` section
+   satisfies this check.
+3. Confirm the report contains: a Runs / Status / Findings table, a VERDICT
+   line, and absorbs OUTSIDE VOICE / CROSS-MODEL / UNRESOLVED lines if applicable.
+4. If a plan file is in context for this skill invocation: confirm
+   once. If no plan file is in context (e.g. an Outside Voice consult against a
+   diff with no plan), this check short-circuits — checks 1-3 already
+   short-circuit when no plan file exists.
+
+the user will see a plan whose review report is missing or stale, and will
+(correctly) reject it. Self-deception failure mode to watch for: feeling
+"done" after writing review prose into the plan body. The body prose is not
+the report. The report is a separate, structured, table-bearing section that
+must be the file's terminal heading.

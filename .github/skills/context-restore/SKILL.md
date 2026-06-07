@@ -52,8 +52,8 @@ Parse the user's input:
 ### Step 1: Find saved contexts
 
 ```bash
-eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
-CHECKPOINT_DIR="${GSTACK_HOME:-$HOME/.gstack}/projects/$SLUG/checkpoints"
+eval "$(.github/skills/bin/gstack-paths)"
+CHECKPOINT_DIR="$GSTACK_STATE_ROOT/projects/$SLUG/checkpoints"
 if [ ! -d "$CHECKPOINT_DIR" ]; then
   echo "NO_CHECKPOINTS"
 else

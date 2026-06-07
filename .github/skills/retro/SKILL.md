@@ -92,6 +92,63 @@ Check for non-git context that should be included in the retro:
 
 If `RETRO_CONTEXT_FOUND`: read `~/.gstack/retro-context.md`. This file is user-authored and may contain meeting notes, calendar events, decisions, and other context that doesn't appear in git history. Incorporate this context into the retro narrative where relevant.
 
+### Step 0.5: Stale-base + bad-today-anchor pre-flight guard
+
+The retro skill computes a window from "today" and queries `git log --since=<window> origin/<default>`. If "today" drifts (model session-context error) or the local worktree's `origin/<default>` is materially behind the actual remote, the window can return zero or near-zero commits and the retro will fabricate a coherent-looking narrative from nothing. This guard prevents silent confidently-wrong output.
+
+Run the pre-flight in this exact order. The first branch that matches wins:
+
+```bash
+# Pre-check A: no remote configured?
+_RETRO_HAS_REMOTE=$(git remote 2>/dev/null | grep -c '^origin$' || echo 0)
+if [ "$_RETRO_HAS_REMOTE" = "0" ]; then
+  echo "RETRO_GUARD: no 'origin' remote, base freshness not verified — proceeding"
+  _RETRO_GUARD_VERDICT="skip-no-remote"
+fi
+
+# Pre-check B: detached HEAD or no current base?
+if [ -z "$_RETRO_GUARD_VERDICT" ]; then
+  _RETRO_HEAD_REF=$(git symbolic-ref --quiet HEAD 2>/dev/null || echo "")
+  if [ -z "$_RETRO_HEAD_REF" ]; then
+    echo "RETRO_GUARD: detached HEAD, base freshness not verified — proceeding"
+    _RETRO_GUARD_VERDICT="skip-detached"
+  fi
+fi
+
+# Pre-check C: fetch origin <default>; if it fails, warn but proceed.
+if [ -z "$_RETRO_GUARD_VERDICT" ]; then
+  if ! git fetch origin <default> --quiet 2>/dev/null; then
+    echo "RETRO_GUARD: 'git fetch origin <default>' failed (offline?) — proceeding against last-known origin/<default>"
+    _RETRO_GUARD_VERDICT="warn-fetch-failed"
+  fi
+fi
+
+# Pre-check D: BLOCK only when fetch succeeded AND the latest origin/<default>
+# commit predates the retro window. Today's date should be loaded from the
+# user-visible "## currentDate" tag in the session reminder; if the gap between
+# origin/<default>'s newest commit and today exceeds the window, the model's
+# "today" is almost certainly stale (or the worktree is wildly behind).
+if [ -z "$_RETRO_GUARD_VERDICT" ]; then
+  _RETRO_LATEST_ISO=$(git log -1 --format=%ci origin/<default> 2>/dev/null | awk '{print $1}')
+  if [ -n "$_RETRO_LATEST_ISO" ]; then
+    # The model computes today from the session reminder (NEVER from `date` —
+    # the system clock can be hours off in containerized harnesses).
+    # Compute window in DAYS (default 7): if today - latest-commit-date > window-days,
+    # BLOCK. If the model cannot reliably compute "today", it MUST stop here and
+    # ask the user via ask_user rather than proceeding.
+    echo "RETRO_GUARD: latest origin/<default> commit on $_RETRO_LATEST_ISO"
+    _RETRO_GUARD_VERDICT="check-gap"
+  fi
+fi
+```
+
+After running the bash block, the model evaluates `RETRO_GUARD: latest origin/<default> commit on <DATE>` against today and the window:
+
+- If the **latest-commit date is older than (today − window-days)**, BLOCK with: "Retro window is stale. Latest commit on `origin/<default>` was `<DATE>`, but the window covers `<since>` to `<today>`. This usually means either (a) today's date is wrong in this session or (b) `origin/<default>` is materially behind the remote. Confirm today's date via the session reminder; if today is correct, run `git fetch origin <default>` manually and re-run /retro." Stop the skill until the user resolves.
+- Otherwise, write: "RETRO_GUARD: latest commit `<DATE>` within window — proceeding."
+
+Skip paths (`skip-no-remote`, `skip-detached`, `warn-fetch-failed`) all proceed to Step 1 with the cited reason on a single stderr line so the retro narrative carries the disclosure ("offline run, window not freshness-verified") rather than silently misreporting.
+
 ### Step 1: Gather Raw Data
 
 First, fetch origin and identify the current user:
@@ -327,7 +384,7 @@ this session, log it for future sessions:
 `operational` (project environment/CLI/workflow knowledge).
 
 **Sources:** `observed` (you found this in the code), `user-stated` (user told you),
-`inferred` (AI deduction), `cross-model` (both Claude and Codex agree).
+`inferred` (AI deduction), `cross-model` (both Claude and Outside Voice agree).
 
 **Confidence:** 1-10. Be honest. An observed pattern you verified in the code is 8-9.
 An inference you're not sure about is 4-5. A user preference they explicitly stated is 10.
@@ -520,7 +577,6 @@ Check review JSONL logs for plan completion data from /ship runs this period:
 
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
-eval "$(true"
 cat ./*-reviews.jsonl 2>/dev/null | grep '"skill":"ship"' | grep '"plan_items_total"' || echo "NO_PLAN_DATA"
 ```
 
@@ -672,7 +728,7 @@ From the commit timestamps gathered in Step 3, group by date. For each date, cou
 From the discovery JSON, analyze tool usage patterns:
 - Which AI tool is used for which repos (exclusive vs. shared)
 - Session count per tool
-- Behavioral patterns (e.g., "Codex used exclusively for myapp, Claude Code for everything else")
+- Behavioral patterns (e.g., "Outside Voice used exclusively for myapp, Claude Code for everything else")
 
 ### Global Step 7: Aggregate and generate narrative
 
@@ -706,7 +762,7 @@ align cleanly. Never truncate project names.
 ║
 ║  [N] commits across [M] projects
 ║  +[X]k LOC added · [Y]k LOC deleted · [Z]k net
-║  [N] AI coding sessions (CC: X, Codex: Y, Gemini: Z)
+║  [N] AI coding sessions (CC: X, Outside Voice: Y, Gemini: Z)
 ║  [N]-day shipping streak 🔥
 ║
 ║  PROJECTS
@@ -760,7 +816,7 @@ This is the "deep dive" that follows the shareable card.
 | Projects active | N |
 | Total commits (all repos, all contributors) | N |
 | Total LOC | +N / -N |
-| AI coding sessions | N (CC: X, Codex: Y, Gemini: Z) |
+| AI coding sessions | N (CC: X, Outside Voice: Y, Gemini: Z) |
 | Active days | N |
 | Global shipping streak (any contributor, any repo) | N consecutive days |
 | Context switches/day | N avg (max: M) |
@@ -803,7 +859,7 @@ Format:
 ### Tool Usage Analysis
 Per-tool breakdown with behavioral patterns:
 - Claude Code: N sessions across M repos — patterns observed
-- Codex: N sessions across M repos — patterns observed
+- Outside Voice: N sessions across M repos — patterns observed
 - Gemini: N sessions across M repos — patterns observed
 
 ### Ship of the Week (Global)
@@ -858,7 +914,7 @@ Use the create tool to save JSON to `~/.gstack/retros/global-${today}-${next}.js
       "commits": 47,
       "insertions": 3200,
       "deletions": 800,
-      "sessions": { "claude_code": 15, "codex": 3, "gemini": 0 }
+      "sessions": { "claude_code": 15, "Outside Voice": 3, "gemini": 0 }
     }
   ],
   "totals": {
@@ -867,11 +923,11 @@ Use the create tool to save JSON to `~/.gstack/retros/global-${today}-${next}.js
     "deletions": 4200,
     "projects": 5,
     "active_days": 6,
-    "sessions": { "claude_code": 48, "codex": 8, "gemini": 3 },
+    "sessions": { "claude_code": 48, "Outside Voice": 8, "gemini": 3 },
     "global_streak_days": 52,
     "avg_context_switches_per_day": 2.1
   },
-  "tweetable": "Week of Mar 14: 5 projects, 182 commits, 15.3k LOC | CC: 48, Codex: 8, Gemini: 3 | Focus: gstack (58%) | Streak: 52d"
+  "tweetable": "Week of Mar 14: 5 projects, 182 commits, 15.3k LOC | CC: 48, Outside Voice: 8, Gemini: 3 | Focus: gstack (58%) | Streak: 52d"
 }
 ```
 

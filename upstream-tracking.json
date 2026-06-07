@@ -1,14 +1,14 @@
 {
-  "upstream_version": "1.20.0.0",
-  "upstream_latest_known": "v1.20.0.0",
-  "upstream_latest_audit_date": "2026-04-29",
+  "upstream_version": "1.56.0.0",
+  "upstream_latest_known": "v1.56.0.0",
+  "upstream_latest_audit_date": "2026-06-07",
   "upstream_lag_versions": 0,
-  "upstream_lag_note": "Phase A-3 完了。commit/version を v1.20.0.0 (e8893a18) に同期済み。developer-profile 機能を v1.2.6.0 で取り込み。",
+  "upstream_lag_note": "v1.20.0.0→v1.56.0.0 (58 commits) 同期。34 vendored スキルを再生成（token-reduction 反映）。adapter に gbrain Brain Context strip + codex idiom 変換 + allowed-tools whitelist を追加。",
   "upstream_repo": "garrytan/gstack",
-  "upstream_commit": "e8893a18b18e32ebd63a21f6915337868249ebe1",
+  "upstream_commit": "cab774cced06e0a36b3b4b1518b8c968707f7e2f",
   "snapshot_path": null,
   "snapshot_note": "スナップショットは保持しない。upstream_commit で参照",
-  "audited_at": "2026-04-29",
+  "audited_at": "2026-06-07",
   "local_version": "1.0.1.0",
   "skills": {
     "office-hours": {
@@ -271,6 +271,46 @@
       "status": "planned",
       "target_phase": "v1.2 (Phase D、判断保留)",
       "reason": "$B プロトタイプを再利用可能スキルへ codify。/scrape とセット"
+    },
+    "ios-clean": {
+      "upstream": "ios-clean/SKILL.md",
+      "status": "excluded",
+      "reason": "iOS device-farm (Mac daemon + Tailscale)。Copilot CLI の範囲外"
+    },
+    "ios-design-review": {
+      "upstream": "ios-design-review/SKILL.md",
+      "status": "excluded",
+      "reason": "iOS device-farm (Mac daemon + Tailscale)。Copilot CLI の範囲外"
+    },
+    "ios-fix": {
+      "upstream": "ios-fix/SKILL.md",
+      "status": "excluded",
+      "reason": "iOS device-farm (Mac daemon + Tailscale)。Copilot CLI の範囲外"
+    },
+    "ios-qa": {
+      "upstream": "ios-qa/SKILL.md",
+      "status": "excluded",
+      "reason": "iOS device-farm (Mac daemon + Tailscale)。Copilot CLI の範囲外"
+    },
+    "ios-sync": {
+      "upstream": "ios-sync/SKILL.md",
+      "status": "excluded",
+      "reason": "iOS device-farm (Mac daemon + Tailscale)。Copilot CLI の範囲外"
+    },
+    "sync-gbrain": {
+      "upstream": "sync-gbrain/SKILL.md",
+      "status": "excluded",
+      "reason": "GBrain クロスマシンメモリ同期インフラ。store_memory + session_store_sql で代替"
+    },
+    "document-generate": {
+      "upstream": "document-generate/SKILL.md",
+      "status": "planned",
+      "reason": "Diataxis カバレッジマップ付きドキュメント生成 (v1.35.0.0)。将来採用候補"
+    },
+    "spec": {
+      "upstream": "spec/SKILL.md",
+      "status": "planned",
+      "reason": "backlog-ready spec を5フェーズで作成 (v1.47.0.0)。将来採用候補"
     }
   }
 }

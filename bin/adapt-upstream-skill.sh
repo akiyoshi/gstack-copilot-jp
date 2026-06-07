@@ -125,8 +125,16 @@ echo "━━━ Layer 1: スキル固有部分抽出 ━━━"
 echo "Extracted: ${BODY_LINES} lines"
 
 # --- Layer 2: 互換ルール適用 ---
+# apply_compat: stdin の Markdown に互換ルールを適用して stdout に出力する。
+# SKILL.md 本体と sections/ サイドカーの両方で再利用する。
 
-CONVERTED=$(echo "$BODY" \
+apply_compat() {
+  cat \
+  | sed '/^## Brain Context (preflight)/,/^## /{/^## Brain Context (preflight)/d; /^## /!d;}' \
+  | sed '/gstack-brain-cache/d' \
+  | sed '/gstack-brain-context/d' \
+  | sed '/eval "\$(.*gstack-slug/d' \
+  | sed '/mkdir -p ~\/\.gstack\/projects\/\$SLUG/d' \
   | sed 's/\bBash\b tool/bash tool/g' \
   | sed 's/\bRead\b tool/view tool/g' \
   | sed 's/\bWrite\b tool/create tool/g' \
@@ -151,7 +159,7 @@ CONVERTED=$(echo "$BODY" \
   | sed '/{{BENEFITS_FROM}}/d' \
   | sed 's/{{LEARNINGS_SEARCH}}/# Learnings: use store_memory \/ session_store_sql/g' \
   | sed 's/{{BASE_BRANCH_DETECT}}/BASE_BRANCH=$(git symbolic-ref refs\/remotes\/origin\/HEAD 2>\/dev\/null | sed "s|refs\/remotes\/origin\/||" || echo "main")/g' \
-  | sed '/<!-- AUTO-GENERATED from SKILL.md.tmpl/d' \
+  | sed '/<!-- AUTO-GENERATED from .*\.tmpl/d' \
   | sed '/<!-- Regenerate: bun run gen:skill-docs/d' \
   \
   | sed 's|\.github/skills/bin/gstack-config[^)]*)||g' \
@@ -203,6 +211,8 @@ CONVERTED=$(echo "$BODY" \
   | sed '/REPO_MODE/d' \
   | sed '/_CROSS_PROJ/d' \
   \
+  | sed 's/gstack-codex-probe/«SHIMPROBE»/g' \
+  | sed -E 's/_gstack_codex_([a-z_]+)/«SHIMFN»\1/g' \
   | sed '/codex exec /d' \
   | sed '/codex review/d' \
   | sed '/codex login/d' \
@@ -231,6 +241,18 @@ CONVERTED=$(echo "$BODY" \
   | sed 's/Codex \(CEO\|design\|eng\|DX\) voice/Outside Voice (\1)/g' \
   | sed 's/\bCODEX\b/OUTSIDE VOICE/g' \
   | sed 's/\bCodex\b/Outside Voice/g' \
+  \
+  | sed -E 's/command -v codex/command -v gstack-outside-voice/g' \
+  | sed -E 's,/codex consult,an Outside Voice consult,g' \
+  | sed -E 's/codex[_-]?unavailable/outside-voice-unavailable/gI' \
+  | sed -E 's/codex[_-]?timeout/outside-voice-timeout/gI' \
+  | sed -E 's/codex[_-]?cli[_-]?missing/outside-voice-missing/gI' \
+  | sed -E 's/codex[_-]?auth[_-]?failed/outside-voice-auth-failed/gI' \
+  | sed -E 's/codex[_-]?only/outside-only/gI' \
+  | sed -E 's/codex\+subagent/outside-voice+subagent/gI' \
+  | sed -E 's/\bcodex\b/Outside Voice/gI' \
+  | sed 's/«SHIMPROBE»/gstack-codex-probe/g' \
+  | sed -E 's/«SHIMFN»([a-z_]+)/_gstack_codex_\1/g' \
   \
   | sed 's/(Primary subagent)/(independent subagent)/g' \
   | sed 's/CLAUDE SUBAGENT/INDEPENDENT SUBAGENT/g' \
@@ -266,8 +288,10 @@ CONVERTED=$(echo "$BODY" \
   | sed 's|~/.gstack/projects/\$SLUG/|./|g' \
   | sed 's|~/.gstack/projects/\${SLUG}/|./|g' \
   \
-  | sed '/^$/N;/^\n$/d' \
-)
+  | sed '/^$/N;/^\n$/d'
+}
+
+CONVERTED=$(echo "$BODY" | apply_compat)
 
 echo ""
 echo "━━━ Layer 2: 互換ルール適用 ━━━"
@@ -277,77 +301,54 @@ echo "━━━ Layer 2: 互換ルール適用 ━━━"
 ERRORS=0
 WARNS=0
 
-# 未解決 placeholder チェック
-UNRESOLVED=$(echo "$CONVERTED" | grep -n '{{[A-Z_]*}}' || true)
-if [ -n "$UNRESOLVED" ]; then
-  echo "⚠️  未解決 placeholder:"
-  echo "$UNRESOLVED"
-  ERRORS=$((ERRORS + 1))
-fi
+# validate_md: ラベル付きで Markdown 内容を検証し、ERRORS/WARNS を加算する。
+# SKILL.md 本体と sections/ サイドカーの両方に適用する。
+validate_md() {
+  local label="$1" content="$2" hits
 
-# Claude Code 固有パスチェック
-CLAUDE_PATHS=$(echo "$CONVERTED" | grep -n '~/.claude/' || true)
-if [ -n "$CLAUDE_PATHS" ]; then
-  echo "⚠️  Claude Code 固有パス:"
-  echo "$CLAUDE_PATHS"
-  ERRORS=$((ERRORS + 1))
-fi
+  # 未解決 placeholder チェック
+  hits=$(echo "$content" | grep -n '{{[A-Z_]*}}' || true)
+  if [ -n "$hits" ]; then echo "⚠️  [$label] 未解決 placeholder:"; echo "$hits"; ERRORS=$((ERRORS + 1)); fi
 
-# CLAUDE.md 参照チェック
-CLAUDE_MD=$(echo "$CONVERTED" | grep -n 'CLAUDE\.md' || true)
-if [ -n "$CLAUDE_MD" ]; then
-  echo "⚠️  CLAUDE.md 参照（copilot-instructions.md に置換すべき）:"
-  echo "$CLAUDE_MD"
-  ERRORS=$((ERRORS + 1))
-fi
+  # Claude Code 固有パスチェック
+  hits=$(echo "$content" | grep -n '~/.claude/' || true)
+  if [ -n "$hits" ]; then echo "⚠️  [$label] Claude Code 固有パス:"; echo "$hits"; ERRORS=$((ERRORS + 1)); fi
 
-# ExitPlanMode チェック
-PLAN_MODE=$(echo "$CONVERTED" | grep -n 'ExitPlanMode\|exit_plan_mode' || true)
-if [ -n "$PLAN_MODE" ]; then
-  echo "⚠️  Plan Mode 参照（Copilot CLI に Plan Mode なし）:"
-  echo "$PLAN_MODE"
-  ERRORS=$((ERRORS + 1))
-fi
+  # CLAUDE.md 参照チェック
+  hits=$(echo "$content" | grep -n 'CLAUDE\.md' || true)
+  if [ -n "$hits" ]; then echo "⚠️  [$label] CLAUDE.md 参照（copilot-instructions.md に置換すべき）:"; echo "$hits"; ERRORS=$((ERRORS + 1)); fi
 
-# gstack-config チェック
-GCONFIG=$(echo "$CONVERTED" | grep -n 'gstack-config\|gstack-update-check\|gstack-telemetry\|gstack-timeline-log\|gstack-repo-mode' || true)
-if [ -n "$GCONFIG" ]; then
-  echo "⚠️  本家固有 bin ユーティリティ:"
-  echo "$GCONFIG"
-  ERRORS=$((ERRORS + 1))
-fi
+  # ExitPlanMode チェック
+  hits=$(echo "$content" | grep -n 'ExitPlanMode\|exit_plan_mode' || true)
+  if [ -n "$hits" ]; then echo "⚠️  [$label] Plan Mode 参照（Copilot CLI に Plan Mode なし）:"; echo "$hits"; ERRORS=$((ERRORS + 1)); fi
 
-# codex コマンドチェック
-CODEX_REFS=$(echo "$CONVERTED" | grep -n '\bcodex\b' || true)
-if [ -n "$CODEX_REFS" ]; then
-  echo "ℹ️  codex 参照（情報のみ — task tool で代替可能）:"
-  echo "$CODEX_REFS"
-  WARNS=$((WARNS + 1))
-fi
+  # gstack-config チェック
+  hits=$(echo "$content" | grep -n 'gstack-config\|gstack-update-check\|gstack-telemetry\|gstack-timeline-log\|gstack-repo-mode' || true)
+  if [ -n "$hits" ]; then echo "⚠️  [$label] 本家固有 bin ユーティリティ:"; echo "$hits"; ERRORS=$((ERRORS + 1)); fi
 
-# $D チェック（コマンド文脈のみ — テキスト内の$D言及は許容）
-DESIGN_BIN=$(echo "$CONVERTED" | grep -n '^\$D \|`\$D \| \$D [a-z]' || true)
-if [ -n "$DESIGN_BIN" ]; then
-  echo "⚠️  \$D (design binary) コマンド参照:"
-  echo "$DESIGN_BIN"
-  ERRORS=$((ERRORS + 1))
-fi
+  # codex コマンドチェック（情報のみ — shim 名は許容）
+  hits=$(echo "$content" | grep -n '\bcodex\b' || true)
+  if [ -n "$hits" ]; then echo "ℹ️  [$label] codex 参照（情報のみ — task tool で代替可能）:"; echo "$hits"; WARNS=$((WARNS + 1)); fi
 
-# Preamble config flags チェック
-CONFIG_FLAGS=$(echo "$CONVERTED" | grep -n 'EXPLAIN_LEVEL\|QUESTION_TUNING\|_PROACTIVE\|TEL_PROMPTED\|CHECKPOINT_MODE\|SPAWNED_SESSION\|_LAKE_SEEN' || true)
-if [ -n "$CONFIG_FLAGS" ]; then
-  echo "⚠️  Preamble config flags:"
-  echo "$CONFIG_FLAGS"
-  ERRORS=$((ERRORS + 1))
-fi
+  # $D チェック（コマンド文脈のみ — テキスト内の$D言及は許容）
+  hits=$(echo "$content" | grep -n '^\$D \|`\$D \| \$D [a-z]' || true)
+  if [ -n "$hits" ]; then echo "⚠️  [$label] \$D (design binary) コマンド参照:"; echo "$hits"; ERRORS=$((ERRORS + 1)); fi
 
-# コードフェンス balance チェック (Phase A-3 で発見した extraction バグへの再発防止)
-FENCE_COUNT=$(echo "$CONVERTED" | grep -cE '^[`]{3}' || true)
-if [ "$((FENCE_COUNT % 2))" -ne 0 ]; then
-  echo "⚠️  コードフェンス不均衡: ${FENCE_COUNT} 個 (奇数)"
-  echo "    → 抽出が preamble 部分を巻き込んでいる可能性あり。"
-  ERRORS=$((ERRORS + 1))
-fi
+  # Preamble config flags チェック
+  hits=$(echo "$content" | grep -n 'EXPLAIN_LEVEL\|QUESTION_TUNING\|_PROACTIVE\|TEL_PROMPTED\|CHECKPOINT_MODE\|SPAWNED_SESSION\|_LAKE_SEEN' || true)
+  if [ -n "$hits" ]; then echo "⚠️  [$label] Preamble config flags:"; echo "$hits"; ERRORS=$((ERRORS + 1)); fi
+
+  # コードフェンス balance チェック (Phase A-3 で発見した extraction バグへの再発防止)
+  local fence
+  fence=$(echo "$content" | grep -cE '^[`]{3}' || true)
+  if [ "$((fence % 2))" -ne 0 ]; then
+    echo "⚠️  [$label] コードフェンス不均衡: ${fence} 個 (奇数)"
+    echo "    → 抽出が preamble 部分を巻き込んでいる可能性あり。"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
+validate_md "SKILL.md (body)" "$CONVERTED"
 
 if [ "$ERRORS" -gt 0 ]; then
   echo ""
@@ -389,6 +390,7 @@ UP_TRIGGERS=$(sed -n '/^triggers:/,/^[a-z]/{
 UP_TOOLS=$(sed -n '/^allowed-tools:/,/^[a-z]/{
   /^allowed-tools:/d
   /^[a-z]/d
+  /^---/d
   s/^ *- *//p
 }' "$UPSTREAM_FILE" \
   | sed 's/^Bash$/bash/' \
@@ -400,6 +402,7 @@ UP_TOOLS=$(sed -n '/^allowed-tools:/,/^[a-z]/{
   | sed 's/^Agent$/task/' \
   | sed 's/^AskUserQuestion$/ask_user/' \
   | sed 's/^WebSearch$/web_search/' \
+  | grep -ixE 'bash|view|create|edit|grep|glob|task|ask_user|web_search' \
   | sort -u \
   | sed 's/^/  - /')
 
@@ -454,6 +457,18 @@ echo "$FINAL" > "$SKILL_DIR/SKILL.md"
 UPSTREAM_SKILL_DIR=$(dirname "$UPSTREAM_FILE")
 SIDECAR_COUNT=0
 
+# rename_sidecar: 本体側のパス書き換え（sed 's|/review\b|/gstack-review|g' 等）と
+# 整合させ、サイドカーのファイル名を変換する。これにより本体からの参照が解決する。
+# 本体 sed が word boundary（\b）を使うため、ここも \b で揃える
+# （review.md / review-sections.md の両方を gstack-review.md / gstack-review-sections.md に変換）。
+rename_sidecar() {
+  echo "$1" | sed -E \
+    -e 's/^codex-plan-review/outside-voice-plan-review/' \
+    -e 's/^codex-review/outside-voice-review/' \
+    -e 's/^review\b/gstack-review/' \
+    -e 's/^codex\b/outside-voice/'
+}
+
 if [ -d "$UPSTREAM_SKILL_DIR" ]; then
   # トップレベルの .md サイドカー
   for src in "$UPSTREAM_SKILL_DIR"/*.md; do
@@ -462,11 +477,17 @@ if [ -d "$UPSTREAM_SKILL_DIR" ]; then
     case "$base" in
       SKILL.md|SKILL.md.tmpl) continue ;;
     esac
-    cp "$src" "$SKILL_DIR/$base"
+    out=$(rename_sidecar "$base")
+    apply_compat < "$src" > "$SKILL_DIR/$out"
+    validate_md "$out" "$(cat "$SKILL_DIR/$out")"
+    # リネームされた場合、旧名の verbatim コピーが残っていれば削除（二重化防止）
+    if [ "$out" != "$base" ] && [ -f "$SKILL_DIR/$base" ]; then
+      rm -f "$SKILL_DIR/$base"
+    fi
     SIDECAR_COUNT=$((SIDECAR_COUNT + 1))
   done
 
-  # サブディレクトリ（specialists/ 等）
+  # サブディレクトリ（specialists/, sections/ 等）
   for subdir in "$UPSTREAM_SKILL_DIR"/*/; do
     [ -d "$subdir" ] || continue
     subname=$(basename "$subdir")
@@ -480,11 +501,21 @@ if [ -d "$UPSTREAM_SKILL_DIR" ]; then
       mkdir -p "$SKILL_DIR/$subname"
       for src in "$subdir"*.md; do
         [ -f "$src" ] || continue
-        cp "$src" "$SKILL_DIR/$subname/"
+        base=$(basename "$src")
+        out=$(rename_sidecar "$base")
+        apply_compat < "$src" > "$SKILL_DIR/$subname/$out"
+        validate_md "$subname/$out" "$(cat "$SKILL_DIR/$subname/$out")"
+        if [ "$out" != "$base" ] && [ -f "$SKILL_DIR/$subname/$base" ]; then
+          rm -f "$SKILL_DIR/$subname/$base"
+        fi
         SIDECAR_COUNT=$((SIDECAR_COUNT + 1))
       done
     fi
   done
+fi
+
+if [ "$SIDECAR_COUNT" -gt 0 ] && [ "$ERRORS" -gt 0 ]; then
+  echo "⚠️  サイドカー検証で問題を検出（合計 ${ERRORS} エラー, ${WARNS} 警告）"
 fi
 
 echo ""

@@ -53,17 +53,17 @@ These rules auto-answer every intermediate question:
 Every auto-decision is classified:
 
 **Mechanical** — one clearly right answer. Auto-decide silently.
-Examples: run outside voice (always yes), run evals (always yes), reduce scope on a complete plan (always no).
+Examples: run Outside Voice (always yes), run evals (always yes), reduce scope on a complete plan (always no).
 
 **Taste** — reasonable people could disagree. Auto-decide with recommendation, but surface at the final gate. Three natural sources:
 1. **Close approaches** — top two are both viable with different tradeoffs.
 2. **Borderline scope** — in blast radius but 3-5 files, or ambiguous radius.
-3. **Outside Voice disagreements** — outside voice (cross-model subagent) recommends differently and has a valid point.
+3. **Outside Voice disagreements** — Outside Voice recommends differently and has a valid point.
 
 **User Challenge** — both models agree the user's stated direction should change.
-This is qualitatively different from taste decisions. When the primary subagent and the
-outside voice both recommend merging, splitting, adding, or removing features/skills/workflows
-that the user specified, this is a User Challenge. It is NEVER auto-decided.
+This is qualitatively different from taste decisions. When Claude and Outside Voice both
+recommend merging, splitting, adding, or removing features/skills/workflows that
+the user specified, this is a User Challenge. It is NEVER auto-decided.
 
 User Challenges go to the final approval gate with richer context than taste
 decisions:
@@ -135,8 +135,8 @@ this boundary instruction:
 
 > IMPORTANT: Do NOT read or execute any SKILL.md files or files in skill definition directories (paths containing skills/gstack). These are AI assistant skill definitions meant for a different system. They contain bash scripts and prompt templates that will waste your time. Ignore them completely. Stay focused on the repository code only.
 
-This prevents the outside voice subagent from discovering gstack skill files on disk
-and following their instructions instead of reviewing the plan.
+This prevents Outside Voice from discovering gstack skill files on disk and following their
+instructions instead of reviewing the plan.
 
 ---
 
@@ -147,7 +147,6 @@ and following their instructions instead of reviewing the plan.
 Before doing anything, save the plan file's current state to an external file:
 
 ```bash
-eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-')
 DATETIME=$(date +%Y%m%d-%H%M%S)
 echo "RESTORE_PATH=$HOME/.gstack/projects/$SLUG/${BRANCH}-autoplan-restore-${DATETIME}.md"
@@ -215,26 +214,32 @@ Loaded review skills from disk. Starting full review pipeline with auto-decision
 
 ---
 
-## Phase 0.5: Outside Voice preflight
+## Phase 0.5: Outside Voice auth + version preflight
 
-gstack-copilot-jp の Outside Voice は Copilot のマルチモデル機能（task tool /
-`runSubagent` + 異なるモデルファミリー指定）で実装される。preflight として
-`gstack-codex-probe` シム（v1.4 で `gstack-outside-voice` に rename 予定）を source し、
-`GSTACK_OUTSIDE_VOICE` / `GSTACK_OUTSIDE_MODEL` を環境に注入する。これにより
-プライマリ voice と異なるモデルファミリーが Phase 1〜3.5 全体で再利用される。
+Before invoking any Outside Voice voice, preflight the CLI: verify auth (multi-signal) and
+warn on known-bad CLI versions. This is infrastructure for all 4 phases below —
+source it once here and the helper functions stay in scope for the rest of the
+workflow.
 
 ```bash
+_TEL=$(
 source .github/skills/bin/gstack-codex-probe
-_gstack_codex_log_event "outside_voice_initialized" "model=$GSTACK_OUTSIDE_MODEL"
+
+# Check Outside Voice binary. If missing, tag the degradation matrix and continue
+# with Primary subagent only (autoplan's existing degradation fallback).
+if ! command -v gstack-outside-voice >/dev/null 2>&1; then
+  _gstack_codex_log_event "outside-voice-missing"
+  echo "[outside-voice-unavailable: binary not found] — proceeding with Primary subagent only"
+elif ! _gstack_codex_auth_probe >/dev/null; then
+  _gstack_codex_log_event "outside-voice-auth-failed"
+else
+  _gstack_codex_version_check   # non-blocking warn if known-bad
+fi
 ```
 
-シムは `_gstack_codex_*` 互換関数（auth_probe / version_check / log_event /
-log_hang / available）と Outside Voice 起動用の環境変数（`GSTACK_OUTSIDE_VOICE=task`、
-`GSTACK_OUTSIDE_MODEL=<primary とは別ファミリー>`）を export する。Phase 1〜3.5 の
-bash ブロックはこれらをそのまま参照できる。
+`[outside-voice-unavailable]` in the degradation matrix. /autoplan completes with
+Primary subagent only — saves token spend on Outside Voice prompts we can't use.
 
-シム source に失敗した場合のみ、外部 voice 不在として `[outside-unavailable]` を
-degradation matrix に記録し、primary subagent のみで継続する。
 ---
 
 ## Phase 1: CEO Review (Strategy & Scope)
@@ -252,44 +257,33 @@ Override: every ask_user → auto-decide using the 6 principles.
 - Scope expansion: in blast radius + <1d CC → approve (P2). Outside → defer to TODOS.md (P3).
   Duplicates → reject (P4). Borderline (3-5 files) → mark TASTE DECISION.
 - All 10 review sections: run fully, auto-decide each issue, log every decision.
-- Dual voices: always run BOTH the **primary subagent** AND the **outside voice**
-  if available (P6). The primary subagent runs in the user's selected model; the
-  outside voice runs in `$GSTACK_OUTSIDE_MODEL` (a different model family
-  resolved by the Phase 0.5 shim). Run them sequentially in foreground.
-  First the primary subagent (task tool / `runSubagent`, foreground — do NOT
-  use run_in_background), then the outside voice (also via task tool /
-  `runSubagent` with `model: $GSTACK_OUTSIDE_MODEL`). Both must complete
-  before building the consensus table.
+- Dual voices: always run BOTH Primary subagent AND Outside Voice if available (P6).
+  Run them sequentially in foreground. First the Primary subagent (task tool,
+  foreground — do NOT use run_in_background), then Outside Voice (Bash). Both must
+  complete before building the consensus table.
 
-  Both calls use `runSubagent` with an inline `prompt` that defines the role
-  (CEO / designer / engineer / DX) for that phase. There is no named persona
-  agent file — the role is encoded in the prompt itself.
-
-  **Outside Voice (CEO) — via task tool with model override**:
-
-  Invoke `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", prompt: "..." })`
-  (or the equivalent task tool spawn). The prompt:
-
-  > You are a CEO/founder advisor reviewing a development plan.
-  > Challenge the strategic foundations: Are the premises valid or assumed? Is this the
-  > right problem to solve, or is there a reframing that would be 10x more impactful?
-  > What alternatives were dismissed too quickly? What competitive or market risks are
-  > unaddressed? What scope decisions will look foolish in 6 months? Be adversarial.
-  > No compliments. Just the strategic blind spots.
-  > File: `<plan_path>`
-
-  Telemetry on timeout/error:
+  **Outside Voice (CEO)** (via Bash):
   ```bash
-  if [ "$_OUTSIDE_VOICE_EXIT" = "124" ]; then
-    _gstack_codex_log_event "outside_voice_timeout" "600"
+  _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+
+  You are a CEO/founder advisor reviewing a development plan.
+  Challenge the strategic foundations: Are the premises valid or assumed? Is this the
+  right problem to solve, or is there a reframing that would be 10x more impactful?
+  What alternatives were dismissed too quickly? What competitive or market risks are
+  unaddressed? What scope decisions will look foolish in 6 months? Be adversarial.
+  No compliments. Just the strategic blind spots.
+  File: <plan_path>" -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached < /dev/null
+  _CODEX_EXIT=$?
+  if [ "$_CODEX_EXIT" = "124" ]; then
+    _gstack_codex_log_event "outside-voice-timeout" "600"
     _gstack_codex_log_hang "autoplan" "0"
-    echo "[outside voice stalled past 10 minutes — tagging as [outside-unavailable] for this phase and proceeding with primary subagent only]"
+    echo "[Outside Voice stalled past 10 minutes — tagging as [outside-voice-unavailable] for this phase and proceeding with Primary subagent only]"
   fi
   ```
-  Timeout: 10 minutes (subagent timeout) + 12 minutes (outer gate). On hang, auto-degrades this phase's outside voice.
+  Timeout: 10 minutes (shell-wrapper) + 12 minutes (Bash outer gate). On hang, auto-degrades this phase's Outside Voice voice.
 
-  **Primary subagent (CEO) — via task tool**:
-  "Read the plan file at `<plan_path>`. You are an independent CEO/strategist
+  **Claude CEO subagent** (via task tool):
+  "Read the plan file at <plan_path>. You are an independent CEO/strategist
   reviewing this plan. You have NOT seen any prior review. Evaluate:
   1. Is this the right problem to solve? Could a reframing yield 10x impact?
   2. Are the premises stated or just assumed? Which ones could be wrong?
@@ -298,17 +292,16 @@ Override: every ask_user → auto-decide using the 6 principles.
   5. What's the competitive risk — could someone else solve this first/better?
   For each finding: what's wrong, severity (critical/high/medium), and the fix."
 
-  **Error handling:** Both calls block in foreground. Outside voice timeout/empty →
-  proceed with primary subagent only, tagged `[single-model]`. If primary subagent
-  also fails → "Both voices unavailable — continuing with primary review."
+  **Error handling:** Both calls block in foreground. Outside Voice auth/timeout/empty → proceed with
+  Primary subagent only, tagged `[single-model]`. If Primary subagent also fails →
+  "Outside voices unavailable — continuing with primary review."
 
-  **Degradation matrix:** Both fail → "single-reviewer mode". Outside voice only →
-  tag `[outside-only]`. Primary subagent only → tag `[primary-only]`.
+  **Degradation matrix:** Both fail → "single-reviewer mode". Outside Voice only →
+  tag `[outside-only]`. Subagent only → tag `[primary-only]`.
 
-- Strategy choices: if the outside voice disagrees with a premise or scope decision
-  with valid strategic reason → TASTE DECISION. If both voices agree the user's
-  stated structure should change (merge, split, add, remove) → USER CHALLENGE
-  (never auto-decided).
+- Strategy choices: if Outside Voice disagrees with a premise or scope decision with valid
+  strategic reason → TASTE DECISION. If both models agree the user's stated structure
+  should change (merge, split, add, remove) → USER CHALLENGE (never auto-decided).
 
 **Required execution checklist (CEO):**
 
@@ -321,25 +314,24 @@ Step 0 (0A-0F) — run each sub-step and produce:
 - 0E: Temporal interrogation (HOUR 1 → HOUR 6+)
 - 0F: Mode selection confirmation
 
-Step 0.5 (Dual Voices): Run primary subagent (foreground task tool) first, then
-the outside voice (task tool / `runSubagent` with `model: $GSTACK_OUTSIDE_MODEL`).
-Present outside voice output under OUTSIDE VOICE (CEO — strategy challenge)
-header. Present primary subagent output under PRIMARY SUBAGENT (CEO — strategic
-independence) header. Produce CEO consensus table:
+Step 0.5 (Dual Voices): Run Primary subagent (foreground task tool) first, then
+Outside Voice (Bash). Present Outside Voice output under OUTSIDE VOICE SAYS (CEO — strategy challenge)
+header. Present subagent output under INDEPENDENT SUBAGENT (CEO — strategic independence)
+header. Produce CEO consensus table:
 
 ```
 CEO DUAL VOICES — CONSENSUS TABLE:
 ═══════════════════════════════════════════════════════════════
   Dimension                           Primary  OutVoice  Consensus
-  ──────────────────────────────────── ─────── ──────── ─────────
-  1. Premises valid?                   —        —         —
-  2. Right problem to solve?           —        —         —
-  3. Scope calibration correct?        —        —         —
-  4. Alternatives sufficiently explored?—       —         —
-  5. Competitive/market risks covered? —        —         —
-  6. 6-month trajectory sound?         —        —         —
+  ──────────────────────────────────── ─────── ─────── ─────────
+  1. Premises valid?                   —       —      —
+  2. Right problem to solve?           —       —      —
+  3. Scope calibration correct?        —       —      —
+  4. Alternatives sufficiently explored?—      —      —
+  5. Competitive/market risks covered? —       —      —
+  6. 6-month trajectory sound?         —       —      —
 ═══════════════════════════════════════════════════════════════
-CONFIRMED = both agree. DISAGREE = voices differ (→ taste decision).
+CONFIRMED = both agree. DISAGREE = models differ (→ taste decision).
 Missing voice = N/A (not CONFIRMED). Single critical finding from one voice = flagged regardless.
 ```
 
@@ -384,38 +376,36 @@ Override: every ask_user → auto-decide using the 6 principles.
 - Structural issues (missing states, broken hierarchy): auto-fix (P5)
 - Aesthetic/taste issues: mark TASTE DECISION
 - Design system alignment: auto-fix if DESIGN.md exists and fix is obvious
-- Dual voices: always run BOTH the **primary subagent** AND the **outside voice**
-  if available (P6).
+- Dual voices: always run BOTH Primary subagent AND Outside Voice if available (P6).
 
-  **Outside Voice (design) — via task tool with model override**:
-
-  Invoke `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", prompt: "..." })`. The prompt:
-
-  > Read the plan file at `<plan_path>`. Evaluate this plan's UI/UX design decisions.
-  >
-  > Also consider these findings from the CEO review phase:
-  > `<insert CEO dual voice findings summary — key concerns, disagreements>`
-  >
-  > Does the information hierarchy serve the user or the developer? Are interaction
-  > states (loading, empty, error, partial) specified or left to the implementer's
-  > imagination? Is the responsive strategy intentional or afterthought? Are
-  > accessibility requirements (keyboard nav, contrast, touch targets) specified or
-  > aspirational? Does the plan describe specific UI decisions or generic patterns?
-  > What design decisions will haunt the implementer if left ambiguous?
-  > Be opinionated. No hedging.
-
-  Telemetry on timeout/error (same shape as Phase 1):
+  **Outside Voice (design)** (via Bash):
   ```bash
-  if [ "$_OUTSIDE_VOICE_EXIT" = "124" ]; then
-    _gstack_codex_log_event "outside_voice_timeout" "600"
+  _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+
+  Read the plan file at <plan_path>. Evaluate this plan's
+  UI/UX design decisions.
+
+  Also consider these findings from the CEO review phase:
+  <insert CEO dual voice findings summary — key concerns, disagreements>
+
+  Does the information hierarchy serve the user or the developer? Are interaction
+  states (loading, empty, error, partial) specified or left to the implementer's
+  imagination? Is the responsive strategy intentional or afterthought? Are
+  accessibility requirements (keyboard nav, contrast, touch targets) specified or
+  aspirational? Does the plan describe specific UI decisions or generic patterns?
+  What design decisions will haunt the implementer if left ambiguous?
+  Be opinionated. No hedging." -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached < /dev/null
+  _CODEX_EXIT=$?
+  if [ "$_CODEX_EXIT" = "124" ]; then
+    _gstack_codex_log_event "outside-voice-timeout" "600"
     _gstack_codex_log_hang "autoplan" "0"
-    echo "[outside voice stalled past 10 minutes — tagging as [outside-unavailable] for this phase and proceeding with primary subagent only]"
+    echo "[Outside Voice stalled past 10 minutes — tagging as [outside-voice-unavailable] for this phase and proceeding with Primary subagent only]"
   fi
   ```
-  Timeout: 10 minutes (subagent timeout) + 12 minutes (outer gate). On hang, auto-degrades this phase's outside voice.
+  Timeout: 10 minutes (shell-wrapper) + 12 minutes (Bash outer gate). On hang, auto-degrades this phase's Outside Voice voice.
 
-  **Primary subagent (design) — via task tool**:
-  "Read the plan file at `<plan_path>`. You are an independent senior product designer
+  **Claude design subagent** (via task tool):
+  "Read the plan file at <plan_path>. You are an independent senior product designer
   reviewing this plan. You have NOT seen any prior review. Evaluate:
   1. Information hierarchy: what does the user see first, second, third? Is it right?
   2. Missing states: loading, empty, error, success, partial — which are unspecified?
@@ -423,23 +413,22 @@ Override: every ask_user → auto-decide using the 6 principles.
   4. Specificity: does the plan describe SPECIFIC UI or generic patterns?
   5. What design decisions will haunt the implementer if left ambiguous?
   For each finding: what's wrong, severity (critical/high/medium), and the fix."
-  NO prior-phase context — the primary subagent must be truly independent.
+  NO prior-phase context — subagent must be truly independent.
 
   Error handling: same as Phase 1 (both foreground/blocking, degradation matrix applies).
 
-- Design choices: if the outside voice disagrees with a design decision with valid
-  UX reasoning → TASTE DECISION. Scope changes both voices agree on → USER CHALLENGE.
+- Design choices: if Outside Voice disagrees with a design decision with valid UX reasoning
+  → TASTE DECISION. Scope changes both models agree on → USER CHALLENGE.
 
 **Required execution checklist (Design):**
 
 1. Step 0 (Design Scope): Rate completeness 0-10. Check DESIGN.md. Map existing patterns.
 
-2. Step 0.5 (Dual Voices): Run primary subagent (foreground) first, then the outside
-   voice. Present under OUTSIDE VOICE (design — UX challenge) and PRIMARY SUBAGENT
-   (design — independent review) headers. Produce design litmus scorecard
-   (consensus table). Use the litmus scorecard format from plan-design-review.
-   Include CEO phase findings in the outside voice prompt ONLY (not the primary
-   subagent — it stays independent).
+2. Step 0.5 (Dual Voices): Run Primary subagent (foreground) first, then Outside Voice. Present under
+   OUTSIDE VOICE SAYS (design — UX challenge) and INDEPENDENT SUBAGENT (design — independent review)
+   headers. Produce design litmus scorecard (consensus table). Use the litmus scorecard
+   format from plan-design-review. Include CEO phase findings in Outside Voice prompt ONLY
+   (not Primary subagent — stays independent).
 
 3. Passes 1-7: Run each from loaded skill. Rate 0-10. Auto-decide each issue.
    DISAGREE items from scorecard → raised in the relevant pass with both perspectives.
@@ -467,34 +456,31 @@ Override: every ask_user → auto-decide using the 6 principles.
 
 **Override rules:**
 - Scope challenge: never reduce (P2)
-- Dual voices: always run BOTH the **primary subagent** AND the **outside voice**
-  if available (P6).
+- Dual voices: always run BOTH Primary subagent AND Outside Voice if available (P6).
 
-  **Outside Voice (eng) — via task tool with model override**:
-
-  Invoke `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", prompt: "..." })`. The prompt:
-
-  > Review this plan for architectural issues, missing edge cases, and hidden
-  > complexity. Be adversarial.
-  >
-  > Also consider these findings from prior review phases:
-  > CEO: `<insert CEO consensus table summary — key concerns, DISAGREEs>`
-  > Design: `<insert Design consensus table summary, or 'skipped, no UI scope'>`
-  >
-  > File: `<plan_path>`
-
-  Telemetry on timeout/error (same shape as Phase 1):
+  **Outside Voice (eng)** (via Bash):
   ```bash
-  if [ "$_OUTSIDE_VOICE_EXIT" = "124" ]; then
-    _gstack_codex_log_event "outside_voice_timeout" "600"
+  _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+
+  Review this plan for architectural issues, missing edge cases,
+  and hidden complexity. Be adversarial.
+
+  Also consider these findings from prior review phases:
+  CEO: <insert CEO consensus table summary — key concerns, DISAGREEs>
+  Design: <insert Design consensus table summary, or 'skipped, no UI scope'>
+
+  File: <plan_path>" -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached < /dev/null
+  _CODEX_EXIT=$?
+  if [ "$_CODEX_EXIT" = "124" ]; then
+    _gstack_codex_log_event "outside-voice-timeout" "600"
     _gstack_codex_log_hang "autoplan" "0"
-    echo "[outside voice stalled past 10 minutes — tagging as [outside-unavailable] for this phase and proceeding with primary subagent only]"
+    echo "[Outside Voice stalled past 10 minutes — tagging as [outside-voice-unavailable] for this phase and proceeding with Primary subagent only]"
   fi
   ```
-  Timeout: 10 minutes (subagent timeout) + 12 minutes (outer gate). On hang, auto-degrades this phase's outside voice.
+  Timeout: 10 minutes (shell-wrapper) + 12 minutes (Bash outer gate). On hang, auto-degrades this phase's Outside Voice voice.
 
-  **Primary subagent (eng) — via task tool**:
-  "Read the plan file at `<plan_path>`. You are an independent senior engineer
+  **Claude eng subagent** (via task tool):
+  "Read the plan file at <plan_path>. You are an independent senior engineer
   reviewing this plan. You have NOT seen any prior review. Evaluate:
   1. Architecture: Is the component structure sound? Coupling concerns?
   2. Edge cases: What breaks under 10x load? What's the nil/empty/error path?
@@ -502,12 +488,11 @@ Override: every ask_user → auto-decide using the 6 principles.
   4. Security: New attack surface? Auth boundaries? Input validation?
   5. Hidden complexity: What looks simple but isn't?
   For each finding: what's wrong, severity, and the fix."
-  NO prior-phase context — the primary subagent must be truly independent.
+  NO prior-phase context — subagent must be truly independent.
 
   Error handling: same as Phase 1 (both foreground/blocking, degradation matrix applies).
 
-- Architecture choices: explicit over clever (P5). If the outside voice disagrees with
-  valid reason → TASTE DECISION. Scope changes both voices agree on → USER CHALLENGE.
+- Architecture choices: explicit over clever (P5). If Outside Voice disagrees with valid reason → TASTE DECISION. Scope changes both models agree on → USER CHALLENGE.
 - Evals: always include all relevant suites (P1)
 - Test plan: generate artifact at `./{user}-{branch}-test-plan-{datetime}.md`
 - TODOS.md: collect all deferred scope expansions from Phase 1, auto-write
@@ -517,24 +502,24 @@ Override: every ask_user → auto-decide using the 6 principles.
 1. Step 0 (Scope Challenge): Read actual code referenced by the plan. Map each
    sub-problem to existing code. Run the complexity check. Produce concrete findings.
 
-2. Step 0.5 (Dual Voices): Run primary subagent (foreground) first, then the outside
-   voice. Present outside voice output under OUTSIDE VOICE (eng — architecture
-   challenge) header. Present primary subagent output under PRIMARY SUBAGENT
-   (eng — independent review) header. Produce eng consensus table:
+2. Step 0.5 (Dual Voices): Run Primary subagent (foreground) first, then Outside Voice. Present
+   Outside Voice output under OUTSIDE VOICE SAYS (eng — architecture challenge) header. Present subagent
+   output under INDEPENDENT SUBAGENT (eng — independent review) header. Produce eng consensus
+   table:
 
 ```
 ENG DUAL VOICES — CONSENSUS TABLE:
 ═══════════════════════════════════════════════════════════════
   Dimension                           Primary  OutVoice  Consensus
-  ──────────────────────────────────── ─────── ──────── ─────────
-  1. Architecture sound?               —        —         —
-  2. Test coverage sufficient?         —        —         —
-  3. Performance risks addressed?      —        —         —
-  4. Security threats covered?         —        —         —
-  5. Error paths handled?              —        —         —
-  6. Deployment risk manageable?       —        —         —
+  ──────────────────────────────────── ─────── ─────── ─────────
+  1. Architecture sound?               —       —      —
+  2. Test coverage sufficient?         —       —      —
+  3. Performance risks addressed?      —       —      —
+  4. Security threats covered?         —       —      —
+  5. Error paths handled?              —       —      —
+  6. Deployment risk manageable?       —       —      —
 ═══════════════════════════════════════════════════════════════
-CONFIRMED = both agree. DISAGREE = voices differ (→ taste decision).
+CONFIRMED = both agree. DISAGREE = models differ (→ taste decision).
 Missing voice = N/A (not CONFIRMED). Single critical finding from one voice = flagged regardless.
 ```
 
@@ -591,39 +576,36 @@ Log: "Phase 3.5 skipped — no developer-facing scope detected."
 - Error message quality: always require problem + cause + fix (P1, completeness)
 - API/CLI naming: consistency wins over cleverness (P5)
 - DX taste decisions (e.g., opinionated defaults vs flexibility): mark TASTE DECISION
-- Dual voices: always run BOTH the **primary subagent** AND the **outside voice**
-  if available (P6).
+- Dual voices: always run BOTH Primary subagent AND Outside Voice if available (P6).
 
-  **Outside Voice (DX) — via task tool with model override**:
-
-  Invoke `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", prompt: "..." })`. The prompt:
-
-  > Read the plan file at `<plan_path>`. Evaluate this plan's developer experience.
-  >
-  > Also consider these findings from prior review phases:
-  > CEO: `<insert CEO consensus summary>`
-  > Eng: `<insert Eng consensus summary>`
-  >
-  > You are a developer who has never seen this product. Evaluate:
-  > 1. Time to hello world: how many steps from zero to working? Target is under 5 minutes.
-  > 2. Error messages: when something goes wrong, does the dev know what, why, and how to fix?
-  > 3. API/CLI design: are names guessable? Are defaults sensible? Is it consistent?
-  > 4. Docs: can a dev find what they need in under 2 minutes? Are examples copy-paste-complete?
-  > 5. Upgrade path: can devs upgrade without fear? Migration guides? Deprecation warnings?
-  > Be adversarial. Think like a developer who is evaluating this against 3 competitors.
-
-  Telemetry on timeout/error (same shape as Phase 1):
+  **Outside Voice (DX)** (via Bash):
   ```bash
-  if [ "$_OUTSIDE_VOICE_EXIT" = "124" ]; then
-    _gstack_codex_log_event "outside_voice_timeout" "600"
+  _REPO_ROOT=$(git rev-parse --show-toplevel) || { echo "ERROR: not in a git repo" >&2; exit 1; }
+
+  Read the plan file at <plan_path>. Evaluate this plan's developer experience.
+
+  Also consider these findings from prior review phases:
+  CEO: <insert CEO consensus summary>
+  Eng: <insert Eng consensus summary>
+
+  You are a developer who has never seen this product. Evaluate:
+  1. Time to hello world: how many steps from zero to working? Target is under 5 minutes.
+  2. Error messages: when something goes wrong, does the dev know what, why, and how to fix?
+  3. API/CLI design: are names guessable? Are defaults sensible? Is it consistent?
+  4. Docs: can a dev find what they need in under 2 minutes? Are examples copy-paste-complete?
+  5. Upgrade path: can devs upgrade without fear? Migration guides? Deprecation warnings?
+  Be adversarial. Think like a developer who is evaluating this against 3 competitors." -C "$(git rev-parse --show-toplevel)" -s read-only --enable web_search_cached < /dev/null
+  _CODEX_EXIT=$?
+  if [ "$_CODEX_EXIT" = "124" ]; then
+    _gstack_codex_log_event "outside-voice-timeout" "600"
     _gstack_codex_log_hang "autoplan" "0"
-    echo "[outside voice stalled past 10 minutes — tagging as [outside-unavailable] for this phase and proceeding with primary subagent only]"
+    echo "[Outside Voice stalled past 10 minutes — tagging as [outside-voice-unavailable] for this phase and proceeding with Primary subagent only]"
   fi
   ```
-  Timeout: 10 minutes (subagent timeout) + 12 minutes (outer gate). On hang, auto-degrades this phase's outside voice.
+  Timeout: 10 minutes (shell-wrapper) + 12 minutes (Bash outer gate). On hang, auto-degrades this phase's Outside Voice voice.
 
-  **Primary subagent (DX) — via task tool**:
-  "Read the plan file at `<plan_path>`. You are an independent DX engineer
+  **Claude DX subagent** (via task tool):
+  "Read the plan file at <plan_path>. You are an independent DX engineer
   reviewing this plan. You have NOT seen any prior review. Evaluate:
   1. Getting started: how many steps from zero to hello world? What's the TTHW?
   2. API/CLI ergonomics: naming consistency, sensible defaults, progressive disclosure?
@@ -631,35 +613,35 @@ Log: "Phase 3.5 skipped — no developer-facing scope detected."
   4. Documentation: copy-paste examples? Information architecture? Interactive elements?
   5. Escape hatches: can developers override every opinionated default?
   For each finding: what's wrong, severity (critical/high/medium), and the fix."
-  NO prior-phase context — the primary subagent must be truly independent.
+  NO prior-phase context — subagent must be truly independent.
 
   Error handling: same as Phase 1 (both foreground/blocking, degradation matrix applies).
 
-- DX choices: if the outside voice disagrees with a DX decision with valid developer
-  empathy reasoning → TASTE DECISION. Scope changes both voices agree on → USER CHALLENGE.
+- DX choices: if Outside Voice disagrees with a DX decision with valid developer empathy reasoning
+  → TASTE DECISION. Scope changes both models agree on → USER CHALLENGE.
 
 **Required execution checklist (DX):**
 
 1. Step 0 (DX Scope Assessment): Auto-detect product type. Map the developer journey.
    Rate initial DX completeness 0-10. Assess TTHW.
 
-2. Step 0.5 (Dual Voices): Run primary subagent (foreground) first, then the outside
-   voice. Present under OUTSIDE VOICE (DX — developer experience challenge) and
-   PRIMARY SUBAGENT (DX — independent review) headers. Produce DX consensus table:
+2. Step 0.5 (Dual Voices): Run Primary subagent (foreground) first, then Outside Voice. Present
+   under OUTSIDE VOICE SAYS (DX — developer experience challenge) and INDEPENDENT SUBAGENT
+   (DX — independent review) headers. Produce DX consensus table:
 
 ```
 DX DUAL VOICES — CONSENSUS TABLE:
 ═══════════════════════════════════════════════════════════════
   Dimension                           Primary  OutVoice  Consensus
-  ──────────────────────────────────── ─────── ──────── ─────────
-  1. Getting started < 5 min?          —        —         —
-  2. API/CLI naming guessable?         —        —         —
-  3. Error messages actionable?        —        —         —
-  4. Docs findable & complete?         —        —         —
-  5. Upgrade path safe?                —        —         —
-  6. Dev environment friction-free?    —        —         —
+  ──────────────────────────────────── ─────── ─────── ─────────
+  1. Getting started < 5 min?          —       —      —
+  2. API/CLI naming guessable?         —       —      —
+  3. Error messages actionable?        —       —      —
+  4. Docs findable & complete?         —       —      —
+  5. Upgrade path safe?                —       —      —
+  6. Dev environment friction-free?    —       —      —
 ═══════════════════════════════════════════════════════════════
-CONFIRMED = both agree. DISAGREE = voices differ (→ taste decision).
+CONFIRMED = both agree. DISAGREE = models differ (→ taste decision).
 Missing voice = N/A (not CONFIRMED). Single critical finding from one voice = flagged regardless.
 ```
 
@@ -758,6 +740,78 @@ noting which items are incomplete. Do not loop indefinitely.
 
 ## Phase 4: Final Approval Gate
 
+## Implementation Tasks aggregator
+
+Before rendering the Final Approval Gate output block below, aggregate the
+per-phase task lists each review skill wrote.
+
+```bash
+TASKS_DIR="${HOME}/.gstack/projects/${SLUG:-unknown}"
+BRANCH=$(git branch --show-current 2>/dev/null || echo unknown)
+# Commit window: last 5 commits on this branch. Drops stale standalone reviews.
+COMMITS_RECENT=$(git log --format=%H -n 5 2>/dev/null | tr '\n' '|' | sed 's/|$//')
+
+AGGREGATED_TASKS=""
+if command -v jq >/dev/null 2>&1; then
+  # Collect entries from all 4 phases, scoped to current branch + commit window.
+  # For each phase, keep only the latest run_id. Within the surviving set,
+  # dedupe by (component, sorted(files), title) — exact match only.
+  # Sort by priority (P1 > P2 > P3) then by phase order.
+  ALL_JSONL=$(mktemp -t autoplan-tasks.XXXXXXXX)
+  for phase in ceo-review design-review eng-review devex-review; do
+    # Use find instead of glob expansion — zsh nomatch errors otherwise when
+    # a phase produced no JSONL files. Sorting by name keeps the order stable.
+    while IFS= read -r f; do
+      [ -f "$f" ] || continue
+      # Filter to current branch + recent commits, then keep records for the
+      # latest run_id only. (Single phase may have multiple files if the user
+      # re-ran the review; aggregator takes the newest.)
+      jq -c --arg branch "$BRANCH" --arg commits "$COMMITS_RECENT" \
+        'select(.branch == $branch and ($commits | split("|") | index(.commit) != null))' \
+        "$f" 2>/dev/null >> "$ALL_JSONL" || true
+    done < <(find "$TASKS_DIR" -maxdepth 1 -name "tasks-$phase-*.jsonl" 2>/dev/null | sort)
+    # Reduce to latest run_id per phase
+    if [ -s "$ALL_JSONL" ]; then
+      jq -sc --arg phase "$phase" \
+        '[.[] | select(.phase == $phase)] | (max_by(.run_id) // null) as $latest_run | if $latest_run then map(select(.run_id == $latest_run.run_id)) else [] end | .[]' \
+        "$ALL_JSONL" > "$ALL_JSONL.phase" 2>/dev/null || true
+      # Replace with reduced version for this phase, accumulating others
+      jq -c --arg phase "$phase" 'select(.phase != $phase)' "$ALL_JSONL" > "$ALL_JSONL.other" 2>/dev/null || true
+      cat "$ALL_JSONL.other" "$ALL_JSONL.phase" > "$ALL_JSONL"
+      rm -f "$ALL_JSONL.phase" "$ALL_JSONL.other"
+    fi
+  done
+
+  # Exact-match dedup by (component, sorted(files), title). Non-matches kept
+  # separately with a possible-duplicate marker injected by the renderer.
+  AGGREGATED_TASKS=$(jq -s \
+    'group_by([.component, (.files | sort), .title])
+     | map(
+         # Take the highest-priority entry per group; tie-break by phase order
+         sort_by({P1:0,P2:1,P3:2}[.priority] // 99, {"ceo-review":0,"design-review":1,"eng-review":2,"devex-review":3}[.phase] // 99) | .[0]
+       )
+     | sort_by({P1:0,P2:1,P3:2}[.priority] // 99, {"ceo-review":0,"design-review":1,"eng-review":2,"devex-review":3}[.phase] // 99)
+     | if length == 0 then "_No actionable tasks emitted from any phase._" else
+         map("- [ ] **\(.id) (\(.priority), human: \(.effort_human) / CC: \(.effort_cc)) — \(.component)** — \(.title)\n  - Surfaced by: \(.phase) — \(.source_finding)\n  - Files: \(.files | join(", "))") | join("\n")
+       end' "$ALL_JSONL" 2>/dev/null | sed 's/^"//;s/"$//;s/\\n/\n/g')
+  rm -f "$ALL_JSONL"
+else
+  AGGREGATED_TASKS="_jq not installed — install jq to aggregate per-phase task lists. Skipping._"
+fi
+```
+
+Inside the Final Approval Gate output template below, render the aggregated
+markdown in the `### Implementation Tasks (aggregated across phases)` section.
+Substitute the contents of `$AGGREGATED_TASKS` (the bash variable set above)
+before printing the message to the user. This is NOT a template placeholder
+— the agent does the substitution at runtime, not gen-skill-docs at build time.
+
+If `$AGGREGATED_TASKS` is empty (no JSONL files found — none of the review
+skills ran in this session), render:
+
+`_No per-phase task lists found in $TASKS_DIR for branch $BRANCH. Each review
+skill writes its own; if you ran one of them but no list appears here, check
+that jq is installed and the tasks-<phase>-*.jsonl files exist._`
 **STOP here and present the final state to the user.**
 
 Present as a message, then use ask_user:
@@ -770,15 +824,15 @@ Present as a message, then use ask_user:
 
 ### Decisions Made: [N] total ([M] auto-decided, [K] taste choices, [J] user challenges)
 
-### User Challenges (both voices disagree with your stated direction)
+### User Challenges (both models disagree with your stated direction)
 [For each user challenge:]
 **Challenge [N]: [title]** (from [phase])
 You said: [user's original direction]
-Both voices recommend: [the change]
+Both models recommend: [the change]
 Why: [reasoning]
 What we might be missing: [blind spots]
 If we're wrong, the cost is: [downside of changing]
-[If security/feasibility: "⚠️ Both voices flag this as a security/feasibility risk,
+[If security/feasibility: "⚠️ Both models flag this as a security/feasibility risk,
 not just a preference."]
 
 Your call — your original direction stands unless you explicitly change it.
@@ -808,6 +862,10 @@ I recommend [X] — [principle]. But [Y] is also viable:
 
 ### Deferred to TODOS.md
 [Items auto-deferred with reasons]
+
+### Implementation Tasks (aggregated across phases)
+[Substitute the contents of $AGGREGATED_TASKS computed above. If empty:
+"_No per-phase task lists found in $TASKS_DIR for branch $BRANCH._"]
 ```
 
 **Cognitive load management:**
@@ -875,7 +933,7 @@ If Phase 3.5 ran (DX scope), also log:
 .github/skills/bin/gstack-review-log '{"skill":"autoplan-voices","timestamp":"'"$TIMESTAMP"'","status":"STATUS","source":"SOURCE","phase":"dx","via":"autoplan","consensus_confirmed":N,"consensus_disagree":N,"commit":"'"$COMMIT"'"}'
 ```
 
-SOURCE = "outside+primary", "outside-only", "primary-only", or "unavailable".
+SOURCE = "outside-voice+subagent", "outside-only", "independent-only", or "unavailable".
 Replace N values with actual consensus counts from the tables.
 
 Suggest next step: `/ship` when ready to create the PR.
@@ -885,7 +943,7 @@ Suggest next step: `/ship` when ready to create the PR.
 ## Important Rules
 
 - **Never abort.** The user chose /autoplan. Respect that choice. Surface all taste decisions, never redirect to interactive review.
-- **Two gates.** The non-auto-decided ask_users are: (1) premise confirmation in Phase 1, and (2) User Challenges — when both voices agree the user's stated direction should change. Everything else is auto-decided using the 6 principles.
+- **Two gates.** The non-auto-decided ask_users are: (1) premise confirmation in Phase 1, and (2) User Challenges — when both models agree the user's stated direction should change. Everything else is auto-decided using the 6 principles.
 - **Log every decision.** No silent auto-decisions. Every choice gets a row in the audit trail.
 - **Full depth means full depth.** Do not compress or skip sections from the loaded skill files (except the skip list in Phase 0). "Full depth" means: read the code the section asks you to read, produce the outputs the section requires, identify every issue, and decide each one. A one-sentence summary of a section is not "full depth" — it is a skip. If you catch yourself writing fewer than 3 sentences for any review section, you are likely compressing.
 - **Artifacts are deliverables.** Test plan artifact, failure modes registry, error/rescue table, ASCII diagrams — these must exist on disk or in the plan file when the review completes. If they don't exist, the review is incomplete.

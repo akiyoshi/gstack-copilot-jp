@@ -45,7 +45,6 @@ Parse the user's input to determine which command to run:
 Show the most recent 20 learnings, grouped by type.
 
 ```bash
-eval "$(true"
 ```
 
 Present the output in a readable format. If no learnings exist, tell the user:
@@ -57,7 +56,6 @@ gstack will automatically capture patterns, pitfalls, and insights it discovers.
 ## Search
 
 ```bash
-eval "$(true"
 ```
 
 Replace USER_QUERY with the user's search terms. Present results clearly.
@@ -69,7 +67,6 @@ Replace USER_QUERY with the user's search terms. Present results clearly.
 Check learnings for staleness and contradictions.
 
 ```bash
-eval "$(true"
 ```
 
 For each learning in the output:
@@ -98,7 +95,6 @@ latest entry wins).
 Export learnings as markdown suitable for adding to copilot-instructions.md or project documentation.
 
 ```bash
-eval "$(true"
 ```
 
 Format the output as a markdown section:
@@ -129,9 +125,8 @@ or save it as a separate file.
 Show summary statistics about the project's learnings.
 
 ```bash
-eval "$(true"
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
-LEARN_FILE="$GSTACK_HOME/projects/$SLUG/learnings.jsonl"
+eval "$(.github/skills/bin/gstack-paths)"
+LEARN_FILE="$GSTACK_STATE_ROOT/projects/$SLUG/learnings.jsonl"
 if [ -f "$LEARN_FILE" ]; then
   TOTAL=$(wc -l < "$LEARN_FILE" | tr -d ' ')
   echo "TOTAL: $TOTAL entries"

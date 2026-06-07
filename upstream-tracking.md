@@ -13,18 +13,24 @@
 
 | 項目 | 値 |
 |------|-----|
-| 本家バージョン | **v1.20.0.0** (e8893a18) — Browser-Skills runtime + /scrape + /skillify |
-| 本家 HEAD（最終監査時点） | v1.20.0.0 (2026-04-29 同期完了) |
-| 取込ラグ | 0 commits（Phase A-3 で 8 リリース分の SKILL.md を一括同期、v1.2.6.0 で `gstack-developer-profile` 取込） |
-| 最終検証日 | 2026-05-02 |
-| gstack-copilot-jp バージョン | 1.2.6.0 |
+| 本家バージョン | **v1.56.0.0** (cab774cc) — Token-reduction Phase B + AUQ paranoid safety net |
+| 本家 HEAD（最終監査時点） | v1.56.0.0 (2026-06-07 同期完了) |
+| 取込ラグ | 0 commits（v1.20.0.0→v1.56.0.0 の 58 commits を一括同期。34 vendored スキルを再生成し token-reduction を反映） |
+| 最終検証日 | 2026-06-07 |
+| gstack-copilot-jp バージョン | 1.3.0.0 |
 
-**Phase A-3 同期サマリ**:
+**v1.20→v1.56 同期サマリ（2026-06-07）**:
 
-- 29 SKILL.md ファイル更新（+5813/-3805 行）
-- v1.13-v1.20 の方法論改善が反映: preamble 削減 (~25%)、AskUserQuestion 強化、`/health` 軸調整、`/ship` workspace-aware
-- 既知の制約: `gstack-review` (upstream `review/`) は upstream-diff の名前マッピング未対応で未同期 → Phase B-3 で個別取込予定
-- 新規スキル `landing-report`, `claude` (gstack-claude), `scrape`, `skillify` は `planned` ステータスのまま（Phase B/D で取込）
+- 34 vendored スキルを `bin/adapt-upstream-skill.sh` で再生成。upstream の token-reduction（v1.46 catalog tokens -56%、v1.54 ship skeleton 化）を反映。plan-* / office-hours は -70% 前後の圧縮。
+- **adapter 強化**: 新 upstream パターンに対応するため `bin/adapt-upstream-skill.sh` の Layer 2 を拡張:
+  - gbrain `## Brain Context (preflight)` ブロック + `gstack-brain-cache` 呼び出しを除去（gbrain 除外方針）
+  - `eval "$(...gstack-slug...)"` の括弧崩れ（`eval "$(true"` 構文エラー）を早期削除で解消
+  - 小文字 `codex` イディオム（`codex-unavailable`/`codex_timeout`/`command -v codex` 等）を Outside Voice 表記へ変換。シム名 `gstack-codex-probe` / `_gstack_codex_*` はマスクで保護
+  - `allowed-tools` 生成で frontmatter 終端 `---` の誤取込（`- --`）を解消し、既知ツール ID のみに whitelist
+- **ローカル分岐の再付与**: upstream が削除した `## Next Steps — Review Chaining`（plan-eng/design/devex）と office-hours `## Spec Review Loop` を再生成後に手動で復元（gstack-copilot-jp の skill-chaining / 品質ゲート契約として保持）。
+- **新規 upstream スキルの分類**: iOS device-farm 5スキル（`ios-clean/design-review/fix/qa/sync`）と `sync-gbrain` を excluded、`spec` / `document-generate` を planned（将来採用候補）として追跡台帳に追加。
+- **adapted スキルは温存**: `gstack-review` `ship` `health` `make-pdf` `landing-report` は手動調整済みのため自動再生成せず（adapter が status=adapted を自動スキップ）。upstream 改善の個別取込は次フェーズ。
+- 既知の制約: `browse` は upstream SKILL.md が h1 を持たない構造（binary-backed）のため自動抽出対象外。ローカル SKILL.md を維持。
 
 **Phase A-1 修正**: `bin/upstream-diff.sh` の浅いクローン + サイレント `pull` 失敗を解消。完全履歴クローン化 + 失敗時 exit 1。lag コミット数の可視化を追加。詳細は [docs/archive/2026-04-upstream-gap-plan.md](docs/archive/2026-04-upstream-gap-plan.md) を参照。
 
@@ -97,6 +103,14 @@ v1.4.0.0 以降、本家は**セキュリティ層**（ML Prompt Injection Defen
 | `/gstack-claude` | ✓ | — | **planned (v1.1)** | 非-Claude ホスト向け Outside Voice。Phase B-2 |
 | `/scrape` | ✓ | — | **planned (v1.2、判断保留)** | Browser-Skills runtime (v1.20.0.0)。Phase D |
 | `/skillify` | ✓ | — | **planned (v1.2、判断保留)** | $B プロトタイプの codify。Phase D |
+| `/spec` | ✓ | — | **planned** | backlog-ready spec を5フェーズで作成 (v1.47.0.0)。将来採用候補 |
+| `/document-generate` | ✓ | — | **planned** | Diataxis カバレッジマップ付きドキュメント生成 (v1.35.0.0)。将来採用候補 |
+| `/ios-clean` | ✓ | — | excluded | iOS device-farm (v1.43.0.0、Mac daemon + Tailscale)。Copilot CLI 範囲外 |
+| `/ios-design-review` | ✓ | — | excluded | iOS device-farm。同上 |
+| `/ios-fix` | ✓ | — | excluded | iOS device-farm。同上 |
+| `/ios-qa` | ✓ | — | excluded | iOS device-farm。同上 |
+| `/ios-sync` | ✓ | — | excluded | iOS device-farm。同上 |
+| `/sync-gbrain` | ✓ | — | excluded | GBrain クロスマシンメモリ同期。store_memory + session_store_sql で代替 |
 
 ## 追跡対象外（マルチホスト基盤）
 
@@ -194,3 +208,14 @@ v1.4.0.0 以降、本家は**セキュリティ層**（ML Prompt Injection Defen
 | Tunnel allowlist 26-command | v1.16.0.0 | — | 除外（pair-agent ngrok トンネル固有） |
 | /setup-gbrain federation source wireup | v1.17.0.0 | — | 除外（GBrain 不使用） |
 | Browser-Skills runtime（`$B skill`、/scrape、/skillify） | v1.20.0.0 | — | **planned**（Phase D、v1.2 判断保留） |
+| always prefix PR titles with v\<VERSION\> | v1.23.0.0 | /ship 再生成で反映 | ✓ 反映済み |
+| cross-platform hardening（Windows lane + Bun.which） | v1.24.0.0 | browse/bin 側で対応済み | adapted |
+| V1 transcript ingest + per-skill gbrain manifests | v1.26.0.0 | — | 除外（GBrain 不使用） |
+| iOS device-farm（5スキル、Mac daemon、Tailscale） | v1.43.0.0 | — | 除外（Copilot CLI 範囲外） |
+| `/spec`（backlog-ready spec を5フェーズで作成） | v1.47.0.0 | — | **planned**（将来採用候補） |
+| `/document-generate`（Diataxis カバレッジマップ） | v1.35.0.0 | — | **planned**（将来採用候補） |
+| gstack v2 foundation（catalog tokens -56%、eval-first floor） | v1.46.0.0 | 34 vendored スキル再生成で token-reduction 反映 | ✓ 反映済み |
+| /ship を skeleton + on-demand sections へ分割（always-loaded -59%） | v1.54.0.0 | — | 見送り（ship は adapted。次フェーズで個別取込） |
+| PII/secrets/legal redaction guard（/spec, /ship, /cso, /document-*） | v1.53.0.0 | — | 部分（vendored cso/document-release は再生成で反映、ship は adapted で未取込） |
+| brain-aware planning（5スキルが gbrain context を先読み） | v1.52.1.0 | — | 除外（gbrain。adapter で Brain Context ブロックを strip） |
+| AskUserQuestion split rule + AUTO_DECIDE carve-out | v1.48.0.0 | vendored スキル再生成で反映 | ✓ 反映済み |

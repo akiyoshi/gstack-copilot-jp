@@ -11,23 +11,6 @@ allowed-tools:
   - ask_user
   - bash
   - view
-hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/../careful/bin/check-careful.sh"
-          statusMessage: "Checking for destructive commands..."
-    - matcher: "Edit"
-      hooks:
-        - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/../freeze/bin/check-freeze.sh"
-          statusMessage: "Checking freeze boundary..."
-    - matcher: "Write"
-      hooks:
-        - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/../freeze/bin/check-freeze.sh"
-          statusMessage: "Checking freeze boundary..."
 ---
 
 # /guard — Full Safety Mode
@@ -60,7 +43,8 @@ echo "$FREEZE_DIR"
 2. Ensure trailing slash and save to the freeze state file:
 ```bash
 FREEZE_DIR="${FREEZE_DIR%/}/"
-STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
+eval "$(.github/skills/bin/gstack-paths)"
+STATE_DIR="$GSTACK_STATE_ROOT"
 mkdir -p "$STATE_DIR"
 echo "$FREEZE_DIR" > "$STATE_DIR/freeze-dir.txt"
 echo "Freeze boundary set: $FREEZE_DIR"

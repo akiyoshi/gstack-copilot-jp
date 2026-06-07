@@ -115,7 +115,7 @@ Five fields, zero ambiguity.
 
 Use when reviewing plans for Claude Code skills, MCP servers, or AI agent tools.
 
-- [ ] **AskUserQuestion design**: One issue per call. Re-ground context (project, branch, task). Browser handoff for visual feedback.
+- [ ] **ask_user design**: One issue per call. Re-ground context (project, branch, task). Browser handoff for visual feedback.
 - [ ] **State storage**: Global (~/.tool/) vs per-project ($SLUG/) vs per-session. Append-only JSONL for audit trails.
 - [ ] **Progressive consent**: One-time prompts with marker files. Never re-ask. Reversible.
 - [ ] **Auto-upgrade**: Version check with cache + snooze backoff. Migration scripts. Inline offer.

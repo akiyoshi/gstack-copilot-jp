@@ -48,7 +48,6 @@ If the user types `/context-save resume` or `/context-save restore`, tell them:
 ### Step 1: Gather state
 
 ```bash
-eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
 ```
 
 Collect the current working state:
@@ -106,8 +105,8 @@ inject shell metacharacters into any subsequent command. The sanitizer is an
 allowlist: only `a-z 0-9 - .` survive.
 
 ```bash
-eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
-CHECKPOINT_DIR="${GSTACK_HOME:-$HOME/.gstack}/projects/$SLUG/checkpoints"
+eval "$(.github/skills/bin/gstack-paths)"
+CHECKPOINT_DIR="$GSTACK_STATE_ROOT/projects/$SLUG/checkpoints"
 mkdir -p "$CHECKPOINT_DIR"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 # Bash-side title sanitize. Pass the raw title as $1 when running this block.
@@ -192,8 +191,8 @@ Restore later with /context-restore.
 ### Step 1: Gather saved contexts
 
 ```bash
-eval "$(true" && mkdir -p ~/.gstack/projects/$SLUG
-CHECKPOINT_DIR="${GSTACK_HOME:-$HOME/.gstack}/projects/$SLUG/checkpoints"
+eval "$(.github/skills/bin/gstack-paths)"
+CHECKPOINT_DIR="$GSTACK_STATE_ROOT/projects/$SLUG/checkpoints"
 if [ -d "$CHECKPOINT_DIR" ]; then
   echo "CHECKPOINT_DIR=$CHECKPOINT_DIR"
   # Use find + sort instead of ls -1t: filename YYYYMMDD-HHMMSS prefix is the
