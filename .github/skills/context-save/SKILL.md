@@ -1,8 +1,10 @@
 ---
 name: context-save
 version: 1.0.0
-description: "セッション保存。作業状態をチェックポイントとして保存。Use when: セッション終了前、作業の中断、context-save、save progress、セッション保存。"
-argument-hint: "チェックポイントのタイトル（省略可）"
+description: "セッション保存。作業状態をチェックポイントとして保存。Use when: セッション終了前、作業の中断、context-save、save progress、セッション保存。
+"
+argument-hint: "チェックポイントのタイトル（省略可）
+"
 triggers:
   - save progress
   - save state
@@ -16,6 +18,8 @@ allowed-tools:
   - grep
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # /context-save — Save Working Context
 

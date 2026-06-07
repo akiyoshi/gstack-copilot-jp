@@ -1,8 +1,10 @@
 ---
 name: canary
 version: 1.0.0
-description: "SREとしてデプロイ後の監視。Use when: デプロイ後監視、カナリア、本番監視、post-deploy monitoring、canary。コンソールエラー、パフォーマンス回帰の検出。"
-argument-hint: "監視対象のURLまたはサービス"
+description: "SREとしてデプロイ後の監視。Use when: デプロイ後監視、カナリア、本番監視、post-deploy monitoring、canary。コンソールエラー、パフォーマンス回帰の検出。
+"
+argument-hint: "監視対象のURLまたはサービス
+"
 triggers:
   - monitor after deploy
   - canary check
@@ -14,6 +16,8 @@ allowed-tools:
   - glob
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # /canary — Post-Deploy Visual Monitor
 

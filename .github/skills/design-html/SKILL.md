@@ -1,8 +1,10 @@
 ---
 name: design-html
 version: 1.0.0
-description: "デザインを本番品質HTML/CSSに変換。Use when: モックアップをHTMLに、デザインを実装、design to code、HTML implementation。フレームワーク自動検出（React/Vue/Svelte）。出荷可能な品質。"
-argument-hint: "実装対象のデザインまたはモックアップの説明"
+description: "デザインを本番品質HTML/CSSに変換。Use when: モックアップをHTMLに、デザインを実装、design to code、HTML implementation。フレームワーク自動検出（React/Vue/Svelte）。出荷可能な品質。
+"
+argument-hint: "実装対象のデザインまたはモックアップの説明
+"
 triggers:
   - build the design
   - code the mockup
@@ -17,6 +19,8 @@ allowed-tools:
   - task
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # /design-html: Pretext-Native HTML Engine
 

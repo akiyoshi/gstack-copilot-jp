@@ -1,8 +1,10 @@
 ---
 name: design-shotgun
 version: 1.0.0
-description: "デザイン探索。複数のデザイン案をテキスト/HTML mockupで生成。Use when: デザインの選択肢を見たい、design exploration、mockups、show me options、デザイン比較。"
-argument-hint: "作りたいUIまたはデザインの説明"
+description: "デザイン探索。複数のデザイン案をテキスト/HTML mockupで生成。Use when: デザインの選択肢を見たい、design exploration、mockups、show me options、デザイン比較。
+"
+argument-hint: "作りたいUIまたはデザインの説明
+"
 triggers:
   - explore design variants
   - show me design options
@@ -15,6 +17,8 @@ allowed-tools:
   - task
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # /design-shotgun: Visual Design Exploration
 

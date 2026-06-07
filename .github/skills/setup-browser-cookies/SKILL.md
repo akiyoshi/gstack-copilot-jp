@@ -1,8 +1,10 @@
 ---
 name: setup-browser-cookies
 version: 1.0.0
-description: "ブラウザCookieをヘッドレスセッションにインポート。認証済みページのQAテスト用。Chrome/Edge/Brave等のCookieをJSON形式でエクスポートし、browseセッションに注入。Use when: ログイン状態テスト、認証ページQA、cookie import。"
-argument-hint: "インポート元ブラウザまたはCookieファイル"
+description: "ブラウザCookieをヘッドレスセッションにインポート。認証済みページのQAテスト用。Chrome/Edge/Brave等のCookieをJSON形式でエクスポートし、browseセッションに注入。Use when: ログイン状態テスト、認証ページQA、cookie import。
+"
+argument-hint: "インポート元ブラウザまたはCookieファイル
+"
 triggers:
   - import browser cookies
   - login to test site
@@ -12,6 +14,8 @@ allowed-tools:
   - bash
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # Setup Browser Cookies
 

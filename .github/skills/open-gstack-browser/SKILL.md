@@ -1,8 +1,10 @@
 ---
 name: open-gstack-browser
 version: 0.2.0
-description: "GStack Browserの起動。AI制御の可視Chromiumを起動し、リアルタイムでブラウジングを観察。反ボットステルス内蔵。Use when: ブラウザを見せて、headed mode、可視モード、ブラウザ起動、show me the browser。"
-argument-hint: "オプション: 開くURL"
+description: "GStack Browserの起動。AI制御の可視Chromiumを起動し、リアルタイムでブラウジングを観察。反ボットステルス内蔵。Use when: ブラウザを見せて、headed mode、可視モード、ブラウザ起動、show me the browser。
+"
+argument-hint: "オプション: 開くURL
+"
 triggers:
   - open gstack browser
   - launch chromium
@@ -12,6 +14,8 @@ allowed-tools:
   - bash
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # /open-gstack-browser — Launch GStack Browser
 

@@ -1,8 +1,10 @@
 ---
 name: learn
 version: 1.0.0
-description: "学習記録マネージャー。セッション間で蓄積する知見の管理と自動抽出。Use when: 学んだことを記録、学習記録の確認、パターンの検索、セッション振り返り、learn、learnings、memory management。"
-argument-hint: "記録したい知見、検索したい内容、または「振り返り」"
+description: "学習記録マネージャー。セッション間で蓄積する知見の管理と自動抽出。Use when: 学んだことを記録、学習記録の確認、パターンの検索、セッション振り返り、learn、learnings、memory management。
+"
+argument-hint: "記録したい知見、検索したい内容、または「振り返り」
+"
 triggers:
   - show learnings
   - what have we learned
@@ -16,6 +18,8 @@ allowed-tools:
   - grep
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # Project Learnings Manager
 
