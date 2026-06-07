@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.2.0] - 2026-06-07
+
+### 🤖 Outside Voice のモデルを最新世代に更新
+
+Outside Voice（マルチモデルレビュー）のデフォルトモデルが古い世代（GPT-5.4 / Claude Sonnet 4）に固定されており、最新モデルが選択されていなかった。
+
+### Fixed
+
+- **`bin/gstack-codex-probe` のデフォルトモデルを最新世代へ更新** — Claude プライマリ時の Outside Voice を `gpt-5.4` → **`gpt-5.5`**、GPT プライマリ時を `claude-sonnet-4` → **`claude-sonnet-4.6`** に変更。各ファミリーの最新モデルを指定し、新モデル登場時に更新すべき旨をコメントで明記
+- ドキュメント（`DESIGN.md`、`browse` スキルの例）のモデル表記も GPT-5.5 に追従。なお `outside_voice_model` 設定での明示指定が常に優先される点は不変
+
 ## [1.3.1.0] - 2026-06-07
 
 ### 🇯🇵 日本語出力の回帰を修正 — ask_user の質問が英語化する問題

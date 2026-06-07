@@ -111,7 +111,7 @@ npm test                       # テスト
 | 役割 | 実装 |
 |------|------|
 | **プライマリ voice** | ユーザーが選択中のモデル（例: Claude Sonnet 4.6） |
-| **Outside voice** | 異なるモデルファミリー（例: GPT-5.4 / Gemini 3.1 Pro） |
+| **Outside voice** | 異なるモデルファミリー（例: GPT-5.5 / Gemini 3.1 Pro） |
 | **選択戦略** | `.gstack/model-routing.yaml` + `bin/gstack-codex-probe`（v1.4 で `gstack-outside-voice` rename 予定）が決定。primary が Claude 系なら GPT を、GPT 系なら Claude を自動選択 |
 | **起動方法** | `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", ... })` または task tool の model パラメータ |
 
