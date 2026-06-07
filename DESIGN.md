@@ -115,6 +115,23 @@ npm test                       # テスト
 | **選択戦略** | `.gstack/model-routing.yaml` + `bin/gstack-codex-probe`（v1.4 で `gstack-outside-voice` rename 予定）が決定。primary が Claude 系なら GPT を、GPT 系なら Claude を自動選択 |
 | **起動方法** | `runSubagent({ model: "$GSTACK_OUTSIDE_MODEL", ... })` または task tool の model パラメータ |
 
+**動的モデル選択（v1.3.3 で確定）:**
+
+シムにモデル版をピン留めすると、新モデルが出るたびに手で更新が必要で陳腐化する。
+そこで「版の固定」ではなく「ファミリーの最新」を実行時に選ぶ方式に変更した。
+
+- `gstack-codex-probe` は対象**ファミリー**（`gpt` / `claude`、プライマリと別系統）を
+  `GSTACK_OUTSIDE_MODEL_FAMILY` として出力する。具体的な版はハードコードしない。
+- 実際に task tool を呼ぶ**エージェントがライブのモデル一覧を持つ**ため、そのファミリーの
+  最新かつ適切なモデルを実行時に選ぶ（ルールは `.github/copilot-instructions.md` の
+  「Outside Voice モデル選択」）。SDK の `client.listModels()` 相当の情報をエージェントが
+  既に保持しているのを利用する形。
+- bash シムから `listModels()` を直接呼ぶ案は、稼働中の Copilot CLI サーバー接続が必須で
+  プリフライトには重く脆弱なため採用しない。シムが出力する `GSTACK_OUTSIDE_MODEL` は
+  「一覧取得不可時のフォールバック」に格下げ。
+- `config.yaml` の `outside_voice_model`（ユーザー明示設定）は常に最優先。設定時は
+  `GSTACK_OUTSIDE_MODEL_FAMILY` を空にして、最新解決をスキップする。
+
 **理由（撤廃）:**
 
 - 外部 CLI 不要（Copilot サブスクリプションだけで完結）
