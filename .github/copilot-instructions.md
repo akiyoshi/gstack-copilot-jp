@@ -165,6 +165,29 @@ structures. Instead:
 This applies to test commands, deploy commands, and any other project-specific
 behavior. The project owns its config; gstack reads it.
 
+## Outside Voice モデル選択（常に最新を選ぶ）
+
+Outside Voice（マルチモデルレビュー）は、プライマリと**異なるファミリー**のモデルを
+task tool で起動してクロスモデルの視点を得る仕組み。`gstack-codex-probe` を source すると
+次の環境変数が設定される:
+
+- `GSTACK_OUTSIDE_MODEL` — フォールバック用の解決済みモデル名（一覧取得不可時のみ使う）
+- `GSTACK_OUTSIDE_MODEL_FAMILY` — 起動すべき対象ファミリー（`gpt` / `claude`）。
+  ユーザーが `outside_voice_model` を明示設定した場合は**空**になる。
+
+**task tool で Outside Voice を起動するときのモデル選択ルール（優先順）:**
+
+1. `GSTACK_OUTSIDE_MODEL_FAMILY` が**空**なら、ユーザーが明示設定した
+   `GSTACK_OUTSIDE_MODEL` をそのまま使う（ユーザー上書きが最優先）。
+2. `GSTACK_OUTSIDE_MODEL_FAMILY` が `gpt` / `claude` なら、**自分（エージェント）が
+   今 task tool で利用できるモデル一覧の中から、そのファミリーの最新かつ適切なモデルを
+   選ぶ**。バージョンをハードコードせず、常に利用可能な最新版を選ぶこと
+   （例: `gpt` → 利用可能な最新 GPT、`claude` → 利用可能な最新 Sonnet/Opus）。
+3. 一覧から選べない場合のみ、フォールバックとして `GSTACK_OUTSIDE_MODEL` を使う。
+
+狙いは「シムにピン留めした版が古くなっても、エージェントが実行時に最新を選ぶ」こと。
+プライマリと同じファミリーは選ばない（クロスモデルの多様性が目的のため）。
+
 ## Writing SKILL files
 
 SKILL.md files are **prompt templates read by Copilot**, not bash scripts.

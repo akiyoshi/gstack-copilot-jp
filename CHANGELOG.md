@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.3.0] - 2026-06-07
+
+### 🤖 Outside Voice モデル選択を動的化 — 常に最新を選ぶ
+
+Outside Voice のモデルがシムにバージョン固定されており、新モデルが出るたびに手で更新が必要だった。実際に task tool を呼ぶエージェントはライブのモデル一覧を持っているため、「版の固定」ではなく「ファミリーの最新を実行時に解決」する方式へ変更した。
+
+### Changed
+
+- **`bin/gstack-codex-probe` が対象モデルファミリーを出力** — プライマリと別系統のファミリー（`gpt` / `claude`）を `GSTACK_OUTSIDE_MODEL_FAMILY` として export。具体的なバージョンはハードコードせず、エージェントが利用可能な最新モデルを実行時に選ぶ。`GSTACK_OUTSIDE_MODEL` は一覧取得不可時のフォールバックに格下げ
+- **`.github/copilot-instructions.md` に「Outside Voice モデル選択」ルールを追加** — task tool 起動時に `GSTACK_OUTSIDE_MODEL_FAMILY` のファミリーの最新かつ適切なモデルを選ぶ手順を明文化。`outside_voice_model` 設定（ユーザー明示指定）が常に最優先で、その場合はファミリーを空にして最新解決をスキップ
+- **`gstack-review` の Outside Voice 起動指示を最新解決ルールへ更新**、`DESIGN.md` 6.5 に動的モデル選択の判断記録を追記
+
+### 調査メモ
+
+- SDK の `client.listModels()` は稼働中の Copilot CLI サーバー接続が必須で、プリフライトの bash シムから直接呼ぶのは重く脆弱なため不採用。代わりに、既にモデル一覧を保持しているエージェントへ選択を委譲する設計とした
+
 ## [1.3.2.0] - 2026-06-07
 
 ### 🤖 Outside Voice のモデルを最新世代に更新

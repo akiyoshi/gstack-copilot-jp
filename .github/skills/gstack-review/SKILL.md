@@ -768,7 +768,12 @@ If Outside Voice is NOT available: "Outside Voice model not configured — runni
 
 If `DIFF_TOTAL >= 200` AND Outside Voice is available AND `OLD_CFG` is NOT `disabled`:
 
-Dispatch via the task tool with `model` set to the Outside Voice model.
+Dispatch via the task tool with `model` set to the Outside Voice model. Resolve the model
+per the "Outside Voice モデル選択" rule in `.github/copilot-instructions.md`: if
+`GSTACK_OUTSIDE_MODEL_FAMILY` is set (`gpt`/`claude`), pick the **latest available model in
+that family** from the models you can use right now; if it is empty, use
+`GSTACK_OUTSIDE_MODEL` as-is (user override). Fall back to `GSTACK_OUTSIDE_MODEL` only if you
+cannot enumerate models. Never pin an old version.
 Use the same review prompt but from an independent model.
 
 Set the bash tool's `timeout` parameter to `300000` (5 minutes). Do NOT use the `timeout` shell command — it doesn't exist on macOS. Present output under `OUTSIDE VOICE (code review):` header.

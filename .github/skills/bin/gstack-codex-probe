@@ -10,23 +10,54 @@
 #
 # 使い方: source .github/skills/bin/gstack-codex-probe
 
-# Outside Voice のモデル選択（プライマリと異なるファミリーを選ぶ）
-# 各ファミリーの最新モデルを指定する。新しいモデルが出たらここを更新する。
+# Outside Voice のモデル選択方針（プライマリと異なるファミリーを選ぶ）
+#
+# 重要: モデルは「ハードコードした版」を固定で使うのではなく、常に最新を選ぶ。
+#   - エージェント（task tool を実際に呼ぶ主体）はライブのモデル一覧を持っているため、
+#     GSTACK_OUTSIDE_MODEL_FAMILY が示すファミリーの「最新の適切なモデル」を実行時に選ぶ。
+#     選択ルールは .github/copilot-instructions.md の「Outside Voice モデル選択」を参照。
+#   - 下のハードコード値（_gstack_outside_voice_fallback_model）は、エージェントが
+#     モデル一覧を取得できない場合のフォールバックに過ぎない。
+#   - config.yaml の outside_voice_model が設定されていれば、それが常に最優先。
+
+# プライマリと異なる対象モデルファミリーを返す（gpt / claude）
+_gstack_outside_voice_family() {
+  # MODEL_OVERLAY（preamble 出力）からプライマリモデルファミリーを推定
+  local primary="${MODEL_OVERLAY:-claude}"
+  case "$primary" in
+    claude*) echo "gpt" ;;     # Claude プライマリ → GPT ファミリーで多様性確保
+    gpt*)    echo "claude" ;;  # GPT プライマリ → Claude ファミリー
+    *)       echo "gpt" ;;     # デフォルト
+  esac
+}
+
+# 対象ファミリーの「フォールバック用」最新既知モデル名（一覧取得不可時のみ使用）
+# 新しいモデルが出たらここを更新する（あくまでフォールバック値）。
+_gstack_outside_voice_fallback_model() {
+  case "$(_gstack_outside_voice_family)" in
+    gpt)    echo "gpt-5.5" ;;            # 最新 GPT
+    claude) echo "claude-sonnet-4.6" ;;  # 最新 Sonnet
+    *)       echo "gpt-5.5" ;;
+  esac
+}
+
+# config.yaml の outside_voice_model（ユーザー上書き）を読む（未設定なら空）
+_gstack_outside_voice_config() {
+  .github/skills/bin/gstack-config get outside_voice_model 2>/dev/null || echo ""
+}
+
+# Outside Voice のモデル解決（ラベル表示などの互換用）:
+#   1. config.yaml の outside_voice_model（ユーザー上書き）が最優先
+#   2. なければ対象ファミリーのフォールバック最新既知モデル
+# 注: 実行時の「真の最新」選択はエージェントが GSTACK_OUTSIDE_MODEL_FAMILY を見て行う。
 _gstack_outside_voice_model() {
-  # config.yaml から設定を読む（未設定ならデフォルト）
   local config_model
-  config_model=$(.github/skills/bin/gstack-config get outside_voice_model 2>/dev/null || echo "")
+  config_model=$(_gstack_outside_voice_config)
   if [ -n "$config_model" ]; then
     echo "$config_model"
     return
   fi
-  # MODEL_OVERLAY（preamble 出力）からプライマリモデルファミリーを推定
-  local primary="${MODEL_OVERLAY:-claude}"
-  case "$primary" in
-    claude*) echo "gpt-5.5" ;;            # Claude → GPT でモデル多様性確保（最新 GPT）
-    gpt*)    echo "claude-sonnet-4.6" ;;  # GPT → Claude（最新 Sonnet）
-    *)       echo "gpt-5.5" ;;            # デフォルト（最新 GPT）
-  esac
+  _gstack_outside_voice_fallback_model
 }
 
 # 本家互換: Codex CLI 認証チェック → 常に成功（Outside Voice は task tool 経由で利用可能）
@@ -66,8 +97,20 @@ _gstack_outside_voice_label() {
 }
 
 # Codex CLI は使わない。以下の環境変数で SKILL.md の bash ブロックに伝達:
-# - GSTACK_OUTSIDE_VOICE=task  (Codex CLI ではなく task tool を使う)
-# - GSTACK_OUTSIDE_MODEL=<model>  (使用するモデル)
+# - GSTACK_OUTSIDE_VOICE=task            (Codex CLI ではなく task tool を使う)
+# - GSTACK_OUTSIDE_MODEL=<model>         (フォールバック / 解決済みモデル)
+# - GSTACK_OUTSIDE_MODEL_FAMILY=<family> (エージェントが最新を選ぶ対象ファミリー。
+#                                         config 上書き時は空＝GSTACK_OUTSIDE_MODEL をそのまま使う)
 export GSTACK_OUTSIDE_VOICE="task"
-export GSTACK_OUTSIDE_MODEL="$(_gstack_outside_voice_model)"
+_gov_cfg="$(_gstack_outside_voice_config)"
+if [ -n "$_gov_cfg" ]; then
+  # ユーザーが outside_voice_model を明示設定 → それが最優先。最新解決はしない。
+  export GSTACK_OUTSIDE_MODEL="$_gov_cfg"
+  export GSTACK_OUTSIDE_MODEL_FAMILY=""
+else
+  # 未設定 → エージェントがファミリーの最新を解決。取得不可時は fallback を使う。
+  export GSTACK_OUTSIDE_MODEL="$(_gstack_outside_voice_fallback_model)"
+  export GSTACK_OUTSIDE_MODEL_FAMILY="$(_gstack_outside_voice_family)"
+fi
+unset _gov_cfg
 
