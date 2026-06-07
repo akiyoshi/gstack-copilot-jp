@@ -11,6 +11,7 @@
 # 使い方: source .github/skills/bin/gstack-codex-probe
 
 # Outside Voice のモデル選択（プライマリと異なるファミリーを選ぶ）
+# 各ファミリーの最新モデルを指定する。新しいモデルが出たらここを更新する。
 _gstack_outside_voice_model() {
   # config.yaml から設定を読む（未設定ならデフォルト）
   local config_model
@@ -22,9 +23,9 @@ _gstack_outside_voice_model() {
   # MODEL_OVERLAY（preamble 出力）からプライマリモデルファミリーを推定
   local primary="${MODEL_OVERLAY:-claude}"
   case "$primary" in
-    claude*) echo "gpt-5.4" ;;       # Claude → GPT でモデル多様性確保
-    gpt*)    echo "claude-sonnet-4" ;; # GPT → Claude
-    *)       echo "gpt-5.4" ;;        # デフォルト
+    claude*) echo "gpt-5.5" ;;            # Claude → GPT でモデル多様性確保（最新 GPT）
+    gpt*)    echo "claude-sonnet-4.6" ;;  # GPT → Claude（最新 Sonnet）
+    *)       echo "gpt-5.5" ;;            # デフォルト（最新 GPT）
   esac
 }
 
