@@ -1,8 +1,10 @@
 ---
 name: land-and-deploy
 version: 1.0.0
-description: "PRをマージしてデプロイ・本番検証。Use when: マージ、デプロイ、本番反映、land、deploy、merge。マージ→CI通過待ち→デプロイ→ヘルスチェック。"
-argument-hint: "マージ対象のPR番号またはブランチ名"
+description: "PRをマージしてデプロイ・本番検証。Use when: マージ、デプロイ、本番反映、land、deploy、merge。マージ→CI通過待ち→デプロイ→ヘルスチェック。
+"
+argument-hint: "マージ対象のPR番号またはブランチ名
+"
 triggers:
   - merge and deploy
   - land the pr
@@ -14,6 +16,8 @@ allowed-tools:
   - glob
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # /land-and-deploy — Merge, Deploy, Verify
 

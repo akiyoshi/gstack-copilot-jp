@@ -430,7 +430,14 @@ fi
 FRONTMATTER="${FRONTMATTER}
 ---"
 
+# 言語ルール banner: スキル本体冒頭に日本語出力の最優先指示を注入する。
+# v1.46+ で本体が長大化し、英語の ask_user テンプレートが近接指示として
+# グローバルな copilot-instructions.md を上書きしてしまう回帰への対策。
+JP_OUTPUT_BANNER='> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。'
+
 FINAL="${FRONTMATTER}
+
+${JP_OUTPUT_BANNER}
 
 ${CONVERTED}"
 

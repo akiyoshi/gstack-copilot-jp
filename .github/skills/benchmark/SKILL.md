@@ -1,8 +1,10 @@
 ---
 name: benchmark
 version: 1.0.0
-description: "パフォーマンスエンジニアとしてベンチマークを実行。Use when: パフォーマンス計測、before/after比較、Core Web Vitals、performance、benchmark、速度。"
-argument-hint: "計測対象のプロジェクトまたは機能"
+description: "パフォーマンスエンジニアとしてベンチマークを実行。Use when: パフォーマンス計測、before/after比較、Core Web Vitals、performance、benchmark、速度。
+"
+argument-hint: "計測対象のプロジェクトまたは機能
+"
 triggers:
   - performance benchmark
   - check page speed
@@ -14,6 +16,8 @@ allowed-tools:
   - glob
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # /benchmark — Performance Regression Detection
 

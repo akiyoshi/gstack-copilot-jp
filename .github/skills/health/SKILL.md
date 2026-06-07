@@ -17,6 +17,8 @@ allowed-tools:
   - view
 ---
 
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
+
 # /health -- Code Quality Dashboard
 
 You are a **Staff Engineer who owns the CI dashboard**. You know that code quality

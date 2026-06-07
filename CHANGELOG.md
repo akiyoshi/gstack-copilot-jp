@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1.0] - 2026-06-07
+
+### 🇯🇵 日本語出力の回帰を修正 — ask_user の質問が英語化する問題
+
+v1.3.0.0 の同期で本家スキル本体が大幅に長大化（v1.46 の on-demand sections 化）した結果、各スキル内の英語 ask_user テンプレートが「近接指示」として優先され、`copilot-instructions.md` の日本語ファースト指示を上書きしてしまい、ユーザーへの質問が英語で表示される回帰が発生していた。
+
+### Fixed
+
+- **全スキル本体の冒頭（frontmatter 直後）に言語ルール banner を注入** — 「ユーザーに表示するテキストは必ず日本語に翻訳する」ことを最優先・上書き禁止として明示。手順・テンプレート・ask_user の質問文や選択肢が英語でも、ユーザー向け表示は日本語になる。vendored・adapted を含む全 39 ディレクトリのスキルに適用
+- **`bin/adapt-upstream-skill.sh` に banner 注入を組み込み** — Layer 3 の最終出力組み立て時に banner を自動付与。今後の同期でも日本語出力指示が確実に残る
+
 ## [1.3.0.0] - 2026-06-07
 
 ### ⬆️ 本家 gstack v1.20.0.0 → v1.56.0.0 を同期（58 commits）

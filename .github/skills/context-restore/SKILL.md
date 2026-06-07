@@ -1,8 +1,10 @@
 ---
 name: context-restore
 version: 1.0.0
-description: "セッション復帰。保存されたチェックポイントから作業状態を復元。Use when: 前回の作業を再開、resume、context-restore、どこまでやったっけ。"
-argument-hint: "復帰するチェックポイントのタイトル（省略可 = 最新）"
+description: "セッション復帰。保存されたチェックポイントから作業状態を復元。Use when: 前回の作業を再開、resume、context-restore、どこまでやったっけ。
+"
+argument-hint: "復帰するチェックポイントのタイトル（省略可 = 最新）
+"
 triggers:
   - resume where i left off
   - restore context
@@ -16,6 +18,8 @@ allowed-tools:
   - grep
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # /context-restore — Restore Saved Working Context
 

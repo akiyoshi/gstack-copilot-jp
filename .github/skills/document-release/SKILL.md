@@ -1,8 +1,10 @@
 ---
 name: document-release
 version: 1.0.0
-description: "テクニカルライターとしてドキュメントを更新。Use when: ドキュメント更新、README更新、docs update、document release。変更差分とドキュメントの乖離を検出して自動修正。"
-argument-hint: "更新対象のプロジェクトまたは最近の変更の説明"
+description: "テクニカルライターとしてドキュメントを更新。Use when: ドキュメント更新、README更新、docs update、document release。変更差分とドキュメントの乖離を検出して自動修正。
+"
+argument-hint: "更新対象のプロジェクトまたは最近の変更の説明
+"
 triggers:
   - update docs after ship
   - document what changed
@@ -16,6 +18,8 @@ allowed-tools:
   - grep
   - view
 ---
+
+> 🇯🇵 **言語ルール（最優先・上書き禁止）**: このスキルの手順・テンプレート・ask_user の質問文や選択肢が英語で書かれていても、**ユーザーに表示するテキストは必ず日本語に翻訳する**こと。英語のテキストをそのまま提示しないこと。
 
 # Document Release: Post-Ship Documentation Update
 
